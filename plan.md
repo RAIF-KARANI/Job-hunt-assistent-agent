@@ -14,7 +14,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 2 | Resume fit analysis | Context, verification, "LLM judges / code decides" | ✅ |
 | 3 | Company research | Tools, the agent loop, first LangGraph graph | ✅ |
 | 4 | Job tracker (SQLite) | Persistent state | ✅ |
-| 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ⏳ |
+| 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ✅ |
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ⏳ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ⏳ |
 | 8 | Optional extras | n8n, web UI, tracing | ⏳ |
@@ -83,19 +83,22 @@ twice = update, not duplicate); keeping the DB layer free of LLM calls.
 - [ ] Learn: open `data/jobs.db` in a viewer (e.g. DB Browser for SQLite) — your turn!
 **Done when:** running the same URL twice leaves one row with updated data. ✅
 
-## Phase 5 — Cover note + human approval ⏳
+## Phase 5 — Cover note + human approval ✅
 **Goal:** draft a tailored note; nothing is saved without your OK.
 **Concepts:** prompt design for writing tasks; human-in-the-loop;
-LangGraph `interrupt()` + `Command(resume=...)`; checkpointer (`MemorySaver`
-→ `SqliteSaver`); guardrails in code.
+LangGraph `interrupt()` + `Command(resume=...)`; checkpointer; guardrails in
+code; serialization allow-lists.
 **Tasks**
-- [ ] `draft_cover_note(job, best_match, company, feedback="")`
-      — uses verified talking points + cover-note hooks only
-- [ ] Mini graph: `draft` → `approval (interrupt)` → `save` / back to `draft` / END
-- [ ] Edit loop: your feedback goes into the next draft
-- [ ] `save_cover_note()` refuses unless approved; saves to DB + `data/cover_notes/*.md`
-- [ ] `phase5_cover_note.py`
+- [x] `draft_cover_note()` — uses verified matches, talking points, research, resume
+- [x] Number check: unknown numbers shown as warnings
+- [x] Graph: `draft` → `review (interrupt)` → `save` / back to `draft` / END
+- [x] Edit loop: feedback in the system message, overrides defaults
+- [x] `save_cover_note()` refuses unless approved; saves to DB + `data/cover_notes/*.md`
+- [x] Allow-list our models in the checkpoint serializer
+- [x] `phase5_cover_note.py <job-id>`
+- [ ] **Your turn:** approve a note yourself and check it in the DB viewer
 **Done when:** approve saves, edit re-drafts with feedback, reject saves nothing.
+✅ edit + reject + guardrail tested; approve is yours to try.
 
 ## Phase 6 — Full pipeline + CLI ⏳
 **Goal:** one command does everything.

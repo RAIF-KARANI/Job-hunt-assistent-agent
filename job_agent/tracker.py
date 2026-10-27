@@ -166,6 +166,21 @@ def get_job(job_id: int) -> dict | None:
     }
 
 
+def add_cover_note(job_id: int, text: str) -> int:
+    """Store an approved cover note. Returns the note's id.
+
+    This function does NOT check approval - it's a plain database helper.
+    The approval guardrail lives in cover_note.save_cover_note(), which is
+    the only place that should call this.
+    """
+    with _db() as conn:
+        row = conn.execute(
+            "INSERT INTO cover_notes (job_id, text) VALUES (?, ?) RETURNING id",
+            (job_id, text),
+        ).fetchone()
+    return row["id"]
+
+
 def update_status(job_id: int, status: str) -> None:
     """Move a job to a new stage, e.g. 'applied'. Rejects unknown statuses."""
     if status not in STATUSES:

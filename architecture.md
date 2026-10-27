@@ -87,7 +87,7 @@ Field `description`s are sent to the LLM as instructions.
 | `FitAnalysis` | LLM (Phase 2) | matching skills, missing skills, talking points, score 0–100, verdict |
 | `ResumeMatch` | Code (Phase 2) | which resume + its verified FitAnalysis + rejected claims |
 | `CompanyBrief` | LLM (Phase 3) | what they do, products, size, news, culture, cover-note hooks, sources |
-| `CoverNote` | LLM (Phase 5) | *planned* |
+| `CoverNote` | LLM (Phase 5) | hooks used + note text |
 
 ### 3.3 Step modules (the "nodes")
 
@@ -98,7 +98,7 @@ Field `description`s are sent to the LLM as instructions.
 | `fit.py` | Analyze fit | judging each resume | verifying evidence, picking the winner | ✅ |
 | `research.py` | Research company | deciding searches, summarizing | running searches, verifying URLs | ✅ |
 | `tracker.py` | Save job | — | SQLite upsert, list, status updates | ✅ |
-| `cover_note.py` | Draft + approve | writing the note | approval gate, saving | ⏳ Phase 5 |
+| `cover_note.py` | Draft + approve | writing the note | number check, approval gate, saving | ✅ |
 | `graph.py` | Main workflow | — | wiring all steps together | ⏳ Phase 6 |
 
 ### 3.4 Interface — `main.py`  ⏳ Phase 6
@@ -199,7 +199,7 @@ START → read_posting → analyze_fit → research_company → save_to_tracker
 data/                      (git-ignored — personal data never leaves your PC)
 ├── *.pdf                  your resumes (every PDF is a candidate)
 ├── jobs.db                SQLite tracker              ✅
-└── cover_notes/           approved notes as .md files ⏳ Phase 5
+└── cover_notes/           approved notes as .md files ✅
 ```
 
 ### SQLite schema (Phase 4 ✅ — see job_agent/tracker.py)
@@ -269,6 +269,7 @@ Job-hunt-assistent-agent/
 ├── phase2_fit.py             Phase 2 test
 ├── phase3_research.py        Phase 3 test
 ├── phase4_tracker.py         Phase 4 CLI: add / list / show / status
+├── phase5_cover_note.py      Phase 5: draft + approve a note for a tracked job
 ├── main.py                   ⏳ final CLI (Phase 6)
 ├── job_agent/
 │   ├── llm.py                LLM factory
@@ -278,7 +279,7 @@ Job-hunt-assistent-agent/
 │   ├── fit.py                fit analysis + verification
 │   ├── research.py           company research agent (LangGraph)
 │   ├── tracker.py            SQLite tracker
-│   ├── cover_note.py         ⏳ draft + approval
+│   ├── cover_note.py         draft + approval graph
 │   └── graph.py              ⏳ main workflow
 └── data/                     git-ignored personal data
 ```

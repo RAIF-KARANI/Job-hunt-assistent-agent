@@ -110,6 +110,22 @@ class CompanyBrief(BaseModel):
     )
 
 
+class CoverNote(BaseModel):
+    """A drafted cover note. Produced by the LLM in Phase 5.
+
+    Structured output (instead of plain text) stops the model from adding
+    chatter like "Sure! Here is your cover note:" around the actual note.
+    """
+
+    hooks_used: list[str] = Field(
+        description="Which company facts and resume achievements the note uses"
+    )
+    text: str = Field(
+        description="The complete cover note, ready to send. No placeholders "
+        "like [Name] or [Company]."
+    )
+
+
 class ResumeMatch(BaseModel):
     """A FitAnalysis plus which resume it was for. Built by code, not the LLM."""
 

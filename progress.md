@@ -13,11 +13,11 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 2 — Resume fit analysis | ✅ Done | Best resume picked with verified evidence (~60 s) |
 | 3 — Company research agent | ✅ Done | LLM chooses its own searches; brief with verified sources (~50 s) |
 | 4 — Job tracker (SQLite) | ✅ Done | Jobs saved to `data/jobs.db`; re-runs update, never duplicate |
-| 5 — Cover note + approval | ⏳ Next | |
-| 6 — Full pipeline + CLI | ⏳ | |
+| 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
+| 6 — Full pipeline + CLI | ⏳ Next | |
 | 7 — Polish | ⏳ | |
 
-**Progress: 5 of 8 core phases complete (~62%).**
+**Progress: 6 of 8 core phases complete (~75%).**
 
 ---
 
@@ -344,5 +344,91 @@ python phase4_tracker.py status 1 applied
 
 ---
 
-## Phase 5 — Cover note + human approval ⏳ Next
-See [plan.md](plan.md#phase-5--cover-note--human-approval-).
+## Phase 5 — Cover note + human approval ✅
+
+### Goal
+Draft a tailored cover note and make it **impossible** to save without your
+explicit approval. You can also ask for changes as many times as you like.
+
+### What was done
+1. **`CoverNote` model** — `hooks_used` + `text`. Structured output stops the
+   model from wrapping the note in chatter ("Sure! Here's your note:").
+2. **`draft_cover_note()`** (LLM) in `job_agent/cover_note.py`. The prompt
+   gets: the job, the **verified** skill matches with their resume quotes,
+   talking points, company research, and the full resume. Writing rules:
+   150–220 words, 3 paragraphs, one genuine company hook (never stock prices,
+   outages or lawsuits), achievements only from the resume, no clichés,
+   no `[placeholders]`.
+3. **`unverified_numbers()`** (code) — every number in the draft must appear
+   in the resume / job / research. Unknown numbers are **shown to you as
+   warnings** ("flag, don't fix" — you can't safely delete words from prose,
+   so the human decides).
+4. **`save_cover_note(..., approved)`** (code) — **the guardrail**: raises
+   `PermissionError` unless `approved is True`. Then saves to the
+   `cover_notes` table, sets the job status to `cover_note_ready`, and writes
+   `data/cover_notes/<id>_<company-title>.md`.
+5. **`tracker.add_cover_note()`** — plain DB insert; only `save_cover_note`
+   calls it.
+6. **The graph** with a **checkpointer**:
+   ```
+   START → draft → review ──approve──► save → END
+             ▲       │ (interrupt)
+             └─edit──┤
+                     └─reject──► END   (nothing saved)
+   ```
+   - `review_node` calls `interrupt({...draft, warnings, word count...})` →
+     the graph **pauses** and returns to the program.
+   - The program shows the draft, asks `[a]pprove / [e]dit / [r]eject`.
+   - `graph.invoke(Command(resume=answer), config)` → the graph continues;
+     `interrupt()` returns your answer.
+   - `route_after_review` turns your decision into the next node.
+   - `thread_id` in `config` identifies this run so the checkpointer can find
+     the paused state.
+7. **`phase5_cover_note.py <job-id>`** — loads a tracked job, runs the graph,
+   handles the pause/resume loop.
+
+### Tests run
+| Test | Result |
+|---|---|
+| Draft → edit ("shorter + mention LangGraph") → reject | ✅ paused twice, resumed twice, **nothing saved** |
+| Number check | ✅ 0 warnings — 8B, 40 s, 12 endpoints, 1.2 s → 9 ms are all in the resume |
+| `save_cover_note(approved=False)` called directly | ✅ `PermissionError` |
+| DB after reject | ✅ 0 cover notes, status still `researched`, no files |
+| **Approve path** | ⏳ **left for you** — approving means *you* read and accept the note, so it shouldn't be done on your behalf |
+
+### Problems hit
+| Problem | Cause | Fix |
+|---|---|---|
+| `Deserializing unregistered type job_agent.models.JobPosting from checkpoint…` | LangGraph security: the checkpointer won't rebuild arbitrary classes from stored data without permission (a tampered checkpoint could abuse that) | `JsonPlusSerializer(allowed_msgpack_modules=[...])` allow-list of our models |
+| "Make it shorter" ignored (draft 2 ≈ draft 1) | Feedback buried at the end of a long user message, conflicting with "150–220 words" | Feedback moved into the **system** message and marked as overriding defaults → 166 → 114 words. Word count now shown to you |
+
+### Concepts learned
+- **Human-in-the-loop:** the agent proposes, the human disposes. For
+  anything outward-facing (emails, applications, payments) this is essential.
+- **`interrupt()` + `Command(resume=…)`:** pause a graph mid-run and continue
+  it with the human's answer.
+- **Checkpointer + `thread_id`:** LangGraph saves state after every node;
+  that's what makes pausing possible. (`InMemorySaver` now; a SQLite saver
+  would let a paused run survive closing the program.)
+- **Gotcha:** on resume, the interrupted node **re-runs from the top**. Never
+  put side effects (saving, sending) *before* `interrupt()` in a node.
+- **Guardrails in code, not prompts:** the approval check is a Python `if`,
+  not an instruction to the model.
+- **Prompt placement matters:** for small models, put high-priority,
+  rule-overriding instructions in the system message.
+- **Serialization safety:** stored state is data, and loading data into
+  objects needs an allow-list.
+
+### Try it (your turn — approve one!)
+```powershell
+python phase5_cover_note.py 1
+```
+Try `e` with feedback like *"more confident tone"* or *"mention remote
+async work"*, then `a` when you're happy. Afterwards:
+`python phase4_tracker.py list` shows `cover_note_ready`, and the note is in
+`data/cover_notes/`. Check the `cover_notes` table in the SQLite viewer too.
+
+---
+
+## Phase 6 — Full pipeline + CLI ⏳ Next
+See [plan.md](plan.md#phase-6--full-pipeline--cli-).
