@@ -1,0 +1,40 @@
+# n8n (workflow automation) for Phase 8d.
+#
+#   cd infra\n8n
+#   docker compose up -d        start, then open http://localhost:5678
+#   docker compose stop         stop (keeps workflows)
+#   docker compose down -v      delete everything, including workflows
+#
+# The workflow itself is kept in git as job-hunt-workflow.json (import it in
+# the n8n editor: ... menu -> Import from File).
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:5678:5678          # reachable only from this PC
+    environment:
+      GENERIC_TIMEZONE: Asia/Kolkata
+      TZ: Asia/Kolkata
+      # Base for webhook / form / resume URLs that n8n hands out. The agent
+      # API runs on the host, so "localhost" is right for the URLs it calls.
+      WEBHOOK_URL: http://localhost:5678/
+      N8N_DIAGNOSTICS_ENABLED: "false"         # no telemetry
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      # The agent API's secret. Comes from infra/n8n/.env (git-ignored), so it
+      # never appears inside the workflow JSON we commit. The workflow reads
+      # it with the expression {{ $env.AGENT_API_KEY }}, which needs:
+      AGENT_API_KEY: ${AGENT_API_KEY:?set AGENT_API_KEY in infra/n8n/.env}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    extra_hosts:
+      # Lets the container reach services on your PC (our API on port 8000).
+      # Docker Desktop provides this name already; this line makes it explicit.
+      - host.docker.internal:host-gateway
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./:/files                    # so the n8n CLI can import the workflow JSON
+
+volumes:
+  n8n_data:

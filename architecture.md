@@ -164,6 +164,31 @@ main.py / app.py
   SDK drops events if the server is down. The CLI `flush()`es before exiting.
 - Self-hosted → prompts (incl. your resume) stay on this PC.
 
+### 3.7 HTTP API + n8n — `api.py` + `infra/n8n/` (Phase 8d)  ✅
+
+```
+Browser ─► n8n (Docker, 127.0.0.1:5678)  workflow "Job Hunt Assistant"
+   │  Form ─► POST /runs {url, callback_url=$execution.resumeUrl} ─► Wait ⏸
+   │                                │ X-API-Key                       ▲
+   │                                ▼  host.docker.internal:8000      │ POST status (callback)
+   │                   api.py (FastAPI, 127.0.0.1:8000)               │
+   │                     202 + thread_id; background thread ──────────┘
+   │                     graph (SQLite checkpointer, shared with web UI)
+   │  IF awaiting_approval ─► Form page (score + draft, Approve/Reject)
+   │                       ─► POST /runs/{id}/decision  (= Command(resume=…))
+   └─ Form ending page ("Saved" / "Rejected")
+```
+
+- Three front doors, one agent: **CLI** (`main.py`), **web UI**
+  (`app.py`), **HTTP API** (`api.py`, used by n8n). All share the graph,
+  tracker, tracing; app and API also share checkpoints.
+- Long runs: `202 Accepted` + callback (webhook) instead of a minutes-long
+  HTTP request.
+- n8n's Wait node + resume URL is n8n's version of `interrupt()` +
+  `Command(resume=…)`.
+- Secrets: API key in git-ignored `.env` files; the workflow JSON reads it
+  with `$env`, so it's safe to commit.
+
 ---
 
 ## 4. The research agent in detail (Phase 3)
@@ -368,10 +393,12 @@ Job-hunt-assistent-agent/
 ├── phase5_cover_note.py      Phase 5: draft + approve a note for a tracked job
 ├── main.py                   the CLI — start here
 ├── app.py                    web UI (Streamlit)
+├── api.py                    HTTP API (FastAPI), used by n8n
 ├── compare_models.py         same task on several models, side by side
 ├── README.md                 setup + usage
 ├── tests/                    pytest suite (no LLM, temp database)
 ├── infra/langfuse/           self-hosted Langfuse (official compose + our override)
+├── infra/n8n/                n8n compose + job-hunt-workflow.json
 ├── job_agent/
 │   ├── llm.py                LLM factory, retries, Ollama check
 │   ├── models.py             Pydantic data models
@@ -405,6 +432,8 @@ Job-hunt-assistent-agent/
 | Tests | pytest | Fast tests for the code-only safety nets |
 | Web UI | Streamlit | Python-only UI, quick to build |
 | Tracing | Langfuse (self-hosted, Docker) | Private observability; LangSmith as a switch |
+| API | FastAPI + Uvicorn | Typed endpoints, Pydantic validation, auto docs |
+| Automation | n8n (self-hosted, Docker) | Forms, triggers, 400+ integrations around the agent |
 
 ## 10. Known limitations
 

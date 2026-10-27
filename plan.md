@@ -17,7 +17,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ✅ |
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ✅ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ✅ |
-| 8 | Optional extras | n8n, web UI, tracing | ⏳ |
+| 8 | Optional extras | Score in code, web UI, tracing, n8n | ✅ |
 
 ---
 
@@ -129,7 +129,7 @@ retries; testing non-deterministic systems; measuring model choices.
 - [ ] **Your turn:** run `compare_models.py` on 2–3 more jobs before switching models
 **Done when:** a broken URL or offline search doesn't crash the run. ✅
 
-## Phase 8 — Optional extras 🚧
+## Phase 8 — Optional extras ✅
 You chose all four, built in this order.
 
 ### 8a — Fit score computed in code ✅
@@ -161,10 +161,17 @@ callbacks; self-hosting with Docker Compose.
 - [x] Traced a full run and analyzed it via the API (54 observations, 9 LLM calls)
 - [ ] **Your turn:** explore the trace at http://localhost:3000
 
-### 8d — n8n integration ⏳
-**Concepts:** agents inside automation tools; exposing an agent as an API.
-- [ ] Small HTTP API around the workflow
-- [ ] n8n workflow: form/webhook → agent → email/notification with the draft
+### 8d — n8n integration ✅
+**Concepts:** agents inside automation tools; exposing an agent as an API;
+async jobs (202 + callback/webhook); API keys; human-in-the-loop in n8n
+(Wait node + resume URL) mirroring LangGraph's interrupt.
+- [x] `api.py` (FastAPI): `/runs`, `/runs/{id}`, `/runs/{id}/decision`, `/jobs`, `/health`
+- [x] `X-API-Key` auth, localhost only, one run at a time, shared SQLite checkpoints
+- [x] `infra/n8n`: n8n in Docker (localhost only, telemetry off, key via env)
+- [x] Workflow: Form → POST /runs (callback = resumeUrl) → Wait → IF → review form → decision → result page
+- [x] End-to-end tested by driving the form like a browser (reject path)
+- [x] 6 API tests (32 total)
+- [ ] **Your turn:** create your n8n owner account, open the workflow, try it
 
 ### Other ideas (not planned)
 - Follow-up reminders for jobs applied > 7 days ago

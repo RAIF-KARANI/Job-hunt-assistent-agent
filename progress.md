@@ -16,9 +16,9 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
-| 8 — Optional extras | 🚧 In progress | 8a ✅ score in code · 8b ✅ web UI · 8c ✅ tracing · 8d n8n |
+| 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API |
 
-**Progress: all 8 core phases (0–7) complete. 🎉 Phase 8 (extras) in progress.**
+**Progress: every phase (0–8) complete. 🎉 The project is finished. See "Where to go next" at the end.**
 
 ---
 
@@ -637,7 +637,7 @@ python main.py https://www.linkedin.com/jobs/view/123  # blocked → paste fallb
 
 ---
 
-## Phase 8 — Optional extras 🚧
+## Phase 8 — Optional extras ✅
 
 You chose all four extras, built in this order: **8a** fit score in code →
 **8b** Streamlit web UI → **8c** tracing → **8d** n8n.
@@ -888,3 +888,124 @@ shorter talking points); shrinking the prompts matters much less.
 3. **Scores:** filter runs by `cover_note_decision`.
 4. Docker: `cd infra\langfuse` then `docker compose stop` (keep data) /
    `docker compose up -d` (start) / `docker compose down -v` (delete all).
+
+### 8d — n8n + an HTTP API around the agent ✅
+
+#### Goal
+Let an **automation tool** use the agent: n8n shows a form, runs the agent,
+shows you the draft for approval, and records your decision. Same agent,
+same tracker, same traces; just a different "front door".
+
+#### Concepts (from the temporary n8n guide)
+- **n8n** = open-source, self-hostable workflow automation (like Zapier):
+  trigger nodes, action nodes, logic nodes, `{{ expressions }}`, 400+ integrations.
+- **Keep the brain in code, use n8n for the plumbing.** We didn't rebuild the
+  agent in n8n's AI Agent node; our Python agent has verification, a judge,
+  guardrails and tests. n8n calls it over HTTP.
+- **Long jobs over HTTP:** answer `202 Accepted` + an id immediately, run in
+  the background, then report back by **polling** or a **callback/webhook**.
+- **Human-in-the-loop exists in both tools, with the same idea:**
+
+  | | LangGraph | n8n |
+  |---|---|---|
+  | pause | `interrupt()` | Wait node (resume on webhook) |
+  | state saved in | checkpointer | n8n's database |
+  | continue with | `Command(resume=…)` + `thread_id` | POST to `$execution.resumeUrl` |
+
+#### What was done
+1. **`api.py`** (FastAPI + Uvicorn, `python api.py`, docs at `/docs`):
+   - `POST /runs` → `202` + `thread_id`; the graph runs in a background
+     thread; when it pauses or ends, the API **POSTs the status to
+     `callback_url`**.
+   - `GET /runs/{id}` → `running` / `awaiting_approval` (draft, warnings,
+     score) / `needs_posting_text` / `done` / `error`, built from
+     `graph.get_state()`, the same idea as the web UI.
+   - `POST /runs/{id}/decision` → the HTTP version of `Command(resume=…)`;
+     `409` unless the run is actually awaiting approval.
+   - `GET /jobs`, `GET /health`.
+   - **Security:** `X-API-Key` header (FastAPI dependency) on everything but
+     `/health`; listens on **127.0.0.1** only.
+   - Same **SQLite checkpointer** as the web UI, so runs are shared;
+     **one run at a time** (lock) since there's one local Ollama; errors
+     are reported, never crash the server; traced as `api` in Langfuse.
+2. **`infra/n8n/docker-compose.yml`**: n8n 2.45 in Docker, `127.0.0.1:5678`
+   only, telemetry off, `AGENT_API_KEY` passed in from the git-ignored
+   `infra/n8n/.env` (read in the workflow as `{{ $env.AGENT_API_KEY }}`), so
+   **no secret inside the committed workflow JSON**.
+3. **`infra/n8n/job-hunt-workflow.json`** (8 nodes):
+   ```
+   Job URL form → Start agent run (POST /runs, callback_url = $execution.resumeUrl)
+     → Wait for the agent (resume on webhook, 20 min limit) → Draft ready? (IF)
+         yes → Review the draft (form page: score + draft + Approve/Reject)
+                 → Send decision (POST /runs/{id}/decision) → Show result (form ending)
+         no  → Show problem (form ending)
+   ```
+   Imported and published with the n8n CLI:
+   `n8n import:workflow --input=/files/job-hunt-workflow.json` and
+   `n8n publish:workflow --id=JobHuntAssist001`, then a restart.
+4. **Node settings were read from the n8n container's own node definitions**
+   (not written from memory): Form v2.5 introduced a new field format, so the
+   form nodes are pinned to v2.3 with the classic `formFields.values`.
+5. **6 API tests** (`tests/test_api.py`): health without key, 401 without /
+   with a wrong key, 404 unknown run, 422 invalid decision, 409 decision when
+   not awaiting approval. **32 tests total.**
+
+#### Tests run
+| Test | Result |
+|---|---|
+| API health, 401 without key, data with key | ✅ |
+| n8n container → API on the host's 127.0.0.1 via `host.docker.internal` | ✅ |
+| Form live at `/form/job-hunt` | ✅ |
+| **End to end** (script driving the form like a browser): submit job #1 URL → agent → callback → review page with title, **63/100**, draft, Approve/Reject → Reject → "Nothing was saved" | ✅ in 37 s |
+| Draft keeps its paragraphs on the review page | ✅ after fix |
+| Approve path | ⏳ yours to try |
+
+#### Problems hit
+| Problem | Cause | Fix |
+|---|---|---|
+| `ENOENT … C:/Program Files/Git/files/job-hunt-workflow.json` | **Git Bash rewrites** `/files/...` into a Windows path before calling Docker | `MSYS_NO_PATHCONV=1` |
+| Draft shown as one block of text | n8n **sanitizes custom HTML** and strips `style` attributes (`white-space: pre-wrap` removed) | turn line breaks into `<br>` |
+| `.replace(/\n/g, '<br>')` did nothing | the `\n` escape didn't survive JSON → n8n expression | escape-free: `.split(String.fromCharCode(10)).join('<br>')` |
+
+#### Concepts learned
+- **Agents as services:** an HTTP API turns the agent into a building block
+  any tool can use.
+- **Async APIs:** `202` + id + callback for long jobs; never hold a request
+  open for minutes.
+- **Webhooks / resume URLs:** "call me back here when you're done".
+- **Pausing for a human is a universal pattern:** LangGraph, n8n, workflow
+  engines all do it the same way: persist state, hand out an id, resume.
+- **Secrets stay out of shareable artifacts** (workflow JSON uses `$env`).
+- **Containers and localhost:** inside a container, `localhost` is the
+  container; use `host.docker.internal` to reach your PC.
+- **Platform quirks are real:** Git Bash path rewriting, HTML sanitizing,
+  escaping layers. Test the real thing end to end.
+
+#### Try it
+1. Start the pieces (each in its own terminal, venv activated):
+   ```cmd
+   python api.py
+   cd infra\n8n && docker compose up -d
+   ```
+2. Open http://localhost:5678 → create your **owner account** (local only) →
+   open the **Job Hunt Assistant** workflow to see the nodes.
+3. Open **http://localhost:5678/form/job-hunt**, paste a job URL, wait for the
+   draft page, choose Approve or Reject.
+4. Check the run in n8n's **Executions** tab, in the tracker
+   (`python main.py list`) and in Langfuse (tag `api`).
+
+---
+
+## Where to go next
+
+The project is complete. Some directions if you want to keep learning:
+- **Write the verdict from the final facts** (after the judge), the last
+  open item from 8a.
+- **n8n extensions:** Telegram/Slack trigger (send job links from your
+  phone), Gmail node (email yourself approved notes), a daily schedule that
+  sends follow-up reminders for jobs applied > 7 days ago.
+- **Evaluation:** build a small dataset of jobs with the "right" answers
+  and use Langfuse datasets to measure prompt changes.
+- **Shorter outputs for speed:** tracing showed output tokens dominate
+  latency, so trim talking points and descriptions and measure the gain.
+- **Deploy:** run api.py + n8n on a small server or Raspberry Pi.

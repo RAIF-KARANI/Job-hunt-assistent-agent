@@ -30,3 +30,7 @@ langgraph-checkpoint-sqlite>=2.0   # paused runs saved to disk (survive page rel
 # ---- Phase 8c: tracing (TRACING=langfuse in .env) ----
 langfuse>=3.0           # SDK + LangChain callback handler; server: infra/langfuse
 # langsmith             # already installed with langchain; TRACING=langsmith needs only a key
+
+# ---- Phase 8d: HTTP API (used by n8n) ----
+fastapi>=0.110          # run: python api.py   (docs at http://127.0.0.1:8000/docs)
+uvicorn>=0.29           # the web server that runs the FastAPI app
