@@ -34,8 +34,10 @@ Key ideas:
 
 from pathlib import Path
 
+import requests
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import interrupt
 
 from job_agent.cover_note import SAFE_SERDE, CoverNoteState, build_cover_note_graph
 from job_agent.fit import pick_best_resume
@@ -93,11 +95,19 @@ def route_after_check(state: JobHuntState) -> str:
 def read_posting(state: JobHuntState) -> dict:
     _step(1, "Reading the job posting...")
     url = state["url"]
-    text = (
-        fetch_page_text(url)
-        if url.startswith("http")
-        else Path(url).read_text(encoding="utf-8")
-    )
+    try:
+        text = (
+            fetch_page_text(url)
+            if url.startswith("http")
+            else Path(url).read_text(encoding="utf-8")
+        )
+    except (requests.RequestException, ValueError, OSError) as e:
+        # Blocked site, login wall, JS-only page, typo in the path...
+        # Instead of crashing, ask the human: the human is the fallback tool.
+        # (On resume this node re-runs from the top, so the fetch is tried -
+        # and fails - once more; then interrupt() returns the pasted text.)
+        print(f"  ! couldn't read the posting: {e}")
+        text = interrupt({"kind": "paste_posting", "reason": str(e)})
     job = extract_job_posting(text)
     print(f"  -> {job.title} @ {job.company} ({job.location})")
     return {"job": job}

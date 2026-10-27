@@ -19,6 +19,7 @@ import uuid
 from langgraph.types import Command
 
 from job_agent.graph import build_job_hunt_graph
+from job_agent.llm import check_llm_ready
 from job_agent.tracker import STATUSES, get_job, list_jobs, update_status
 
 
@@ -28,6 +29,7 @@ from job_agent.tracker import STATUSES, get_job, list_jobs, update_status
 
 
 def run(url: str, fresh: bool) -> None:
+    check_llm_ready()  # fail fast if Ollama isn't running
     start = time.time()
     graph = build_job_hunt_graph()
     # A new thread_id per run: this run's checkpoints are kept separate.
@@ -35,9 +37,13 @@ def run(url: str, fresh: bool) -> None:
 
     result = graph.invoke({"url": url, "fresh": fresh}, config)
 
-    # Paused inside the cover-note subgraph, waiting for the human.
+    # The graph pauses whenever it needs the human. The payload's "kind" says why.
     while "__interrupt__" in result:
-        answer = ask_for_approval(result["__interrupt__"][0].value)
+        payload = result["__interrupt__"][0].value
+        if payload["kind"] == "paste_posting":
+            answer = ask_for_posting_text(payload)
+        else:
+            answer = ask_for_approval(payload)
         result = graph.invoke(Command(resume=answer), config)
 
     print()
@@ -48,6 +54,27 @@ def run(url: str, fresh: bool) -> None:
         print(f"Cover note rejected - nothing saved. Job #{result['job_id']} "
               "is still in the tracker.")
     print(f"Total time: {time.time() - start:.0f}s")
+
+
+def ask_for_posting_text(payload: dict) -> str:
+    """The page couldn't be fetched: let the user paste the job description."""
+    print("\nThe graph is PAUSED: I couldn't read that page "
+          "(it may need a login or JavaScript).")
+    print("Open it in your browser, copy the job description, paste it here,")
+    print("then type END on its own line and press Enter.\n")
+    lines = []
+    while True:
+        try:
+            line = input()
+        except EOFError:  # input ran out (e.g. piped text without END)
+            break
+        if line.strip() == "END":
+            break
+        lines.append(line)
+    text = "\n".join(lines).strip()
+    if len(text) < 200:
+        sys.exit("That's too little text to be a job posting - stopping.")
+    return text
 
 
 def ask_for_approval(payload: dict) -> dict:

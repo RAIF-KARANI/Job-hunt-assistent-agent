@@ -126,9 +126,28 @@ class CoverNote(BaseModel):
     )
 
 
+class SkillJudgment(BaseModel):
+    """The judge's verdict on one claimed skill match (Phase 7)."""
+
+    id: int = Field(description="The number of the claim being judged")
+    supported: bool = Field(
+        description="true ONLY if the quote directly proves this specific requirement"
+    )
+    reason: str = Field(description="One short sentence explaining the verdict")
+
+
+class EvidenceReview(BaseModel):
+    """All of the judge's verdicts, one per claim."""
+
+    judgments: list[SkillJudgment]
+
+
 class ResumeMatch(BaseModel):
     """A FitAnalysis plus which resume it was for. Built by code, not the LLM."""
 
     resume_name: str
     analysis: FitAnalysis  # only contains matches that passed verification
     rejected_matches: list[SkillMatch] = []  # claims whose evidence wasn't found
+    # Phase 7: real quotes the judge said don't prove the claim ("req - reason").
+    # The default [] keeps older tracker rows (saved before Phase 7) loadable.
+    unsupported_matches: list[str] = []

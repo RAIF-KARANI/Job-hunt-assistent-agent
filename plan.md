@@ -16,7 +16,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 4 | Job tracker (SQLite) | Persistent state | ✅ |
 | 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ✅ |
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ✅ |
-| 7 | Polish | Error handling, observability, LLM-as-judge, tests | ⏳ |
+| 7 | Polish | Error handling, observability, LLM-as-judge, tests | ✅ |
 | 8 | Optional extras | n8n, web UI, tracing | ⏳ |
 
 ---
@@ -112,19 +112,22 @@ agent; conditional entry; resuming after interrupt.
 - [x] Clear step-by-step console output `[1/5] … [5/5]`
 **Done when:** `python main.py <url>` runs all six steps end to end. ✅ (176 s new job, 13 s reused)
 
-## Phase 7 — Polish ⏳
+## Phase 7 — Polish ✅
 **Goal:** make it robust and trustworthy.
-**Concepts:** error handling in agents; observability; LLM-as-judge; testing
-non-deterministic systems.
+**Concepts:** error handling in agents; human as fallback; LLM-as-judge;
+retries; testing non-deterministic systems; measuring model choices.
 **Tasks**
-- [ ] Graceful failures: blocked page → ask for pasted text; search down →
-      continue without research; model timeout → retry
-- [ ] LLM-as-judge: second call checks each `SkillMatch` evidence really
-      supports the requirement
-- [ ] Compare `qwen3:8b` vs `qwen3:14b` on 3 jobs (quality vs speed)
-- [ ] `pytest` tests for code-only parts (evidence check, URL verify, tracker)
-- [ ] README with setup + usage
-**Done when:** a broken URL or offline search doesn't crash the run.
+- [x] Blocked/unreadable page → graph pauses (`interrupt`) and asks you to paste text
+- [x] Search down → continue without research (Phase 3/6); tool errors → text
+- [x] Malformed structured output → automatic retry (`structured_llm()`, 3 attempts)
+- [x] Ollama not running / model missing → clear message before the run starts
+- [x] LLM-as-judge: second call checks each `SkillMatch` quote really proves the
+      requirement; unproven claims move to gaps (`JUDGE_EVIDENCE` in `.env`)
+- [x] `compare_models.py` + 8b vs 14b comparison on job #1
+- [x] `pytest` suite: 18 tests for code-only parts (no LLM, temp DB)
+- [x] README with setup + usage
+- [ ] **Your turn:** run `compare_models.py` on 2–3 more jobs before switching models
+**Done when:** a broken URL or offline search doesn't crash the run. ✅
 
 ## Phase 8 — Optional extras ⏳
 Pick any:

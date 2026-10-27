@@ -46,6 +46,10 @@ print(f"Verdict: {a.verdict}\n")
 print("Matching skills (evidence verified in resume):")
 for s in a.matching_skills:
     print(f'  + {s.requirement}  <- "{s.resume_evidence}"')
+if best.unsupported_matches:
+    print("\nJudge: real quote, but doesn't prove the claim (moved to gaps):")
+    for s in best.unsupported_matches:
+        print(f"  ~ {s}")
 if best.rejected_matches:
     print("\nRejected claims (evidence NOT found in resume):")
     for s in best.rejected_matches:

@@ -19,3 +19,6 @@ pypdf>=5.0              # extract text from PDF files
 # ---- Phase 3: company research ----
 ddgs>=9.0               # DuckDuckGo web + news search (free, no API key)
 # langchain-tavily      # alternative: better results, needs TAVILY_API_KEY
+
+# ---- Phase 7: testing ----
+pytest>=8.0             # run: python -m pytest

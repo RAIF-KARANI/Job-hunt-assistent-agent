@@ -75,6 +75,11 @@ only when the path really can't be known in advance.
   - `.bind_tools([tools])` → reply may be a tool call
 - **Current:** Ollama `qwen3:8b`, local, `num_ctx=16384`, reasoning off.
 - **To switch:** edit `.env` only (plus install that provider's package).
+- **`structured_llm(Schema)`** (Phase 7): `with_structured_output` +
+  `.with_retry(stop_after_attempt=3)`. All structured calls use it, so a
+  malformed JSON reply is retried instead of crashing the run.
+- **`check_llm_ready()`** (Phase 7): before a run, checks that Ollama is
+  reachable and the model is pulled; otherwise a clear one-line message.
 
 ### 3.2 Data models — `job_agent/models.py`  ✅
 Pydantic classes that define the **shape of data** passing between steps.
@@ -85,7 +90,8 @@ Field `description`s are sent to the LLM as instructions.
 | `JobPosting` | LLM (Phase 1) | title, company, location, type, seniority, salary, summary, skills, responsibilities |
 | `SkillMatch` | LLM (Phase 2) | requirement + exact quote from the resume as evidence |
 | `FitAnalysis` | LLM (Phase 2) | matching skills, missing skills, talking points, score 0–100, verdict |
-| `ResumeMatch` | Code (Phase 2) | which resume + its verified FitAnalysis + rejected claims |
+| `ResumeMatch` | Code (Phase 2) | which resume + its verified FitAnalysis + rejected claims + judge-unproven claims |
+| `SkillJudgment` / `EvidenceReview` | LLM judge (Phase 7) | per claim: id, supported yes/no, reason |
 | `CompanyBrief` | LLM (Phase 3) | what they do, products, size, news, culture, cover-note hooks, sources |
 | `CoverNote` | LLM (Phase 5) | hooks used + note text |
 
@@ -95,7 +101,7 @@ Field `description`s are sent to the LLM as instructions.
 |---|---|---|---|---|
 | `posting.py` | Read posting | extracting fields | download + clean HTML | ✅ |
 | `resume.py` | Load resumes | — | PDF → text | ✅ |
-| `fit.py` | Analyze fit | judging each resume | verifying evidence, picking the winner | ✅ |
+| `fit.py` | Analyze fit | judging each resume; **judge** reviewing the evidence | verifying quotes, applying verdicts, picking the winner | ✅ |
 | `research.py` | Research company | deciding searches, summarizing | running searches, verifying URLs | ✅ |
 | `tracker.py` | Save job | — | SQLite upsert, list, status updates | ✅ |
 | `cover_note.py` | Draft + approve | writing the note | number check, approval gate, saving | ✅ |
@@ -282,7 +288,9 @@ needing a column per field.
 2. **Structured output everywhere.** The LLM fills Pydantic forms; the rest of
    the code works with typed objects, never with free text.
 3. **Don't trust, verify.** LLM claims are checked by code where possible
-   (resume quotes, source URLs). Unverified claims are dropped and shown.
+   (resume quotes, source URLs, news dates, numbers). Unverified claims are
+   dropped and shown. Where checking needs *judgment*, a second, stricter
+   LLM call (**LLM-as-judge**) reviews the first one's work.
 4. **LLM judges, code decides.** The LLM scores each option separately; plain
    Python picks the winner. Transparent and reproducible.
 5. **Guardrails live in code, not prompts.** Tool-call limits, the approval
@@ -291,6 +299,12 @@ needing a column per field.
 7. **Provider-agnostic.** Swap models in `.env`; no code changes.
 8. **Local-first and private.** Resumes and the tracker stay on your machine;
    with Ollama, even the LLM runs locally. Only search queries go online.
+9. **Fail gracefully; the human is the fallback.** Tool errors become text
+   for the LLM; failed research → continue without it; unreadable page →
+   pause and ask you to paste it; flaky JSON → retry.
+10. **Test the safety nets, measure the models.** Code-only checks have unit
+    tests (no LLM needed); model choices are decided by running the same
+    input through each model (`compare_models.py`), not by guessing.
 
 ---
 
@@ -308,12 +322,15 @@ Job-hunt-assistent-agent/
 ├── phase4_tracker.py         Phase 4 CLI: add / list / show / status
 ├── phase5_cover_note.py      Phase 5: draft + approve a note for a tracked job
 ├── main.py                   the CLI — start here
+├── compare_models.py         same task on several models, side by side
+├── README.md                 setup + usage
+├── tests/                    pytest suite (no LLM, temp database)
 ├── job_agent/
-│   ├── llm.py                LLM factory
+│   ├── llm.py                LLM factory, retries, Ollama check
 │   ├── models.py             Pydantic data models
 │   ├── posting.py            read job posting
 │   ├── resume.py             load resume PDFs
-│   ├── fit.py                fit analysis + verification
+│   ├── fit.py                fit analysis + verification + LLM judge
 │   ├── research.py           company research agent (LangGraph)
 │   ├── tracker.py            SQLite tracker
 │   ├── cover_note.py         draft + approval graph
@@ -337,13 +354,22 @@ Job-hunt-assistent-agent/
 | Search | DuckDuckGo (`ddgs`) | Free, no API key (Tavily as alternative) |
 | Storage | SQLite (built into Python) | Real database, single file, no server |
 | Config | python-dotenv | Settings and keys out of code |
+| Tests | pytest | Fast tests for the code-only safety nets |
 
 ## 10. Known limitations
 
 - **JavaScript-only / login-walled job pages** (e.g. LinkedIn) can't be
-  fetched → paste the text into a `.txt` file instead.
-- **Small local model accuracy:** evidence verification proves a quote
-  *exists*, not that it *supports* the claim. Planned mitigation (Phase 7):
-  LLM-as-judge review step and/or `qwen3:14b`.
-- **DuckDuckGo** may rate-limit heavy use and returns only short snippets.
-- **Speed:** each LLM call on qwen3:8b takes ~20–30 s on CPU/consumer GPU.
+  fetched → the run pauses and asks you to paste the text.
+- **`fit_score` isn't recalculated after the judge** — it's the first LLM's
+  score; the judge only moves claims to gaps. The score is also the least
+  stable output (qwen3:14b once gave 4/100 to a resume with 4 proven
+  matches). A future fix: compute the score in code from proven vs missing
+  requirements.
+- **The judge is an LLM too** — stricter and more reliable than the writer
+  in tests, but not infallible.
+- **Unverified facts:** research facts without a URL or date (e.g. employee
+  counts) aren't checked.
+- **DuckDuckGo** may rate-limit heavy use and returns only short snippets;
+  failed searches are retried by the agent.
+- **Speed:** a full run is ~3 min on qwen3:8b (~4× slower on qwen3:14b).
+- **In-memory checkpointer:** a paused run doesn't survive closing the program.

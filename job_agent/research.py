@@ -30,7 +30,7 @@ from langchain_core.tools import tool
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from job_agent.llm import get_llm
+from job_agent.llm import get_llm, structured_llm
 from job_agent.models import CompanyBrief
 
 # Safety limit: after this many tool calls, the agent must stop and answer.
@@ -191,31 +191,43 @@ def research_company(company: str, role_context: str = "") -> CompanyBrief:
         notes = f"APPLICANT'S ROLE: {role_context}\n\n{notes}"
 
     print("  [summarize] turning research notes into a structured CompanyBrief...")
-    brief = get_llm().with_structured_output(CompanyBrief).invoke(
+    brief = structured_llm(CompanyBrief).invoke(
         [SystemMessage(content=SUMMARY_PROMPT), HumanMessage(content=notes)]
     )
 
-    # Verify: keep only source URLs that really came back from a search.
-    # (LLMs sometimes invent plausible-looking URLs.)
-    real_urls = set(URL_PATTERN.findall(tool_outputs))
-    verified = [u for u in brief.sources if u in real_urls]
-    dropped = len(brief.sources) - len(verified)
-    if dropped:
-        print(f"  [verify] dropped {dropped} source URL(s) not found in search results")
+    verified = verify_sources(brief.sources, tool_outputs)
+    if len(verified) < len(brief.sources):
+        print(f"  [verify] dropped {len(brief.sources) - len(verified)} source URL(s) "
+              "not found in search results")
 
-    # Verify: a news date must appear in the search results. Small models
-    # like to "fill in" a missing date (often today's date minus N years).
-    real_dates = set(DATE_PATTERN.findall(tool_outputs))
-    news = []
-    for item in brief.recent_news:
-        fake = [d for d in DATE_PATTERN.findall(item) if d not in real_dates]
-        for d in fake:
-            item = item.replace(d, "date unknown")
-        if fake:
-            print(f"  [verify] removed invented date(s) {fake} from a news item")
-        news.append(item)
+    news = remove_invented_dates(brief.recent_news, tool_outputs)
+    if news != brief.recent_news:
+        print("  [verify] removed invented date(s) from news items")
 
     return brief.model_copy(update={"sources": verified, "recent_news": news})
+
+
+# Pure functions (no LLM, no network) -> easy to unit-test. See tests/.
+
+
+def verify_sources(sources: list[str], tool_outputs: str) -> list[str]:
+    """Keep only URLs that really came back from a search.
+    (LLMs sometimes invent plausible-looking URLs.)"""
+    real_urls = set(URL_PATTERN.findall(tool_outputs))
+    return [u for u in sources if u in real_urls]
+
+
+def remove_invented_dates(news: list[str], tool_outputs: str) -> list[str]:
+    """Replace dates that never appeared in the search results.
+    Small models like to "fill in" a missing date (often today minus N years)."""
+    real_dates = set(DATE_PATTERN.findall(tool_outputs))
+    cleaned = []
+    for item in news:
+        for d in DATE_PATTERN.findall(item):
+            if d not in real_dates:
+                item = item.replace(d, "date unknown")
+        cleaned.append(item)
+    return cleaned
 
 
 def _print_step(node_name: str, msg) -> None:

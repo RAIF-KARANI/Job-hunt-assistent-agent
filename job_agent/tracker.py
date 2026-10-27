@@ -64,9 +64,11 @@ CREATE TABLE IF NOT EXISTS cover_notes (
 
 
 @contextmanager
-def _db(path: Path = DB_PATH):
+def _db(path: Path | None = None):
     """Open a connection, commit if all went well, always close it."""
-    conn = sqlite3.connect(path)
+    # DB_PATH is read at call time (not as a default argument) so tests can
+    # point it at a temporary database.
+    conn = sqlite3.connect(path or DB_PATH)
     conn.row_factory = sqlite3.Row  # rows behave like dicts: row["title"]
     conn.execute("PRAGMA foreign_keys = ON")  # SQLite has them OFF by default
     try:

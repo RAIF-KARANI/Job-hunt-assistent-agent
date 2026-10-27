@@ -42,7 +42,7 @@ from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
-from job_agent.llm import get_llm
+from job_agent.llm import structured_llm
 from job_agent.models import CompanyBrief, CoverNote, JobPosting, ResumeMatch
 from job_agent.resume import DATA_DIR
 from job_agent.tracker import add_cover_note, update_status
@@ -103,7 +103,7 @@ def draft_cover_note(
             "(e.g. if asked to be shorter, go below 150 words)."
         )
 
-    return get_llm().with_structured_output(CoverNote).invoke(
+    return structured_llm(CoverNote).invoke(
         [SystemMessage(content=system), HumanMessage(content=prompt)]
     )
 
@@ -193,6 +193,7 @@ def review_node(state: CoverNoteState) -> dict:
     # put side effects (saving, sending email) BEFORE interrupt() in a node.
     answer = interrupt(
         {
+            "kind": "approval",  # lets the program tell different questions apart
             "draft": state["draft"],
             "warnings": state["warnings"],
             "revision": state["revision"],

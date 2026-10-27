@@ -15,9 +15,10 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 4 — Job tracker (SQLite) | ✅ Done | Jobs saved to `data/jobs.db`; re-runs update, never duplicate |
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
-| 7 — Polish | ⏳ Next | |
+| 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
+| 8 — Optional extras | ⏳ Optional | n8n, web UI, tracing… |
 
-**Progress: 7 of 8 core phases complete (~88%). The assistant is fully usable.**
+**Progress: all 8 core phases (0–7) complete. 🎉 Phase 8 is optional extras.**
 
 ---
 
@@ -510,5 +511,133 @@ python main.py graph        # paste output into https://mermaid.live
 
 ---
 
-## Phase 7 — Polish ⏳ Next
-See [plan.md](plan.md#phase-7--polish-).
+## Phase 7 — Polish ✅
+
+### Goal
+Make the assistant **robust** (doesn't crash on real-world problems) and
+**trustworthy** (catches more of the model's mistakes), and prove it with
+tests and measurements.
+
+### What was done
+
+**1. Reliability (`job_agent/llm.py`)**
+- `structured_llm(Schema)` = `with_structured_output(Schema).with_retry(stop_after_attempt=3)`.
+  All 5 structured calls (posting, fit, judge, company brief, cover note) use
+  it. Malformed JSON from the model gets retried instead of crashing.
+- `check_llm_ready()` — `main.py` calls it first: Ollama not running →
+  *"Can't reach Ollama… start the Ollama app"*; model not pulled →
+  *"Run `ollama pull …`"* with the list of installed models.
+
+**2. Human as the fallback (`graph.py` + `main.py`)**
+- If the posting can't be read (403, login wall, JS-only page, missing file),
+  `read_posting` calls `interrupt({"kind": "paste_posting", ...})`.
+  The graph pauses; `main.py` asks you to paste the description and type
+  `END`; the run continues with your text.
+- Every interrupt payload now has a **`kind`** (`paste_posting` /
+  `approval`), so `main.py` knows which question it's answering.
+- Gotcha reminder: on resume the node re-runs from the top, so the fetch is
+  tried (and fails) once more before `interrupt()` returns your text.
+  Harmless here because fetching has no side effects.
+
+**3. LLM-as-judge (`job_agent/fit.py`)**
+- Fixes the Phase 2 limitation: code proves a quote *exists*, but not that it
+  *proves the skill*.
+- After the code check, **one extra LLM call per resume** gets all claims as
+  a numbered list: *"Is this quote real PROOF of this specific requirement?
+  Related-but-different is NOT proof."* It returns `SkillJudgment(id,
+  supported, reason)` for each one.
+- `apply_judgments()` (plain code) moves rejected claims to
+  `missing_skills` and records the reason in `ResumeMatch.unsupported_matches`.
+  Claims the judge skipped are kept, so only explicit rejections are removed.
+  A gap the model already listed isn't added twice.
+- Toggle with `JUDGE_EVIDENCE=true/false` in `.env`.
+- Why it works: the judge has a **narrower job** (yes/no per claim) than the
+  writer (analyze everything), the same reason code reviews catch bugs the
+  author missed.
+
+**4. Tests (`tests/`, `python -m pytest`)** — 19 tests, ~2 s, no LLM, temp DB
+- Verification: real quote ✓, reworded quote ✓, **the fake GraphQL quote
+  from Phase 2** ✗, invented URLs dropped, **the invented "today minus one
+  year" date from Phase 3** replaced, invented numbers flagged.
+- Judge: rejections move to gaps; skipped claims kept; no duplicate gaps.
+- Tracker: save/load roundtrip, upsert idempotency, status preserved on
+  re-save, unknown status rejected, `find_job_id`.
+- Guardrail: unapproved note → `PermissionError`, no DB change, no file;
+  approved → file + status `cover_note_ready`; review routing.
+- Small refactors to make code testable: URL/date checks pulled out into
+  pure functions `verify_sources()` / `remove_invented_dates()`; `_db()`
+  reads `DB_PATH` at call time so tests can point it at a temp file.
+
+**5. `compare_models.py` + README**
+- `python compare_models.py <job-id> qwen3:8b qwen3:14b` runs the fit
+  analysis (with judge) on a tracked job with each model, side by side.
+- `README.md`: setup, usage, configuration, tests, layout.
+
+### Results
+
+**LLM-as-judge on job #1 (qwen3:8b)** — it caught **exactly** the two weak
+claims we spotted by hand in Phase 2:
+| Claim | Quote used | Judge's reason |
+|---|---|---|
+| LangGraph experience | the RAG assistant project | "describes a RAG assistant with Streamlit… unrelated to LangGraph" |
+| Remote/async communication | the CodeLens Desktop installer | "describes a technical product release… doesn't mention collaboration or communication" |
+
+Both moved to gaps; 4 genuinely proven matches remain.
+
+**qwen3:8b vs qwen3:14b (job #1, fit analysis + judge, both resumes)**
+| | qwen3:8b | qwen3:14b |
+|---|---|---|
+| Time | **76 s** | 291 s (**3.8× slower**) |
+| AI Engineer resume | 85/100, 4 proven | 90/100, 4 proven |
+| Software Engineer resume | 65/100 | **4/100** ← with 4 proven matches?! |
+| Best resume | AI Engineer | AI Engineer |
+| Judge caught LangGraph + communication | ✅ | ✅ |
+| Fake quotes caught by code | 0 | 1 |
+
+**Verdict: stay on `qwen3:8b` + judge.** The bigger model reached the same
+conclusions, took almost 4× longer, and produced a nonsensical score
+(4/100) for a resume it rated as matching 4 requirements. Bigger is not
+automatically better, and **verification (code + judge) improved quality
+more than a bigger model did**. One job isn't enough for a final decision,
+so run `compare_models.py` on a couple more before switching.
+
+### Problems hit
+| Problem | Fix |
+|---|---|
+| Judge + model both listed "LangGraph" → duplicate gap | `apply_judgments` skips gaps already listed (even reworded) + test |
+| `_db(path=DB_PATH)` default arg bound at import → tests couldn't redirect the DB | read `DB_PATH` at call time |
+
+### Remaining limitations (honest list)
+- `fit_score` comes from the first LLM and isn't recalculated after the
+  judge. It's also the least stable output (see the 4/100). Idea: compute
+  it in code from proven vs missing requirements.
+- The judge is an LLM too — more reliable in tests, but not infallible.
+- Research facts without a URL/date (e.g. employee counts) aren't verified.
+
+### Concepts learned
+- **Graceful degradation:** decide which steps are essential (posting, fit)
+  and which are nice-to-have (research), and fail accordingly.
+- **The human is the best fallback tool:** `interrupt()` isn't only for
+  approval; it works for any "I'm stuck, help me" moment.
+- **Retries for flaky outputs:** LLM output is probabilistic; one retry
+  often fixes a malformed answer.
+- **LLM-as-judge:** use a second, narrowly-scoped LLM call to check work
+  that code can't check.
+- **Test the deterministic parts:** you can't unit-test what the model says,
+  but you can test every safety net around it, including regression tests
+  for real bugs you've seen.
+- **Measure, don't guess:** model choice is an experiment with numbers.
+
+### Try it
+```powershell
+python -m pytest -v                                  # see every test by name
+python compare_models.py 1 qwen3:8b qwen3:14b        # ~6 min
+python main.py https://www.linkedin.com/jobs/view/123  # blocked → paste fallback
+```
+
+---
+
+## Phase 8 — Optional extras ⏳
+See [plan.md](plan.md#phase-8--optional-extras-). Ideas: n8n trigger, a
+Streamlit web UI, LangSmith/Langfuse tracing, computing `fit_score` in code,
+a SQLite checkpointer.

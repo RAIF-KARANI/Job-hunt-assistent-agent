@@ -14,7 +14,7 @@ import requests
 from bs4 import BeautifulSoup
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from job_agent.llm import get_llm
+from job_agent.llm import structured_llm
 from job_agent.models import JobPosting
 
 # Some sites block requests that don't look like a browser.
@@ -62,11 +62,11 @@ Rules:
 
 def extract_job_posting(page_text: str) -> JobPosting:
     """Ask the LLM to fill in the JobPosting form from raw page text."""
-    # with_structured_output() sends the JobPosting schema to the model and
+    # structured_llm() = with_structured_output() + retries. It sends the schema and
     # parses its reply back into a JobPosting object (or raises if invalid).
-    structured_llm = get_llm().with_structured_output(JobPosting)
+    llm = structured_llm(JobPosting)
 
-    return structured_llm.invoke(
+    return llm.invoke(
         [
             SystemMessage(content=SYSTEM_PROMPT),
             HumanMessage(content=f"Job posting text:\n\n{page_text}"),

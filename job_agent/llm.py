@@ -67,3 +67,48 @@ def get_llm() -> BaseChatModel:
     raise ValueError(
         f"Unknown LLM_PROVIDER '{provider}'. Use: ollama, anthropic, openai, google."
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 7: reliability helpers
+# ---------------------------------------------------------------------------
+
+
+def structured_llm(schema):
+    """get_llm().with_structured_output(schema), retried up to 3 times.
+
+    Small models occasionally return JSON that doesn't match the schema
+    (a missing field, a string instead of a list). Pydantic rejects it, and
+    .with_retry() simply asks again. Because temperature > 0, the next answer
+    is usually valid. Every structured LLM call in the project goes through
+    this function.
+    """
+    return get_llm().with_structured_output(schema).with_retry(stop_after_attempt=3)
+
+
+def check_llm_ready() -> None:
+    """Fail fast with a clear message if the model can't be reached.
+
+    Without this, a stopped Ollama shows up minutes later as a long
+    'connection refused' traceback in the middle of the run.
+    """
+    if os.getenv("LLM_PROVIDER", "ollama").lower() != "ollama":
+        return  # cloud providers: a missing API key fails fast on its own
+
+    import requests
+
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.getenv("LLM_MODEL", "qwen3:8b")
+    try:
+        tags = requests.get(f"{base_url}/api/tags", timeout=5).json()
+    except requests.RequestException:
+        raise SystemExit(
+            f"Can't reach Ollama at {base_url}. Start the Ollama app "
+            "(or run `ollama serve`) and try again."
+        )
+    installed = {m["name"] for m in tags.get("models", [])}
+    if model not in installed:
+        raise SystemExit(
+            f"Model '{model}' isn't installed in Ollama. Run `ollama pull {model}` "
+            f"or change LLM_MODEL in .env. Installed: {', '.join(sorted(installed))}"
+        )
