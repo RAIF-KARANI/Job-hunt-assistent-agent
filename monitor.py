@@ -129,20 +129,21 @@ nodes = m.build_node_latency(obs_f)
 decisions = m.build_decisions(scores)
 
 # ---- KPI tiles -------------------------------------------------------------
+kpi = m.build_kpis(runs, calls, decisions)  # shared with the desktop Dashboard tab
+decided = kpi["decided"]
 k = st.columns(5)
-k[0].metric("Runs", f"{len(runs)}")
-k[1].metric("LLM calls", f"{len(calls)}",
+k[0].metric("Runs", f"{kpi['runs']}")
+k[1].metric("LLM calls", f"{kpi['llm_calls']}",
             help="Each call to the model: extraction, fit, judge, research, draft")
-total_in, total_out = int(calls["input_tokens"].sum()), int(calls["output_tokens"].sum())
-k[2].metric("Tokens", f"{total_in + total_out:,}", help=f"{total_in:,} in · {total_out:,} out")
-full_runs = runs[runs["llm_calls"] >= 5]  # full analyses, not just a re-draft
-k[3].metric("Median full run", f"{full_runs['agent_seconds'].median():.0f} s" if len(full_runs) else "–",
+k[2].metric("Tokens", f"{kpi['tokens_in'] + kpi['tokens_out']:,}",
+            help=f"{kpi['tokens_in']:,} in · {kpi['tokens_out']:,} out")
+k[3].metric("Median full run",
+            f"{kpi['median_full_run']:.0f} s" if kpi["median_full_run"] is not None else "–",
             help="Agent working time for runs that did the full analysis (excludes "
                  "time spent waiting for your decision)")
-decided = int(decisions["count"].sum())
-approved = int(decisions.loc[decisions["decision"] == "approve", "count"].sum())
-k[4].metric("Approval rate", f"{approved / decided:.0%}" if decided else "–",
-            help=f"{approved} approved out of {decided} decisions (all time)")
+k[4].metric("Approval rate",
+            f"{kpi['approval_rate']:.0%}" if kpi["approval_rate"] is not None else "–",
+            help=f"{kpi['approved']} approved out of {decided} decisions (all time)")
 
 st.divider()
 

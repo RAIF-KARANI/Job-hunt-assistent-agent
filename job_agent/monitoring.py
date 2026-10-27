@@ -211,6 +211,27 @@ def build_decisions(scores: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"decision": order, "count": [int(d.get(k, 0)) for k in order]})
 
 
+def build_kpis(runs: pd.DataFrame, calls: pd.DataFrame, decisions: pd.DataFrame) -> dict:
+    """The headline numbers, shared by both dashboards (Streamlit + desktop).
+
+    'median_full_run' only counts runs that did the full analysis (>= 5 LLM
+    calls), not quick re-drafts, and uses agent time (waiting excluded).
+    """
+    full = runs[runs["llm_calls"] >= 5] if not runs.empty else runs
+    decided = int(decisions["count"].sum())
+    approved = int(decisions.loc[decisions["decision"] == "approve", "count"].sum())
+    return {
+        "runs": len(runs),
+        "llm_calls": len(calls),
+        "tokens_in": int(calls["input_tokens"].sum()) if not calls.empty else 0,
+        "tokens_out": int(calls["output_tokens"].sum()) if not calls.empty else 0,
+        "median_full_run": float(full["agent_seconds"].median()) if len(full) else None,
+        "approved": approved,
+        "decided": decided,
+        "approval_rate": approved / decided if decided else None,
+    }
+
+
 def build_status_funnel(jobs: pd.DataFrame) -> pd.DataFrame:
     """How many tracked jobs are at each stage, in lifecycle order."""
     counts = jobs["status"].value_counts() if not jobs.empty else pd.Series(dtype=int)

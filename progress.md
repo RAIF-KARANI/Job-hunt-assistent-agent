@@ -17,7 +17,7 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
-| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze ✅ · 9d Tracker ✅ · 9e Dashboard next |
+| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze ✅ · 9d Tracker ✅ · 9e Dashboard ✅ · 9f packaging next |
 
 **Progress: every phase (0–8, incl. 8e monitoring dashboard) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
 
@@ -1259,6 +1259,43 @@ updates.
 **Qt concepts learned:** model/view; item roles; proxy models for sorting
 and filtering; mapping proxy ↔ source rows; escaping untrusted text in
 rich-text widgets; tabs decoupled through signals.
+
+### 9e — Dashboard tab ✅
+- **Reused the 8e data layer** (`job_agent/monitoring.py`) unchanged: the
+  payoff of keeping it free of UI code. The desktop tab only draws.
+- **One KPI calculation for both dashboards:** the headline numbers moved
+  from `monitor.py` into `monitoring.build_kpis()`; the Streamlit page and
+  the desktop tab both call it (one tested version instead of two copies
+  that could drift apart).
+- **`desktop/dashboard_tab.py`**:
+  - 5 KPI tiles (runs, LLM calls, tokens, median full run, approval rate)
+    + Refresh.
+  - 4 charts in a 2×2 grid, **matplotlib embedded in Qt**
+    (`FigureCanvasQTAgg`): fit score per job (top 10), where your
+    applications are, seconds per pipeline step, LLM call time vs output
+    tokens (correlation in the title).
+  - **Two speeds of data:** tracker charts from local SQLite draw instantly;
+    Langfuse data loads on a **background thread** (network). If Langfuse
+    is off, those panels say "Needs Langfuse" with how to start it; the
+    tracker charts still work.
+  - Chart colors read the **Qt palette**, so charts follow the app's light /
+    dark theme; same styling rules as 8e (one blue series, values at bar
+    ends, light gridlines, whole-number ticks for counts).
+  - Loads **lazily**: only when the tab is first opened, not at app start.
+  - Analyze → `jobs_changed` → dashboard redraws the tracker charts.
+- Bug caught while writing: the status chart was built from the top-10
+  list used for the fit chart (would under-count with more than 10 jobs);
+  now each chart gets the data it needs.
+- Removed the placeholder helper: all four tabs are real.
+- **4 tests** (`tests/test_desktop_dashboard.py`): KPIs (re-drafts excluded
+  from the median, approval rate), KPIs with no data, tab without Langfuse
+  (tracker charts + message), tab with trace data (tiles filled).
+  **54 tests total.** Screenshot with real data matches the web dashboard
+  (6 runs, 13 calls, 34,939 tokens, 186 s, 17 %, correlation 0.90).
+
+**Concepts learned:** reusing a data layer across UIs; one source of truth
+for metrics; embedding matplotlib in Qt; lazy loading; degrading
+gracefully when an optional service is down.
 
 ---
 

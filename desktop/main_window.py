@@ -4,15 +4,15 @@ The main window: one window, four tabs.
     Analyze  | Tracker | Dashboard | Settings
     (9c)       (9d)      (9e)        (9b)
 
-Tabs not built yet show a placeholder, so the app runs at every step.
+Tabs never call each other directly; they're connected here with signals.
 """
 
 import os
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QMainWindow, QMessageBox, QTabWidget
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QTabWidget
 
 from desktop.analyze_tab import AnalyzeTab
+from desktop.dashboard_tab import DashboardTab
 from desktop.settings_tab import SettingsTab
 from desktop.tracker_tab import TrackerTab
 from job_agent import paths
@@ -29,14 +29,9 @@ QPushButton:default { background: #2a78d6; color: white; border: none; border-ra
 QPushButton:default:disabled { background: #9ec5f4; }
 QLabel#title { font-size: 13pt; font-weight: 600; }
 QLabel#fit   { font-size: 13pt; font-weight: 600; color: #2a78d6; }
+QFrame#tile  { border: 1px solid palette(mid); border-radius: 6px; }
+QLabel#kpi   { font-size: 18pt; }
 """
-
-
-def placeholder(text: str) -> QLabel:
-    label = QLabel(text)
-    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    label.setObjectName("hint")
-    return label
 
 
 class MainWindow(QMainWindow):
@@ -53,10 +48,13 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.analyze_tab, "Analyze")
         self.tabs.addTab(self.tracker_tab, "Tracker")
 
+        self.dashboard_tab = DashboardTab()
+
         # Tabs talk through signals, never by reaching into each other:
         self.analyze_tab.jobs_changed.connect(self.tracker_tab.refresh)
+        self.analyze_tab.jobs_changed.connect(self.dashboard_tab.draw_tracker)
         self.tracker_tab.draft_requested.connect(self.draft_for)
-        self.tabs.addTab(placeholder("Dashboard: coming in step 9e"), "Dashboard")
+        self.tabs.addTab(self.dashboard_tab, "Dashboard")
         self.tabs.addTab(self.settings_tab, "Settings")
         self.setCentralWidget(self.tabs)
 
