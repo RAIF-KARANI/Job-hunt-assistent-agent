@@ -218,7 +218,9 @@ def save_node(state: CoverNoteState) -> dict:
     return {"saved_path": str(path)}
 
 
-def build_cover_note_graph(checkpointer=None):
+def build_cover_note_graph(checkpointer=None, as_subgraph: bool = False):
+    """Standalone (Phase 5): own checkpointer.
+    Subgraph (Phase 6): no checkpointer - it uses the parent graph's one."""
     graph = StateGraph(CoverNoteState)
     graph.add_node("draft", draft_node)
     graph.add_node("review", review_node)
@@ -229,6 +231,9 @@ def build_cover_note_graph(checkpointer=None):
     graph.add_conditional_edges("review", route_after_review, ["save", "draft", END])
     graph.add_edge("save", END)
 
+    if as_subgraph:
+        # Inside another graph: the parent's checkpointer saves our state too.
+        return graph.compile()
     # interrupt() REQUIRES a checkpointer - otherwise there's nowhere to keep
     # the paused state.
     return graph.compile(checkpointer=checkpointer or InMemorySaver(serde=SAFE_SERDE))

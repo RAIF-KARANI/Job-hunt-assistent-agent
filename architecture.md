@@ -99,12 +99,21 @@ Field `description`s are sent to the LLM as instructions.
 | `research.py` | Research company | deciding searches, summarizing | running searches, verifying URLs | ✅ |
 | `tracker.py` | Save job | — | SQLite upsert, list, status updates | ✅ |
 | `cover_note.py` | Draft + approve | writing the note | number check, approval gate, saving | ✅ |
-| `graph.py` | Main workflow | — | wiring all steps together | ⏳ Phase 6 |
+| `graph.py` | Main workflow | — | wiring all steps together | ✅ |
 
-### 3.4 Interface — `main.py`  ⏳ Phase 6
-A command-line program: `python main.py <url>`. Prints each step as it runs,
-shows the draft, and asks `[a]pprove / [e]dit / [r]eject`.
-Until then, each phase has its own test script (`phase1_*.py`, …).
+### 3.4 Interface — `main.py`  ✅
+A command-line program that only talks to the user; all logic is in
+`job_agent/`.
+
+| Command | Does |
+|---|---|
+| `python main.py <url>` | full run: read → fit → research → save → cover note |
+| `python main.py <url> --fresh` | re-analyze even if already tracked |
+| `python main.py job.txt` | use pasted job text (blocked sites) |
+| `python main.py list` / `show <id>` / `status <id> <s>` | tracker |
+| `python main.py graph` | print the workflow as Mermaid |
+
+The `phaseN_*.py` scripts remain as learning examples of each phase alone.
 
 ---
 
@@ -146,50 +155,78 @@ The classic **ReAct loop** (Reason + Act) as a LangGraph graph:
 
 ---
 
-## 5. The main workflow (Phase 6, planned)
+## 5. The main workflow (Phase 6) — `job_agent/graph.py`
 
 ### 5.1 Shared state
-Every node reads from and writes to one state object:
+Every node receives the whole state and returns only the keys it changed;
+LangGraph merges them. Nodes never call each other directly.
 
 ```python
-class JobHuntState(TypedDict):
-    url: str
-    posting_text: str
+class CoverNoteState(TypedDict, total=False):       # cover_note.py
+    job_id: int
     job: JobPosting
     best_match: ResumeMatch
+    company_brief: CompanyBrief | None
+    resume_text: str
+    draft: str
+    warnings: list[str]          # unverified numbers
+    revision: int
+    decision: str                # "approve" | "edit" | "reject"
+    feedback: str                # your edit instructions
+    saved_path: str
+
+class JobHuntState(CoverNoteState, total=False):    # graph.py
+    url: str                     # web URL or path to a .txt file
+    fresh: bool                  # --fresh flag
+    reused: bool                 # loaded from tracker, analysis skipped
     all_matches: list[ResumeMatch]
-    company: CompanyBrief
-    job_id: int                 # row id in SQLite
-    cover_note_draft: str
-    approval: Literal["approved", "edit", "rejected"]
-    feedback: str               # your edit instructions
 ```
+
+`JobHuntState` **inherits** every `CoverNoteState` key — that's what lets the
+cover-note graph run as a subgraph and share values automatically.
 
 ### 5.2 Graph
 
 ```
-START → read_posting → analyze_fit → research_company → save_to_tracker
-                                                              │
-                                                       draft_cover_note ◄──┐
-                                                              │            │
-                                                     human_approval        │
-                                                      (interrupt)          │
-                                     approved │      edit │     rejected │ │
-                                              ▼           └─────────────┼─┘
-                                     save_cover_note                    ▼
-                                              │                        END
-                                              ▼
-                                             END
+START
+  │
+check_tracker ──(URL already tracked and no --fresh)────────────┐
+  │                                                             │
+read_posting → analyze_fit → research_company → save_to_tracker │
+                                  (agent inside)        │       │
+                                                        ▼       ▼
+                              ┌──────────── cover_note (SUBGRAPH) ───────────┐
+                              │  draft → review (interrupt) ──approve──► save │
+                              │    ▲         │                                │
+                              │    └──edit───┤                                │
+                              │              └──reject──► (end of subgraph)   │
+                              └───────────────────────────────────────────────┘
+                                                        │
+                                                       END
 ```
 
+- **Conditional entry:** `check_tracker` → `route_after_check` skips the
+  ~2–3 min analysis when the URL is already in the tracker (13 s vs 176 s).
+- **Subgraph:** `graph.add_node("cover_note", build_cover_note_graph(as_subgraph=True))`
+  — the Phase 5 graph, reused unchanged. Compiled **without** its own
+  checkpointer, so the parent's checkpointer covers it.
+- **Nested agent:** `research_company` is a normal node that internally runs
+  the Phase 3 agent graph.
+- `python main.py graph` prints it with `xray=True` (subgraph expanded).
+
 ### 5.3 Human-in-the-loop
-- The `human_approval` node calls LangGraph's `interrupt(draft)`.
-- The graph **stops**, and a **checkpointer** saves the whole state.
-- The CLI shows you the draft and collects your answer.
-- The CLI resumes the graph with `Command(resume=answer)`; it continues
-  exactly where it stopped.
-- **Guardrail in code:** `save_cover_note` refuses to save unless
-  `approval == "approved"`. The rule doesn't depend on the LLM behaving.
+- `review` calls `interrupt({draft, warnings, revision, word_count})`.
+- The **whole** graph stops (an interrupt inside a subgraph pauses the
+  parent too), and the **checkpointer** saves the state under the run's
+  `thread_id` (a new UUID per run).
+- `main.py` shows the draft and collects your answer.
+- `graph.invoke(Command(resume=answer), config)` continues exactly where it
+  stopped; `interrupt()` returns your answer.
+- **Guardrail in code:** `save_cover_note` raises `PermissionError` unless
+  `approved is True`. The rule doesn't depend on the LLM behaving.
+- Checkpointer is `InMemorySaver` (with an allow-listed serializer). A
+  paused run does not survive closing the program — fine for a CLI that
+  waits for you; a SQLite checkpointer would be needed for a web UI.
 
 ---
 
@@ -270,7 +307,7 @@ Job-hunt-assistent-agent/
 ├── phase3_research.py        Phase 3 test
 ├── phase4_tracker.py         Phase 4 CLI: add / list / show / status
 ├── phase5_cover_note.py      Phase 5: draft + approve a note for a tracked job
-├── main.py                   ⏳ final CLI (Phase 6)
+├── main.py                   the CLI — start here
 ├── job_agent/
 │   ├── llm.py                LLM factory
 │   ├── models.py             Pydantic data models
@@ -280,7 +317,7 @@ Job-hunt-assistent-agent/
 │   ├── research.py           company research agent (LangGraph)
 │   ├── tracker.py            SQLite tracker
 │   ├── cover_note.py         draft + approval graph
-│   └── graph.py              ⏳ main workflow
+│   └── graph.py              main workflow (all phases wired together)
 └── data/                     git-ignored personal data
 ```
 

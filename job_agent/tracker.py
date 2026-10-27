@@ -137,6 +137,14 @@ def save_job(
     return row["id"]
 
 
+def find_job_id(url: str) -> int | None:
+    """The id of the job with this URL, or None if it isn't tracked yet."""
+    init_db()
+    with _db() as conn:
+        row = conn.execute("SELECT id FROM jobs WHERE url = ?", (url,)).fetchone()
+    return row["id"] if row else None
+
+
 def list_jobs() -> list[sqlite3.Row]:
     """All tracked jobs, best fit first."""
     init_db()

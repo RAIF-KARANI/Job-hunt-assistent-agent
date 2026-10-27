@@ -15,7 +15,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 3 | Company research | Tools, the agent loop, first LangGraph graph | ✅ |
 | 4 | Job tracker (SQLite) | Persistent state | ✅ |
 | 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ✅ |
-| 6 | Full pipeline + CLI | Workflow graph, shared state | ⏳ |
+| 6 | Full pipeline + CLI | Workflow graph, shared state | ✅ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ⏳ |
 | 8 | Optional extras | n8n, web UI, tracing | ⏳ |
 
@@ -100,16 +100,17 @@ code; serialization allow-lists.
 **Done when:** approve saves, edit re-drafts with feedback, reject saves nothing.
 ✅ edit + reject + guardrail tested; approve is yours to try.
 
-## Phase 6 — Full pipeline + CLI ⏳
+## Phase 6 — Full pipeline + CLI ✅
 **Goal:** one command does everything.
-**Concepts:** workflow graph with shared typed state; subgraphs (research
-agent inside the workflow); resuming after interrupt.
+**Concepts:** workflow graph with shared typed state; subgraphs; nested
+agent; conditional entry; resuming after interrupt.
 **Tasks**
-- [ ] `JobHuntState` (TypedDict) in `job_agent/graph.py`
-- [ ] Nodes wrapping phases 1–5; edges per architecture.md §5.2
-- [ ] `main.py`: `python main.py <url>`, `python main.py list`
-- [ ] Clear step-by-step console output
-**Done when:** `python main.py <url>` runs all six steps end to end.
+- [x] `JobHuntState` (inherits `CoverNoteState`) in `job_agent/graph.py`
+- [x] Nodes wrapping phases 1–4; Phase 5 graph added as a **subgraph**
+- [x] `check_tracker` conditional entry: skip analysis for tracked URLs; `--fresh` to redo
+- [x] `main.py`: run, `list`, `show`, `status`, `graph`
+- [x] Clear step-by-step console output `[1/5] … [5/5]`
+**Done when:** `python main.py <url>` runs all six steps end to end. ✅ (176 s new job, 13 s reused)
 
 ## Phase 7 — Polish ⏳
 **Goal:** make it robust and trustworthy.

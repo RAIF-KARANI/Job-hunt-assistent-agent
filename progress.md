@@ -14,10 +14,10 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 3 — Company research agent | ✅ Done | LLM chooses its own searches; brief with verified sources (~50 s) |
 | 4 — Job tracker (SQLite) | ✅ Done | Jobs saved to `data/jobs.db`; re-runs update, never duplicate |
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
-| 6 — Full pipeline + CLI | ⏳ Next | |
-| 7 — Polish | ⏳ | |
+| 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
+| 7 — Polish | ⏳ Next | |
 
-**Progress: 6 of 8 core phases complete (~75%).**
+**Progress: 7 of 8 core phases complete (~88%). The assistant is fully usable.**
 
 ---
 
@@ -430,5 +430,85 @@ async work"*, then `a` when you're happy. Afterwards:
 
 ---
 
-## Phase 6 — Full pipeline + CLI ⏳ Next
-See [plan.md](plan.md#phase-6--full-pipeline--cli-).
+## Phase 6 — Full pipeline + CLI ✅
+
+### Goal
+One command — `python main.py <url>` — runs every step, in one LangGraph
+workflow, and pauses only for your approval.
+
+### What was done
+1. **`job_agent/graph.py`** — the main workflow:
+   ```
+   START → check_tracker ─(already tracked)──────────────────────┐
+              │                                                  │
+           read_posting → analyze_fit → research_company → save_to_tracker
+                                                              │  │
+                                                              ▼  ▼
+                                          cover_note (SUBGRAPH: draft → review → save)
+                                                              │
+                                                             END
+   ```
+   - **`JobHuntState`** inherits all keys of `CoverNoteState` and adds
+     `url`, `fresh`, `reused`, `all_matches`.
+   - Each node is a **thin wrapper** around an earlier phase: it reads what it
+     needs from the state, calls the phase's function, prints a step line,
+     returns only the keys it changed.
+   - **Subgraph:** the Phase 5 graph is one node:
+     `add_node("cover_note", build_cover_note_graph(as_subgraph=True))`.
+     It's compiled without its own checkpointer and uses the parent's.
+   - **Nested agent:** `research_company` runs the Phase 3 agent graph inside
+     a normal node.
+   - **Conditional entry:** `check_tracker` looks the URL up (new
+     `tracker.find_job_id()`); if found (and no `--fresh`), it loads the saved
+     job/fit/research and jumps straight to `cover_note`.
+   - **Graceful degradation:** research failure → continue with
+     `company_brief = None`.
+2. **`main.py`** — the real CLI. Only user interaction lives here:
+   run (`<url>`, `<url> --fresh`, `job.txt`), `list`, `show`, `status`,
+   `graph`. A new `thread_id` (UUID) per run.
+3. `cover_note.build_cover_note_graph()` got an `as_subgraph` flag — the only
+   change to earlier code.
+
+### Tests run
+| Test | Result |
+|---|---|
+| `main.py graph` | ✅ Mermaid shows `cover_note` as a nested subgraph |
+| New job: GitLab *Knowledge Graph (Rust)* → reject | ✅ 176 s, saved as job #3, fit 70 (AI resume) with the real gap "no Rust"; nothing saved for the note |
+| Tracked job #1 again → reject | ✅ **13 s** — analysis skipped, straight to draft |
+| DB afterwards | ✅ 2 jobs, both `researched`, 0 cover notes |
+
+### Observations
+- **Tailoring works:** for the Knowledge Graph role, the draft chose your
+  *tree-sitter code graph* and *Neo4j* work — the most relevant parts of
+  your resume for a graph role — instead of repeating the Python-role note.
+- **Self-recovery again:** DuckDuckGo failed once more; the agent retried
+  with a new query on its own.
+- **Job id is #3, not #2:** SQLite's `AUTOINCREMENT` consumed an id during
+  the earlier upsert test. Gaps in ids are normal and harmless.
+- **`InMemorySaver`:** a paused run lives only while `main.py` is running.
+  Fine for a CLI; a web UI would need a persistent (SQLite) checkpointer.
+
+### Concepts learned
+- **Workflow with an agent inside:** fixed edges for the steps that never
+  change; an agent only where the path is unknown (research).
+- **Shared state:** nodes communicate *only* through the state, never by
+  calling each other → each node is small and testable on its own.
+- **Subgraphs = reuse:** a compiled graph is just a node. State flows in/out
+  through shared keys; an `interrupt()` inside pauses the whole parent.
+- **Conditional entry / caching:** don't redo expensive LLM work you already
+  have — check stored results first.
+- **Separation of concerns:** `main.py` talks to the user, `graph.py` wires
+  steps, the phase modules do the work, `tracker.py` stores.
+
+### Try it
+```powershell
+python main.py https://job-boards.greenhouse.io/gitlab/jobs/8704363002   # tracked → fast
+python main.py <any new job URL>                                          # full run
+python main.py list
+python main.py graph        # paste output into https://mermaid.live
+```
+
+---
+
+## Phase 7 — Polish ⏳ Next
+See [plan.md](plan.md#phase-7--polish-).
