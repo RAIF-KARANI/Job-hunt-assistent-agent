@@ -1,0 +1,21 @@
+# ---- Core agent framework ----
+langchain>=0.3          # building blocks: tools, prompts, structured output
+langgraph>=0.2          # the agent as a graph of steps, with pause/resume (interrupt)
+python-dotenv>=1.0      # loads settings from the .env file
+
+# ---- LLM provider (pick the one that matches LLM_PROVIDER in .env) ----
+langchain-ollama>=0.3   # local models via Ollama (current choice: qwen3)
+# langchain-anthropic   # uncomment to use Claude
+# langchain-openai      # uncomment to use OpenAI (GPT)
+# langchain-google-genai  # uncomment to use Gemini
+
+# ---- Phase 1: reading job posting pages ----
+requests>=2.32          # download the web page
+beautifulsoup4>=4.12    # strip HTML down to readable text
+
+# ---- Phase 2: reading resume PDFs ----
+pypdf>=5.0              # extract text from PDF files
+
+# ---- Added in later phases ----
+# ddgs                 # Phase 3: DuckDuckGo web search (free, no key)
+# tavily-python         # Phase 3 alternative: better results, needs TAVILY_API_KEY
