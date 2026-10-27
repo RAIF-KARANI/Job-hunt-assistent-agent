@@ -16,7 +16,7 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
-| 8 — Optional extras | 🚧 In progress | 8a ✅ score in code · 8b ✅ web UI · 8c tracing · 8d n8n |
+| 8 — Optional extras | 🚧 In progress | 8a ✅ score in code · 8b ✅ web UI · 8c ✅ tracing · 8d n8n |
 
 **Progress: all 8 core phases (0–7) complete. 🎉 Phase 8 (extras) in progress.**
 
@@ -793,3 +793,98 @@ streamlit run app.py
 ```
 Then try: reload the page while the draft is showing (it's still there), edit
 a sentence yourself and Approve, or use "Draft a cover note" in the Tracker tab.
+
+### 8c — Tracing with self-hosted Langfuse ✅
+
+#### Goal
+See **inside** every run: each node, LLM call, tool call, the exact prompts
+and outputs, token counts and timings, without sending your resume to a
+cloud service.
+
+#### Concepts (from the temporary tracing guide)
+- **Trace** = one run; **span** = one step; **generation** = one LLM call
+  (prompt, output, model, tokens); spans nest into a tree.
+- **Session** = several traces that belong together. Our run is 2+ graph
+  calls (start → pause → resume), grouped by `thread_id`.
+- **Score** = a rating attached to a run (we record your decision).
+- **Callbacks:** LangChain fires start/end/error events for every runnable.
+  A tracing tool is a callback handler; pass it once in the graph config and
+  LangChain propagates it to every nested call. No node had to change.
+- **LangSmith vs Langfuse:** LangSmith = LangChain's cloud, zero-code setup,
+  best LangGraph integration, but data leaves your PC. Langfuse = open
+  source, self-hostable (private), framework-agnostic, needs Docker.
+  We chose **self-hosted Langfuse**; LangSmith stays one `.env` switch away.
+
+#### What was done
+1. **`infra/langfuse/`**
+   - `docker-compose.yml`: Langfuse's **official** file, read in full before
+     running, kept unmodified.
+   - `docker-compose.override.yml`: our changes, merged automatically:
+     - your PC already uses **5432** (local PostgreSQL) and **6379**
+       (`billing-redis`) → internal services get **no host ports**
+       (`!reset []`); they talk over Docker's private network
+     - dashboard (3000) and MinIO (9090) bound to **127.0.0.1 only**
+       (the default exposed them to your whole Wi-Fi network)
+     - `TELEMETRY_ENABLED=false`
+   - `.env` (git-ignored): random secrets + `LANGFUSE_INIT_*` →
+     your user, org, project and API keys are created automatically.
+   - 6 containers: `langfuse-web`, `langfuse-worker`, `postgres`,
+     `clickhouse`, `redis`, `minio` (~5.5 GB of images).
+2. **`job_agent/tracing.py`** — one switch, `TRACING=off|langfuse|langsmith`:
+   - `tracing_config(session_id, interface)` → `callbacks` + `metadata`
+     (`langfuse_session_id`, `langfuse_tags`, `langfuse_trace_name`)
+   - `record_decision()` → `create_score("cover_note_decision", "approve"|"edit"|"reject")`
+   - `flush()` → send buffered events before the CLI exits
+   - `check_tracing_ready()` → only **warns**; tracing never blocks a run
+3. **Wired into `main.py` and `app.py`**: tracing config merged into the
+   graph config, decisions recorded, flush in `finally`.
+4. **API discovery instead of guessing:** the SDK turned out to be **v5**
+   and the server **v4**. Langfuse v4 removed the old `/api/public/traces`
+   read endpoint (now OpenTelemetry-based ingestion), so the trace was read
+   back via `/api/public/v2/observations` (with `fields=` groups) and
+   `/api/public/v3/scores`, found by searching the installed SDK.
+
+#### Result: one traced run (job #3, `--fresh`, rejected)
+| Metric | Value |
+|---|---|
+| Observations | 54, in 2 traces (run + resume), 1 session |
+| Tags / name | `cli`, `qwen3:8b` / `job-hunt-run` |
+| LLM calls | 9 |
+| Tokens | 15,431 in / 5,260 out |
+| Time in LLM calls | 175 of 186 s (**94 %**) |
+| Slowest node | `analyze_fit` 85 s (2 analyses + 2 judge calls) |
+| Score | `cover_note_decision = reject` ✅ |
+
+**Insight only tracing could give:** an LLM call with 2,571 input / 819
+output tokens took **34 s**; one with 3,734 input / 239 output took **11 s**.
+On a local model, **output tokens dominate latency** (~25–30 tokens/s). To
+speed the agent up, ask for **shorter structured outputs** (e.g. fewer,
+shorter talking points); shrinking the prompts matters much less.
+
+#### Problems hit
+| Problem | Fix |
+|---|---|
+| Ports 5432 and 6379 already in use | Internal services get no host ports (`!reset []`) |
+| Default compose exposed dashboard + MinIO to the LAN | Bound to 127.0.0.1 |
+| Quick test said "client initialized without public_key" | The SDK doesn't read `.env` files; `tracing.py` now calls `load_dotenv()` itself |
+| `/api/public/traces` → 404 on Langfuse v4 | Found the v2/v3 endpoints in the installed SDK |
+
+#### Concepts learned
+- **Observability for agents:** you can't improve what you can't see.
+- **Callbacks / instrumentation:** one handler at the top observes everything.
+- **Sessions group multi-step runs** (interrupt → resume).
+- **Human decisions are evaluation data**: store them next to the trace.
+- **Self-hosting trade-offs:** privacy and no limits vs. setup, disk, RAM.
+- **Read before you run:** downloaded compose files are code; we reviewed
+  it, kept it unmodified and put our changes in an override.
+- **Verify APIs against the installed version:** major versions change
+  endpoints and parameters.
+
+#### Try it
+1. Open http://localhost:3000 and log in with **karaniraif@gmail.com** and the
+   password in `infra\langfuse\.env` (`LANGFUSE_INIT_USER_PASSWORD`).
+2. **Tracing → Sessions:** open the latest session and expand the tree:
+   `analyze_fit` → the judge's `ChatOllama` call → read its exact prompt.
+3. **Scores:** filter runs by `cover_note_decision`.
+4. Docker: `cd infra\langfuse` then `docker compose stop` (keep data) /
+   `docker compose up -d` (start) / `docker compose down -v` (delete all).

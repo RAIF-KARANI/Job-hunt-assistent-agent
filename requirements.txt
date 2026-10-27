@@ -26,3 +26,7 @@ pytest>=8.0             # run: python -m pytest
 # ---- Phase 8b: web UI ----
 streamlit>=1.40                    # run: streamlit run app.py
 langgraph-checkpoint-sqlite>=2.0   # paused runs saved to disk (survive page reloads)
+
+# ---- Phase 8c: tracing (TRACING=langfuse in .env) ----
+langfuse>=3.0           # SDK + LangChain callback handler; server: infra/langfuse
+# langsmith             # already installed with langchain; TRACING=langsmith needs only a key

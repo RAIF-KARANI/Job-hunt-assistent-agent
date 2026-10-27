@@ -36,6 +36,7 @@ from job_agent.graph import build_job_hunt_graph
 from job_agent.llm import check_llm_ready
 from job_agent.resume import DATA_DIR
 from job_agent.tracker import STATUSES, get_job, list_jobs, update_status
+from job_agent.tracing import flush, record_decision, tracing_config
 
 CHECKPOINT_DB = DATA_DIR / "checkpoints.db"
 
@@ -85,16 +86,19 @@ def run_graph(graph_input, thread_id: str) -> None:
     """Run (or resume) the graph until it finishes or pauses, showing live progress."""
     graph = get_graph()
     log = LogBuffer()
+    # Phase 8c: add tracing callbacks + metadata ({} when TRACING=off).
+    config = {**config_for(thread_id), **tracing_config(thread_id, interface="web")}
     with st.status("The agent is working... (a full analysis takes ~3 min)", expanded=True) as status:
         live = st.empty()
         real_stdout, sys.stdout = sys.stdout, log
         try:
             # stream_mode="updates" yields after each node finishes, so we can
             # refresh the log between steps.
-            for _ in graph.stream(graph_input, config_for(thread_id), stream_mode="updates"):
+            for _ in graph.stream(graph_input, config, stream_mode="updates"):
                 live.code(log.text() or "...", language=None)
         finally:
             sys.stdout = real_stdout
+            flush()
         live.code(log.text() or "...", language=None)
         status.update(label="Step finished", state="complete", expanded=False)
     st.rerun()  # redraw the page for the graph's new state
@@ -181,13 +185,16 @@ def approval_screen(payload: dict, values: dict, thread_id: str) -> None:
 
         b1, b2 = st.columns(2)
         if b1.button("✅ Approve and save", type="primary", width="stretch"):
+            record_decision(thread_id, "approve")
             run_graph(Command(resume={"decision": "approve", "text": text}), thread_id)
         if b2.button("🗑️ Reject", width="stretch"):
+            record_decision(thread_id, "reject")
             run_graph(Command(resume={"decision": "reject"}), thread_id)
 
         feedback = st.text_input("Or ask the agent for changes",
                                  placeholder="e.g. shorter, more confident, mention remote work")
         if st.button("✏️ Rewrite with this feedback") and feedback.strip():
+            record_decision(thread_id, "edit")
             run_graph(Command(resume={"decision": "edit", "feedback": feedback.strip()}),
                       thread_id)
 

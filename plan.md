@@ -150,10 +150,16 @@ survives page reloads; streaming steps to a UI; headless UI tests.
 - [x] SQLite checkpointer + thread id in the URL → reload-safe
 - [x] Tested headlessly with Streamlit's `AppTest` (incl. reload + reject)
 
-### 8c — Tracing ⏳
-**Concepts:** observability; spans, tokens, latency per LLM call.
-- [ ] Langfuse (self-hostable, keeps data private) or LangSmith (cloud)
-- [ ] One config switch in `.env`, off by default
+### 8c — Tracing ✅
+**Concepts:** observability; traces, spans, generations, sessions, scores;
+callbacks; self-hosting with Docker Compose.
+- [x] Self-hosted Langfuse v4 in `infra/langfuse` (official compose + override:
+      no port clashes, localhost only, telemetry off, generated secrets)
+- [x] `job_agent/tracing.py`: `TRACING=off|langfuse|langsmith`
+- [x] Wired into CLI + web UI; thread_id = session; tags `cli`/`web` + model
+- [x] Approve/edit/reject recorded as a `cover_note_decision` score
+- [x] Traced a full run and analyzed it via the API (54 observations, 9 LLM calls)
+- [ ] **Your turn:** explore the trace at http://localhost:3000
 
 ### 8d — n8n integration ⏳
 **Concepts:** agents inside automation tools; exposing an agent as an API.

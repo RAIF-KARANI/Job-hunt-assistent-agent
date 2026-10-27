@@ -1,0 +1,43 @@
+# Our changes to Langfuse's official docker-compose.yml (kept unmodified next
+# to this file). Docker Compose merges this override automatically.
+#
+#   cd infra\langfuse
+#   docker compose up -d        start (first time downloads ~1-2 GB of images)
+#   docker compose ps           status
+#   docker compose stop         stop (keeps your traces)
+#   docker compose down -v      delete everything, including all traces
+#
+# Why these changes:
+# 1. Ports. Your PC already uses 5432 (a local PostgreSQL) and 6379
+#    (billing-redis). The internal services only talk to each other over
+#    Docker's private network, so they don't need host ports at all:
+#    `!reset []` removes them. Only the dashboard (3000) and MinIO (9090,
+#    used by the browser for media uploads) stay reachable, and only from
+#    THIS machine (127.0.0.1), not from other devices on your network.
+# 2. Telemetry off: don't send usage statistics to Langfuse.
+# Secrets and the auto-created user/project/keys come from .env (git-ignored).
+
+services:
+  langfuse-web:
+    ports: !override
+      - 127.0.0.1:3000:3000
+    environment:
+      TELEMETRY_ENABLED: "false"
+
+  langfuse-worker:
+    ports: !reset []
+    environment:
+      TELEMETRY_ENABLED: "false"
+
+  minio:
+    ports: !override
+      - 127.0.0.1:9090:9000
+
+  postgres:
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  clickhouse:
+    ports: !reset []

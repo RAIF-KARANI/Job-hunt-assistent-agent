@@ -78,6 +78,22 @@ all jobs, their score breakdown and status. A paused run is saved to
 `data/checkpoints.db`, so you can reload the page or come back later with
 the same URL.
 
+### Tracing (optional)
+
+See every LLM call, prompt, token count and timing in a dashboard. The
+default is **self-hosted Langfuse**, so your resume never leaves your PC.
+
+```powershell
+cd infra\langfuse
+docker compose up -d            # first time: ~5 GB of images
+```
+Generate secrets into `infra\langfuse\.env` (see the comments in
+`infra\langfuse\docker-compose.override.yml`), then in the project `.env`
+set `TRACING=langfuse` and the `LANGFUSE_*` keys. Open
+http://localhost:3000. Every run appears as a session, tagged `cli`/`web`
+and with the model name, and your approve/edit/reject decision is attached
+as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
+
 ### CLI approval
 
 At the approval step you can **[a]pprove** (saves to the tracker and
@@ -97,6 +113,7 @@ paste** the job description. Type `END` on its own line when you're done.
 | `OLLAMA_NUM_CTX` | `16384` | context window; too small silently truncates text |
 | `OLLAMA_REASONING` | `false` | Qwen3 "thinking" mode |
 | `JUDGE_EVIDENCE` | `true` | second LLM call double-checks skill evidence |
+| `TRACING` | `off` | `off`, `langfuse` (self-hosted), `langsmith` (cloud) |
 
 To use a cloud model, `pip install` its LangChain package (see
 `requirements.txt`) and add its API key to `.env`. No code changes needed.
@@ -152,5 +169,7 @@ job_agent/
   tracker.py          SQLite tracker
   cover_note.py       draft + approval subgraph
   graph.py            the main workflow
+  tracing.py          Langfuse / LangSmith switch
+infra/langfuse/       self-hosted Langfuse (Docker Compose + our override)
 tests/                pytest suite
 ```

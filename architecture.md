@@ -139,6 +139,31 @@ button ─► graph.stream(Command(resume=...)) ─► log redrawn per node ─�
 A paused run survives reloads and restarts. The approval screen lets you
 edit the draft directly; `review_node` saves your edited text.
 
+### 3.6 Tracing — `job_agent/tracing.py` + `infra/langfuse/` (Phase 8c)  ✅
+
+```
+main.py / app.py
+   config = {"configurable": {thread_id}, **tracing_config(thread_id, "cli"|"web")}
+                     │  callbacks=[Langfuse CallbackHandler]
+                     │  metadata={langfuse_session_id, langfuse_tags, langfuse_trace_name}
+                     ▼
+   graph ─► nodes ─► ChatOllama / tools      (callbacks propagate automatically)
+                     │ events, batched in a background thread
+                     ▼
+   langfuse-web :3000 (127.0.0.1 only) ─► redis queue ─► langfuse-worker
+                                                          ├─► clickhouse (traces)
+                                                          ├─► postgres  (users, keys)
+                                                          └─► minio     (raw events)
+```
+
+- `TRACING=off | langfuse | langsmith` in `.env`; off by default.
+- One **session** per `thread_id` (the run + every resume), tags `cli`/`web`
+  + model name; your approve/edit/reject is stored as a
+  `cover_note_decision` **score**.
+- Tracing never blocks a run: `check_tracing_ready()` only warns, and the
+  SDK drops events if the server is down. The CLI `flush()`es before exiting.
+- Self-hosted → prompts (incl. your resume) stay on this PC.
+
 ---
 
 ## 4. The research agent in detail (Phase 3)
@@ -346,6 +371,7 @@ Job-hunt-assistent-agent/
 ├── compare_models.py         same task on several models, side by side
 ├── README.md                 setup + usage
 ├── tests/                    pytest suite (no LLM, temp database)
+├── infra/langfuse/           self-hosted Langfuse (official compose + our override)
 ├── job_agent/
 │   ├── llm.py                LLM factory, retries, Ollama check
 │   ├── models.py             Pydantic data models
@@ -355,7 +381,8 @@ Job-hunt-assistent-agent/
 │   ├── research.py           company research agent (LangGraph)
 │   ├── tracker.py            SQLite tracker
 │   ├── cover_note.py         draft + approval graph
-│   └── graph.py              main workflow (all phases wired together)
+│   ├── graph.py              main workflow (all phases wired together)
+│   └── tracing.py            Langfuse / LangSmith / off switch
 └── data/                     git-ignored personal data
 ```
 
@@ -376,6 +403,8 @@ Job-hunt-assistent-agent/
 | Storage | SQLite (built into Python) | Real database, single file, no server |
 | Config | python-dotenv | Settings and keys out of code |
 | Tests | pytest | Fast tests for the code-only safety nets |
+| Web UI | Streamlit | Python-only UI, quick to build |
+| Tracing | Langfuse (self-hosted, Docker) | Private observability; LangSmith as a switch |
 
 ## 10. Known limitations
 

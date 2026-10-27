@@ -23,6 +23,7 @@ from job_agent.fit import score_match
 from job_agent.graph import build_job_hunt_graph
 from job_agent.llm import check_llm_ready
 from job_agent.tracker import STATUSES, get_job, list_jobs, save_job, update_status
+from job_agent.tracing import check_tracing_ready, flush, record_decision, tracing_config
 
 
 # ---------------------------------------------------------------------------
@@ -32,21 +33,31 @@ from job_agent.tracker import STATUSES, get_job, list_jobs, save_job, update_sta
 
 def run(url: str, fresh: bool) -> None:
     check_llm_ready()  # fail fast if Ollama isn't running
+    check_tracing_ready()  # only warns: tracing must never block a run
     start = time.time()
     graph = build_job_hunt_graph()
     # A new thread_id per run: this run's checkpoints are kept separate.
-    config = {"configurable": {"thread_id": str(uuid.uuid4())}}
+    thread_id = str(uuid.uuid4())
+    config = {
+        "configurable": {"thread_id": thread_id},
+        # Phase 8c: callbacks + metadata for the tracing tool ({} when off).
+        **tracing_config(thread_id, interface="cli"),
+    }
 
-    result = graph.invoke({"url": url, "fresh": fresh}, config)
+    try:
+        result = graph.invoke({"url": url, "fresh": fresh}, config)
 
-    # The graph pauses whenever it needs the human. The payload's "kind" says why.
-    while "__interrupt__" in result:
-        payload = result["__interrupt__"][0].value
-        if payload["kind"] == "paste_posting":
-            answer = ask_for_posting_text(payload)
-        else:
-            answer = ask_for_approval(payload)
-        result = graph.invoke(Command(resume=answer), config)
+        # The graph pauses whenever it needs the human. The payload's "kind" says why.
+        while "__interrupt__" in result:
+            payload = result["__interrupt__"][0].value
+            if payload["kind"] == "paste_posting":
+                answer = ask_for_posting_text(payload)
+            else:
+                answer = ask_for_approval(payload)
+                record_decision(thread_id, answer["decision"])
+            result = graph.invoke(Command(resume=answer), config)
+    finally:
+        flush()  # send the last trace events before the program exits
 
     print()
     if result.get("saved_path"):
