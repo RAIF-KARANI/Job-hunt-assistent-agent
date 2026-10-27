@@ -17,7 +17,7 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
-| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze ✅ · 9d Tracker next |
+| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze ✅ · 9d Tracker ✅ · 9e Dashboard next |
 
 **Progress: every phase (0–8, incl. 8e monitoring dashboard) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
 
@@ -1217,6 +1217,48 @@ review    ◄─ paused(payload, summary) ─────  interrupt() → graph
 **Qt concepts learned:** `QThread` + worker objects; queued cross-thread
 signals; never touch widgets off the GUI thread; testing GUIs by calling
 slots with fake signals.
+
+### 9d — Tracker tab ✅
+**Qt's model/view architecture:**
+```
+SQLite ─► JobsModel ─► QSortFilterProxyModel ─► QTableView
+          (the data)   (search + click-to-sort)  (what you see)
+```
+The view never holds data; it asks the model ("how many rows? what's in
+row 3, column 2?"). The proxy re-orders and hides rows **without changing
+the model**. `model.load()` → `beginResetModel/endResetModel` → every view
+updates.
+
+- **`desktop/tracker_tab.py`**:
+  - `JobsModel(QAbstractTableModel)` answers `rowCount`, `columnCount`,
+    `headerData`, `data(role)`. Two roles per cell: `DisplayRole` = text to
+    show, `UserRole` = **raw value for sorting** (so fit 80 sorts above 9;
+    as text, "9" > "80").
+  - Proxy: search box filters all columns (case-insensitive); clicking a
+    header sorts; best fit first by default.
+  - **Proxy rows ≠ model rows:** the view's row number belongs to the
+    proxy; `proxy.mapToSource()` translates it back.
+  - Details panel (HTML): location, fit + breakdown, verdict, proven matches
+    with quotes, gaps, company summary, the latest **approved cover note**.
+    Every value is `html.escape`d: job text comes from the web and must be
+    shown, never executed.
+  - Actions: status dropdown (saved on change; `activated` fires only for
+    user changes, not when code sets it), Open posting, **Copy cover note**
+    (clipboard), **Draft a cover note** → switches to Analyze and starts.
+- **`tracker.get_cover_notes(job_id)`**, newest first.
+- **Tabs talk through signals:** Analyze `jobs_changed` → Tracker
+  `refresh`; Tracker `draft_requested(url)` → main window → Analyze.
+  No tab reaches into another.
+- **8 tests** (`tests/test_desktop_tracker.py`, temp DB): numeric sort,
+  search, escaped details (`<script>` title shown as text), status saved,
+  approved note shown + copied to clipboard, draft button sends the URL,
+  notes newest first, sort role returns numbers. **50 tests total.**
+- Screenshot with your real tracker checked: 4 jobs sorted 90 / 84 / 63 / 42,
+  ByteDance details with breakdown and evidence.
+
+**Qt concepts learned:** model/view; item roles; proxy models for sorting
+and filtering; mapping proxy ↔ source rows; escaping untrusted text in
+rich-text widgets; tabs decoupled through signals.
 
 ---
 

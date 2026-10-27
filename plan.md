@@ -197,8 +197,8 @@ signals & slots; keeping the GUI thread free; packaging Python apps.
 | 9a | `paths.py` (dev vs installed data folder), `settings.py` (read/write .env), `llm_status()` | ✅ |
 | 9b | Qt window + **Settings** tab (model/API key, resumes, options, connection check) | ✅ |
 | 9c | **Analyze** tab: agent in a background thread, live log, approve / rewrite / reject | ✅ |
-| 9d | **Tracker** tab: jobs table, details, status changes | 🚧 |
-| 9e | **Dashboard** tab: tracker charts + trace charts when Langfuse is up | ⏳ |
+| 9d | **Tracker** tab: jobs table, details, status changes | ✅ |
+| 9e | **Dashboard** tab: tracker charts + trace charts when Langfuse is up | 🚧 |
 | 9f | Package with PyInstaller (folder + `.exe`), docs | ⏳ |
 | — | Optional: code-signing certificate (~$100–400/yr) to avoid the SmartScreen warning | not planned |
 

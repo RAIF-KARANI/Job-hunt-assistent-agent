@@ -189,6 +189,18 @@ def add_cover_note(job_id: int, text: str) -> int:
     return row["id"]
 
 
+def get_cover_notes(job_id: int) -> list[dict]:
+    """Approved cover notes for a job, newest first (Phase 9d: desktop Tracker)."""
+    init_db()
+    with _db() as conn:
+        rows = conn.execute(
+            "SELECT id, text, approved_at FROM cover_notes WHERE job_id = ? "
+            "ORDER BY approved_at DESC, id DESC",
+            (job_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def update_status(job_id: int, status: str) -> None:
     """Move a job to a new stage, e.g. 'applied'. Rejects unknown statuses."""
     if status not in STATUSES:

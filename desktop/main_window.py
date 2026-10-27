@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QMessageBox, QTabWidget
 
 from desktop.analyze_tab import AnalyzeTab
 from desktop.settings_tab import SettingsTab
+from desktop.tracker_tab import TrackerTab
 from job_agent import paths
 
 STYLE = """
@@ -48,8 +49,13 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.settings_tab = SettingsTab()
         self.analyze_tab = AnalyzeTab()
+        self.tracker_tab = TrackerTab()
         self.tabs.addTab(self.analyze_tab, "Analyze")
-        self.tabs.addTab(placeholder("Tracker: coming in step 9d"), "Tracker")
+        self.tabs.addTab(self.tracker_tab, "Tracker")
+
+        # Tabs talk through signals, never by reaching into each other:
+        self.analyze_tab.jobs_changed.connect(self.tracker_tab.refresh)
+        self.tracker_tab.draft_requested.connect(self.draft_for)
         self.tabs.addTab(placeholder("Dashboard: coming in step 9e"), "Dashboard")
         self.tabs.addTab(self.settings_tab, "Settings")
         self.setCentralWidget(self.tabs)
@@ -61,6 +67,16 @@ class MainWindow(QMainWindow):
         if not self.settings_tab.is_ready():
             self.tabs.setCurrentWidget(self.settings_tab)
         self.settings_tab.check_connection()
+
+    def draft_for(self, url: str):
+        """Tracker -> Analyze: a tracked URL skips straight to drafting."""
+        if self.analyze_tab.busy:
+            QMessageBox.information(self, "Busy", "The agent is already working on a job.")
+            return
+        self.tabs.setCurrentWidget(self.analyze_tab)
+        self.analyze_tab.url.setText(url)
+        self.analyze_tab.fresh.setChecked(False)
+        self.analyze_tab.analyze()
 
     def closeEvent(self, event):
         """Closing while the agent runs: ask, then exit immediately.
