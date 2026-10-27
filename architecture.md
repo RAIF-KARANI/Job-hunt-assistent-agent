@@ -97,7 +97,7 @@ Field `description`s are sent to the LLM as instructions.
 | `resume.py` | Load resumes | — | PDF → text | ✅ |
 | `fit.py` | Analyze fit | judging each resume | verifying evidence, picking the winner | ✅ |
 | `research.py` | Research company | deciding searches, summarizing | running searches, verifying URLs | ✅ |
-| `tracker.py` | Save job | — | SQLite insert/update | ⏳ Phase 4 |
+| `tracker.py` | Save job | — | SQLite upsert, list, status updates | ✅ |
 | `cover_note.py` | Draft + approve | writing the note | approval gate, saving | ⏳ Phase 5 |
 | `graph.py` | Main workflow | — | wiring all steps together | ⏳ Phase 6 |
 
@@ -198,11 +198,11 @@ START → read_posting → analyze_fit → research_company → save_to_tracker
 ```
 data/                      (git-ignored — personal data never leaves your PC)
 ├── *.pdf                  your resumes (every PDF is a candidate)
-├── jobs.db                SQLite tracker              ⏳ Phase 4
+├── jobs.db                SQLite tracker              ✅
 └── cover_notes/           approved notes as .md files ⏳ Phase 5
 ```
 
-### Planned SQLite schema (Phase 4)
+### SQLite schema (Phase 4 ✅ — see job_agent/tracker.py)
 
 ```sql
 CREATE TABLE jobs (
@@ -268,6 +268,7 @@ Job-hunt-assistent-agent/
 ├── phase1_read_posting.py    Phase 1 test
 ├── phase2_fit.py             Phase 2 test
 ├── phase3_research.py        Phase 3 test
+├── phase4_tracker.py         Phase 4 CLI: add / list / show / status
 ├── main.py                   ⏳ final CLI (Phase 6)
 ├── job_agent/
 │   ├── llm.py                LLM factory
@@ -276,7 +277,7 @@ Job-hunt-assistent-agent/
 │   ├── resume.py             load resume PDFs
 │   ├── fit.py                fit analysis + verification
 │   ├── research.py           company research agent (LangGraph)
-│   ├── tracker.py            ⏳ SQLite tracker
+│   ├── tracker.py            SQLite tracker
 │   ├── cover_note.py         ⏳ draft + approval
 │   └── graph.py              ⏳ main workflow
 └── data/                     git-ignored personal data

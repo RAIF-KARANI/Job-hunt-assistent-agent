@@ -13,7 +13,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 1 | Read a job posting | Structured output | ✅ |
 | 2 | Resume fit analysis | Context, verification, "LLM judges / code decides" | ✅ |
 | 3 | Company research | Tools, the agent loop, first LangGraph graph | ✅ |
-| 4 | Job tracker (SQLite) | Persistent state | ⏳ |
+| 4 | Job tracker (SQLite) | Persistent state | ✅ |
 | 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ⏳ |
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ⏳ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ⏳ |
@@ -70,17 +70,18 @@ hallucination and how to verify; "LLM judges, code decides".
 - [x] `phase3_research.py` (also prints the graph as Mermaid)
 **Done when:** the agent picks its own searches and returns a brief with real sources.
 
-## Phase 4 — Job tracker (SQLite) ⏳
+## Phase 4 — Job tracker (SQLite) ✅
 **Goal:** every analyzed job is saved and can be listed later.
 **Concepts:** persistence (agent memory across runs); idempotency (same URL
 twice = update, not duplicate); keeping the DB layer free of LLM calls.
 **Tasks**
-- [ ] `job_agent/tracker.py`: `init_db()`, `save_job()` (upsert by URL),
+- [x] `job_agent/tracker.py`: `init_db()`, `save_job()` (upsert by URL),
       `list_jobs()`, `get_job()`, `update_status()`
-- [ ] Schema from architecture.md §6 (`jobs`, `cover_notes`)
-- [ ] `phase4_tracker.py`: run phases 1–3 on a URL and save; `list` command
-- [ ] Learn: open `data/jobs.db` in a viewer (e.g. DB Browser for SQLite)
-**Done when:** running the same URL twice leaves one row with updated data.
+- [x] Schema from architecture.md §6 (`jobs`, `cover_notes`)
+- [x] `phase4_tracker.py`: `add`, `list`, `show`, `status` commands
+- [x] Upsert keeps your `status`; research failure still saves the job
+- [ ] Learn: open `data/jobs.db` in a viewer (e.g. DB Browser for SQLite) — your turn!
+**Done when:** running the same URL twice leaves one row with updated data. ✅
 
 ## Phase 5 — Cover note + human approval ⏳
 **Goal:** draft a tailored note; nothing is saved without your OK.

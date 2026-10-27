@@ -12,12 +12,12 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 1 — Read a job posting | ✅ Done | URL → structured `JobPosting` in ~23 s |
 | 2 — Resume fit analysis | ✅ Done | Best resume picked with verified evidence (~60 s) |
 | 3 — Company research agent | ✅ Done | LLM chooses its own searches; brief with verified sources (~50 s) |
-| 4 — Job tracker (SQLite) | ⏳ Next | |
-| 5 — Cover note + approval | ⏳ | |
+| 4 — Job tracker (SQLite) | ✅ Done | Jobs saved to `data/jobs.db`; re-runs update, never duplicate |
+| 5 — Cover note + approval | ⏳ Next | |
 | 6 — Full pipeline + CLI | ⏳ | |
 | 7 — Polish | ⏳ | |
 
-**Progress: 4 of 8 core phases complete (~50%).**
+**Progress: 5 of 8 core phases complete (~62%).**
 
 ---
 
@@ -258,5 +258,91 @@ python phase3_research.py "Anthropic"
 
 ---
 
-## Phase 4 — Job tracker (SQLite) ⏳ Next
-See [plan.md](plan.md#phase-4--job-tracker-sqlite-).
+## Phase 4 — Job tracker (SQLite) ✅
+
+### Goal
+Give the agent **persistent memory**: everything learned about a job is saved
+to disk and survives after the program exits.
+
+### What was done
+1. **`job_agent/tracker.py`** — pure code, **no LLM**. SQLite is built into
+   Python (`import sqlite3`), the whole database is one file: `data/jobs.db`
+   (git-ignored, stays on your PC).
+2. **Schema** (`CREATE TABLE IF NOT EXISTS`, so it's safe to run every time):
+   - `jobs` — normal columns for filtering/sorting (`title`, `company`,
+     `fit_score`, `best_resume`, `status`, timestamps…) **plus** JSON columns
+     (`job_json`, `fit_json`, `company_json`) holding the complete Pydantic
+     objects so no detail is lost.
+   - `cover_notes` — linked to `jobs` by `job_id` (foreign key); used in Phase 5.
+3. **`_db()` context manager** — opens a connection, commits on success,
+   always closes. Turns on `PRAGMA foreign_keys` (SQLite has it off by default)
+   and `row_factory = sqlite3.Row` so rows work like dicts.
+4. **Functions:**
+   - `init_db()` — create tables if missing
+   - `save_job(url, job, best, company)` — **upsert** with
+     `INSERT … ON CONFLICT(url) DO UPDATE … RETURNING id`
+   - `list_jobs()` — best fit first
+   - `get_job(id)` — rebuilds `JobPosting` / `ResumeMatch` / `CompanyBrief`
+     from JSON with `model_validate_json()`
+   - `update_status(id, status)` — only allows the 6 known statuses
+5. **Status lifecycle:** `researched → cover_note_ready → applied →
+   interviewing → offer / rejected`.
+6. **`phase4_tracker.py`** — a small CLI: `add <url>`, `list`, `show <id>`,
+   `status <id> <status>`. `add` runs phases 1→3, then saves.
+7. **Graceful degradation:** if company research fails, the job is still
+   saved (with `company_json = NULL`) — research is nice-to-have, the job
+   itself is essential.
+
+### Tests run
+| Test | Expected | Result |
+|---|---|---|
+| `add` GitLab URL | job #1 created | ✅ ~120 s total |
+| `list` | 1 row, status `researched` | ✅ |
+| `status 1 applied` | status changes | ✅ |
+| `status 1 hired` | rejected (unknown status) | ✅ `ValueError` |
+| save same URL again | same id, still 1 row | ✅ id 1 returned |
+| status after re-save | still `applied` (not reset) | ✅ |
+| `show 1` | JSON rebuilt into objects | ✅ |
+
+(Test status was reset to `researched` afterwards — you haven't applied yet!)
+
+### Bonus: Phase 3 error handling proved itself live
+During `add`, DuckDuckGo failed on the first `web_search`. The error came
+back to Qwen as text, and **Qwen retried the search by itself** — exactly the
+behavior the Phase 3 fix was designed for. Before the fix, this would have
+crashed the whole run.
+
+### Concepts learned
+- **Persistence = agent memory across runs.** (Different from the
+  *conversation* memory inside a single run, which is the message list.)
+- **Idempotency:** running the same thing twice gives the same result, not
+  a duplicate. Crucial for agents, which get re-run often. Implemented with
+  `UNIQUE(url)` + upsert.
+- **Don't clobber user data:** the upsert updates analysis fields but
+  deliberately **not** `status` — re-analysing a job you applied to must not
+  reset it to "researched".
+- **Parameterized queries (`?`, `:name`)** — never build SQL with f-strings
+  from outside data (job titles come from the web!) → prevents SQL injection.
+- **Validate at the boundary:** `update_status()` rejects unknown statuses
+  so bad values never reach the database.
+- **Normal columns + JSON columns:** query what you filter on, keep the rest
+  as JSON.
+
+### Notes
+- Timestamps use SQLite's `CURRENT_TIMESTAMP`, which is **UTC** (India is
+  UTC+5:30).
+- To browse the database visually, install
+  [DB Browser for SQLite](https://sqlitebrowser.org/) and open `data/jobs.db`.
+
+### Try it
+```powershell
+python phase4_tracker.py add https://job-boards.greenhouse.io/gitlab/jobs/8704363002
+python phase4_tracker.py list
+python phase4_tracker.py show 1
+python phase4_tracker.py status 1 applied
+```
+
+---
+
+## Phase 5 — Cover note + human approval ⏳ Next
+See [plan.md](plan.md#phase-5--cover-note--human-approval-).
