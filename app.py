@@ -34,11 +34,9 @@ from langgraph.types import Command
 from job_agent.cover_note import SAFE_SERDE
 from job_agent.graph import build_job_hunt_graph
 from job_agent.llm import check_llm_ready
-from job_agent.resume import DATA_DIR
+from job_agent.paths import CHECKPOINT_DB, DATA_DIR
 from job_agent.tracker import STATUSES, get_job, list_jobs, update_status
 from job_agent.tracing import flush, record_decision, tracing_config
-
-CHECKPOINT_DB = DATA_DIR / "checkpoints.db"
 
 st.set_page_config(page_title="Job Hunt Assistant", page_icon="🧭", layout="wide")
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+from job_agent.paths import DATA_DIR  # one place decides where files live (Phase 9a)
 
 
 def load_resumes(folder: Path = DATA_DIR) -> dict[str, str]:

@@ -21,9 +21,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from job_agent.models import CompanyBrief, JobPosting, ResumeMatch
-from job_agent.resume import DATA_DIR
-
-DB_PATH = DATA_DIR / "jobs.db"
+from job_agent.paths import DB_PATH
 
 # The life of a job application. update_status() only accepts these.
 STATUSES = (
@@ -80,7 +78,7 @@ def _db(path: Path | None = None):
 
 def init_db() -> None:
     """Create the tables if they don't exist yet. Safe to call every run."""
-    DB_PATH.parent.mkdir(exist_ok=True)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # fresh install: nothing exists yet
     with _db() as conn:
         conn.executescript(SCHEMA)
 

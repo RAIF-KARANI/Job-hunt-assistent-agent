@@ -17,7 +17,7 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
-| 9 — Windows desktop app | ⏳ Future | Chosen after the deployment cost comparison (end of this file) |
+| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze 🚧 |
 
 **Progress: every phase (0–8, incl. 8e monitoring dashboard) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
 
@@ -1100,6 +1100,78 @@ streamlit run monitor.py --server.port 8502
 ```
 Run a few jobs (`python main.py <url>` or the web UI), press **Refresh now**,
 and watch the numbers move.
+
+---
+
+## Phase 9 — Windows desktop app (Qt) 🚧
+
+**Goal:** double-click an icon and use the assistant in a native window,
+on a PC without Python. **Your choices:** native Qt (PySide6) rewrite of
+the UI; Ollama by default plus an optional Claude API key; the monitoring
+dashboard as a tab. The agent (`job_agent/`) doesn't change; only a new
+front end is built on top of it. The Streamlit app stays as a dev tool.
+
+**Download-size choice:** full PySide6 is ~230 MB; `PySide6-Essentials`
+(~80 MB) has all the widgets we need, and charts use `matplotlib` (~10 MB)
+instead of Qt's chart module (which needs the other ~150 MB).
+
+### 9a — App data folder + settings ✅
+- **`job_agent/paths.py`**, the one place that decides where files live:
+  | | Developer mode (from the repo) | Installed mode (packaged `.exe`) |
+  |---|---|---|
+  | settings | `<repo>/.env` | `%LOCALAPPDATA%\JobHuntAssistant\.env` |
+  | data | `<repo>/data/` | `%LOCALAPPDATA%\JobHuntAssistant\data\` |
+  Installed mode is detected by `sys.frozen` (set by PyInstaller);
+  `JOB_HUNT_HOME` overrides both (used for tests / a second profile).
+  **Why:** an installed app's code folder may not be writable and it can be
+  started from anywhere, so "the current folder" means nothing.
+  `%LOCALAPPDATA%` is Windows' per-user, writable, not-synced place, right
+  for private resumes and databases.
+- `resume.py`, `tracker.py`, `cover_note.py`, `app.py` now import their
+  paths from `paths.py`; the tracker creates the full folder on first use
+  (`parents=True`, a fresh install has nothing yet).
+- **`job_agent/settings.py`**: `load_settings()` (defaults → .env → real env
+  vars win), `read_settings()`, `save_settings()` (writes .env **and**
+  updates `os.environ`, so `get_llm()` picks it up immediately, no restart).
+  `llm.py` / `tracing.py` load settings from `paths.ENV_FILE` instead of
+  "whatever .env is in the current folder".
+- **`llm_status()`** returns `(ok, message)` instead of exiting, so a GUI
+  can show it; `check_llm_ready()` wraps it for the CLI. Also checks that an
+  Anthropic key exists when Claude is selected.
+- 5 tests (`tests/test_paths_settings.py`): dev mode, installed mode
+  (fake `sys.frozen`), override, save → applied + written, defaults.
+  **37 tests total.** Developer mode verified: still finds your 4 jobs.
+
+### 9b — Qt window + Settings tab ✅
+- **`desktop_app.py`**: entry point (`python desktop_app.py`): creates
+  `QApplication`, shows the window, runs Qt's **event loop**.
+- **`desktop/main_window.py`**: `QMainWindow` with 4 tabs (Analyze,
+  Tracker, Dashboard = placeholders for now; Settings); a small stylesheet
+  (blue default button, ok/error label colors); status bar shows mode +
+  data folder. **First run** (no resumes) opens on Settings.
+- **`desktop/settings_tab.py`**: three groups in the order a new user needs
+  them: **AI model** (provider dropdown; the API-key field appears only for
+  Claude; "Check connection"), **Resumes** (list, Add PDF… copies the file,
+  Remove asks first and only deletes the app's copy, Open folder),
+  **Options** (evidence double-check, tracing). Save → `save_settings()`.
+- **`desktop/threads.py`**: `run_in_background(fn, on_done=...)` using Qt's
+  thread pool. The connection check can wait 5 s on the network, so it must
+  not run on the GUI thread or the window freezes ("Not responding").
+  Results come back via a **signal**, because widgets may only be touched
+  from the GUI thread.
+
+**Tested offscreen** (Qt renders into memory, no window on your screen):
+first run with an empty temp profile → Settings tab, "no resumes yet",
+✔ Ollama check; your setup → both resumes listed. Two test-renderer
+quirks (not app bugs): offscreen Qt on Windows needs `QT_QPA_FONTDIR` to
+find fonts, and then must be told to use Segoe UI.
+
+**Qt concepts learned:** widgets & layouts (no pixel positions); signals &
+slots (`clicked.connect(...)`); the event loop; one GUI thread, slow work in
+background threads, results via queued signals; combo boxes with a visible
+label + hidden value; password echo mode.
+
+**Try it:** `python desktop_app.py` → Settings tab.
 
 ---
 

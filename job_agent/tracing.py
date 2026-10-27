@@ -20,9 +20,8 @@ down, the SDK just logs a warning and the run continues.
 
 import os
 
-from dotenv import load_dotenv
+from job_agent import settings  # noqa: F401  (loads .env from paths.ENV_FILE)
 
-load_dotenv()  # don't depend on another module having loaded .env first
 TRACING = os.getenv("TRACING", "off").lower()
 
 

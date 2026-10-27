@@ -44,10 +44,8 @@ from langgraph.types import interrupt
 
 from job_agent.llm import structured_llm
 from job_agent.models import CompanyBrief, CoverNote, JobPosting, ResumeMatch
-from job_agent.resume import DATA_DIR
+from job_agent.paths import NOTES_DIR
 from job_agent.tracker import add_cover_note, update_status
-
-NOTES_DIR = DATA_DIR / "cover_notes"
 
 # ---------------------------------------------------------------------------
 # 1. DRAFTING (LLM)

@@ -5,7 +5,7 @@ python-dotenv>=1.0      # loads settings from the .env file
 
 # ---- LLM provider (pick the one that matches LLM_PROVIDER in .env) ----
 langchain-ollama>=0.3   # local models via Ollama (current choice: qwen3)
-# langchain-anthropic   # uncomment to use Claude
+# langchain-anthropic   # Claude: now installed for the desktop app (see Phase 9 below)
 # langchain-openai      # uncomment to use OpenAI (GPT)
 # langchain-google-genai  # uncomment to use Gemini
 
@@ -26,6 +26,11 @@ pytest>=8.0             # run: python -m pytest
 # ---- Phase 8b: web UI ----
 streamlit>=1.40                    # run: streamlit run app.py
 langgraph-checkpoint-sqlite>=2.0   # paused runs saved to disk (survive page reloads)
+
+# ---- Phase 9: Windows desktop app (python desktop_app.py) ----
+PySide6-Essentials>=6.7 # Qt widgets (Essentials = ~80 MB instead of ~230 MB full PySide6)
+matplotlib>=3.8         # charts in the desktop Dashboard tab
+langchain-anthropic>=0.3  # optional Claude provider (API key in Settings)
 
 # ---- Phase 8c: tracing (TRACING=langfuse in .env) ----
 langfuse>=3.0           # SDK + LangChain callback handler; server: infra/langfuse

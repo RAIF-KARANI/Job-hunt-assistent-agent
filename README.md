@@ -94,6 +94,12 @@ http://localhost:3000. Every run appears as a session, tagged `cli`/`web`
 and with the model name, and your approve/edit/reject decision is attached
 as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
 
+### Desktop app (in progress, Phase 9)
+
+```powershell
+python desktop_app.py         # native window (Qt); Settings tab works, more tabs coming
+```
+
 ### Monitoring dashboard
 
 ```powershell

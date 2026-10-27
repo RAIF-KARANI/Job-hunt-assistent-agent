@@ -183,16 +183,24 @@ render-and-look testing.
 - [x] Palette validated (light + dark); blue accent theme (`.streamlit/config.toml`)
 - [x] Rendered in a real browser and fixed 4 layout bugs; 6 tests (32 total)
 
-## Phase 9 — Windows desktop app (future, planned)
+## Phase 9 — Windows desktop app 🚧
 **Why:** chosen after comparing deployment costs (see progress.md,
 "Deployment decision"): the LLM runs on each user's own PC, so running
 costs are **$0**, and no user data is stored on a server.
-**Concepts:** packaging Python apps; local-first apps; first-run setup.
-- [ ] Choose the UI: wrap the Streamlit app in a desktop window, or a native toolkit
-- [ ] Package as an `.exe` with PyInstaller; release on GitHub Releases (free)
-- [ ] First-run wizard: check Ollama + model, pick resume PDFs, or enter an API key instead
-- [ ] Store data in the user's AppData folder instead of `data/`
-- [ ] Optional: code-signing certificate (~$100–400/yr) to avoid the SmartScreen warning
+**Decisions:** native **Qt (PySide6)** UI; Ollama by default + optional
+Claude API key; monitoring dashboard included as a tab.
+**Concepts:** where desktop apps keep data; Qt widgets/layouts;
+signals & slots; keeping the GUI thread free; packaging Python apps.
+
+| Step | What | Status |
+|---|---|---|
+| 9a | `paths.py` (dev vs installed data folder), `settings.py` (read/write .env), `llm_status()` | ✅ |
+| 9b | Qt window + **Settings** tab (model/API key, resumes, options, connection check) | ✅ |
+| 9c | **Analyze** tab: agent in a background thread, live log, approve / rewrite / reject | 🚧 |
+| 9d | **Tracker** tab: jobs table, details, status changes | ⏳ |
+| 9e | **Dashboard** tab: tracker charts + trace charts when Langfuse is up | ⏳ |
+| 9f | Package with PyInstaller (folder + `.exe`), docs | ⏳ |
+| — | Optional: code-signing certificate (~$100–400/yr) to avoid the SmartScreen warning | not planned |
 
 ### Other ideas (not planned)
 - Follow-up reminders for jobs applied > 7 days ago

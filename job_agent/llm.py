@@ -14,11 +14,11 @@ How to switch models:
 
 import os
 
-from dotenv import load_dotenv
 from langchain_core.language_models.chat_models import BaseChatModel
 
-# Read key=value pairs from .env into environment variables.
-load_dotenv()
+# Read settings (defaults + the .env file from paths.ENV_FILE) into
+# environment variables. Phase 9a: no longer depends on the current folder.
+from job_agent import settings  # noqa: F401  (loads on import)
 
 
 def get_llm() -> BaseChatModel:
@@ -86,29 +86,44 @@ def structured_llm(schema):
     return get_llm().with_structured_output(schema).with_retry(stop_after_attempt=3)
 
 
+def llm_status() -> tuple[bool, str]:
+    """Can the configured model be used right now? Returns (ok, message).
+
+    Returns the answer instead of exiting, so a GUI can show it (Phase 9b);
+    the CLI wraps it in check_llm_ready() below.
+    """
+    provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+    model = os.getenv("LLM_MODEL", "qwen3:8b")
+
+    if provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            return False, "No Anthropic API key set. Add one in Settings."
+        return True, f"Using Claude ({model}) with your API key."
+    if provider != "ollama":
+        return True, f"Using {provider} ({model})."
+
+    import requests
+
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    try:
+        tags = requests.get(f"{base_url}/api/tags", timeout=5).json()
+    except requests.RequestException:
+        return False, (f"Can't reach Ollama at {base_url}. Install it from "
+                       "https://ollama.com and start the Ollama app.")
+    installed = {m["name"] for m in tags.get("models", [])}
+    if model not in installed:
+        return False, (f"Model '{model}' isn't installed in Ollama. Run "
+                       f"`ollama pull {model}`. Installed: "
+                       f"{', '.join(sorted(installed)) or 'none'}")
+    return True, f"Ollama is running and '{model}' is installed."
+
+
 def check_llm_ready() -> None:
     """Fail fast with a clear message if the model can't be reached.
 
     Without this, a stopped Ollama shows up minutes later as a long
     'connection refused' traceback in the middle of the run.
     """
-    if os.getenv("LLM_PROVIDER", "ollama").lower() != "ollama":
-        return  # cloud providers: a missing API key fails fast on its own
-
-    import requests
-
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    model = os.getenv("LLM_MODEL", "qwen3:8b")
-    try:
-        tags = requests.get(f"{base_url}/api/tags", timeout=5).json()
-    except requests.RequestException:
-        raise SystemExit(
-            f"Can't reach Ollama at {base_url}. Start the Ollama app "
-            "(or run `ollama serve`) and try again."
-        )
-    installed = {m["name"] for m in tags.get("models", [])}
-    if model not in installed:
-        raise SystemExit(
-            f"Model '{model}' isn't installed in Ollama. Run `ollama pull {model}` "
-            f"or change LLM_MODEL in .env. Installed: {', '.join(sorted(installed))}"
-        )
+    ok, message = llm_status()
+    if not ok:
+        raise SystemExit(message)
