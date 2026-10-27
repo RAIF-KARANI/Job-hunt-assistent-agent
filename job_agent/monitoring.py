@@ -123,9 +123,9 @@ def _with_times(obs: pd.DataFrame) -> pd.DataFrame:
 
 
 def interface_of(tags) -> str:
-    """Which front door started the run: cli / web / api (tag set in tracing.py)."""
+    """Which front door started the run: cli / web / api / desktop (tag from tracing.py)."""
     for t in tags if isinstance(tags, list) else []:
-        if t in ("cli", "web", "api"):
+        if t in ("cli", "web", "api", "desktop"):
             return t
     return "unknown"
 

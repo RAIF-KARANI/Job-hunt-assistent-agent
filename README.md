@@ -97,7 +97,7 @@ as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
 ### Desktop app (in progress, Phase 9)
 
 ```powershell
-python desktop_app.py         # native window (Qt); Settings tab works, more tabs coming
+python desktop_app.py         # native window (Qt): Analyze + Settings work; Tracker, Dashboard coming
 ```
 
 ### Monitoring dashboard

@@ -7,9 +7,12 @@ The main window: one window, four tabs.
 Tabs not built yet show a placeholder, so the app runs at every step.
 """
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QMainWindow, QTabWidget
+import os
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QLabel, QMainWindow, QMessageBox, QTabWidget
+
+from desktop.analyze_tab import AnalyzeTab
 from desktop.settings_tab import SettingsTab
 from job_agent import paths
 
@@ -23,6 +26,8 @@ QLabel[state="error"] { color: #d03b3b; }
 QPushButton { padding: 5px 14px; }
 QPushButton:default { background: #2a78d6; color: white; border: none; border-radius: 4px; }
 QPushButton:default:disabled { background: #9ec5f4; }
+QLabel#title { font-size: 13pt; font-weight: 600; }
+QLabel#fit   { font-size: 13pt; font-weight: 600; color: #2a78d6; }
 """
 
 
@@ -42,7 +47,8 @@ class MainWindow(QMainWindow):
 
         self.tabs = QTabWidget()
         self.settings_tab = SettingsTab()
-        self.tabs.addTab(placeholder("Analyze: coming in step 9c"), "Analyze")
+        self.analyze_tab = AnalyzeTab()
+        self.tabs.addTab(self.analyze_tab, "Analyze")
         self.tabs.addTab(placeholder("Tracker: coming in step 9d"), "Tracker")
         self.tabs.addTab(placeholder("Dashboard: coming in step 9e"), "Dashboard")
         self.tabs.addTab(self.settings_tab, "Settings")
@@ -55,3 +61,20 @@ class MainWindow(QMainWindow):
         if not self.settings_tab.is_ready():
             self.tabs.setCurrentWidget(self.settings_tab)
         self.settings_tab.check_connection()
+
+    def closeEvent(self, event):
+        """Closing while the agent runs: ask, then exit immediately.
+
+        A thread blocked inside an LLM call can't be stopped politely, so we
+        end the process. Nothing is corrupted: the checkpointer saved every
+        finished step, and the tracker only writes complete rows."""
+        if self.analyze_tab.busy:
+            answer = QMessageBox.question(
+                self, "Agent is working",
+                "The agent is still running. Close anyway? (The current run stops.)")
+            if answer != QMessageBox.StandardButton.Yes:
+                event.ignore()
+                return
+            os._exit(0)
+        self.analyze_tab.shutdown()
+        event.accept()

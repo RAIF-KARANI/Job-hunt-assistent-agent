@@ -106,7 +106,7 @@ st.caption("How the Job Hunt Assistant behaves (from Langfuse traces) and what i
 f1, f2, f3 = st.columns([2, 2, 1])
 range_label = f1.selectbox("Time range", ["Last 7 days", "Last 30 days", "Last 90 days", "All time"], index=1)
 days = {"Last 7 days": 7, "Last 30 days": 30, "Last 90 days": 90, "All time": None}[range_label]
-interfaces = f2.multiselect("Started from", ["cli", "web", "api"], default=["cli", "web", "api"],
+interfaces = f2.multiselect("Started from", ["cli", "web", "desktop", "api"], default=["cli", "web", "desktop", "api"],
                             help="Which front door started the run (tag set in tracing.py)")
 if f3.button("Refresh now", width="stretch"):
     st.cache_data.clear()

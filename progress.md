@@ -17,7 +17,7 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
-| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze 🚧 |
+| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze ✅ · 9d Tracker next |
 
 **Progress: every phase (0–8, incl. 8e monitoring dashboard) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
 
@@ -1172,6 +1172,51 @@ background threads, results via queued signals; combo boxes with a visible
 label + hidden value; password echo mode.
 
 **Try it:** `python desktop_app.py` → Settings tab.
+
+### 9c — Analyze tab ✅
+**The problem:** a full analysis takes ~3 minutes. On the GUI thread the
+window would freeze ("Not responding") for 3 minutes.
+**The solution:** the Qt **worker-object pattern**:
+```
+GUI thread                                   worker QThread
+[Analyze] ── start_requested(url) ─────────► AgentWorker.start()  → graph.invoke()
+log panel ◄─ log("[2/5] ...") ─────────────  every print() from the nodes
+review    ◄─ paused(payload, summary) ─────  interrupt() → graph pauses
+[Approve] ── resume_requested(answer) ─────► AgentWorker.resume() → Command(resume=…)
+"Saved ✔" ◄─ finished(result) ─────────────  run complete
+```
+- `worker.moveToThread(thread)`: the worker's slots now run on that thread.
+  Signals across threads are **queued**, so the GUI never runs the graph and
+  the worker never touches a widget.
+- **`desktop/agent_worker.py`**: builds the graph with the **SQLite
+  checkpointer** (same `checkpoints.db` as the web UI); temporarily swaps
+  `sys.stdout` for a writer that turns each `print()` into a `log` signal;
+  after each run reads `get_state()` → `paused` (with a plain-data summary:
+  title, fit score, breakdown, matches, gaps) or `finished`. Separate slots
+  for decisions (`resume`) and pasted job text (`resume_with_text`, because the
+  paste interrupt expects the text itself). Traces are tagged `desktop`.
+- **`desktop/analyze_tab.py`**: URL + "re-analyze" + Analyze; progress bar
+  driven by the `[n/5]` log lines; agent log; review panel (title, **Fit
+  x/100**, breakdown, proven matches with quotes, gaps, number warnings,
+  **editable draft** + word count, Approve & save / Reject / feedback +
+  Rewrite). Unreadable page → **paste dialog**.
+- **Closing during a run** asks first, then exits immediately (a thread
+  stuck in an LLM call can't be stopped politely; the checkpointer has
+  already saved every finished step).
+- The monitoring dashboard's "Started from" filter now includes `desktop`.
+
+**Tests:**
+| Test | Result |
+|---|---|
+| Driven like a user (offscreen script): unreadable source → paste step | ✅ |
+| Job #1 → window stays responsive while running | ✅ |
+| Review panel after 51 s: title, Fit 63/100, 153-word draft | ✅ screenshot checked |
+| Reject → "nothing was saved", job #1 still `researched` | ✅ |
+| 5 GUI unit tests (`tests/test_desktop.py`): fake worker signals → progress, review panel, approve sends *your edited* text, finished messages, rewrite needs feedback | ✅ **42 tests total** |
+
+**Qt concepts learned:** `QThread` + worker objects; queued cross-thread
+signals; never touch widgets off the GUI thread; testing GUIs by calling
+slots with fake signals.
 
 ---
 
