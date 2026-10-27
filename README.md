@@ -94,28 +94,6 @@ http://localhost:3000. Every run appears as a session, tagged `cli`/`web`
 and with the model name, and your approve/edit/reject decision is attached
 as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
 
-### HTTP API + n8n (optional)
-
-```powershell
-python api.py                         # API on http://127.0.0.1:8000 (docs: /docs)
-cd infra\n8n
-docker compose up -d                  # n8n on http://localhost:5678
-```
-Set the same `AGENT_API_KEY` in `.env` and `infra\n8n\.env`. Import
-`infra\n8n\job-hunt-workflow.json` in n8n (or with the CLI, see
-progress.md 8d) and publish it. Then open **http://localhost:5678/form/job-hunt**:
-paste a URL, wait for the draft page, and choose Approve or Reject.
-
-| Endpoint | Purpose |
-|---|---|
-| `GET /health` | alive? (no key needed) |
-| `POST /runs` `{url, fresh?, callback_url?}` | start a run → `202` + `thread_id` |
-| `GET /runs/{id}` | running / awaiting_approval / done / error |
-| `POST /runs/{id}/decision` `{decision, feedback?, text?}` | approve / edit / reject |
-| `GET /jobs` | the tracker |
-
-All endpoints except `/health` need the header `X-API-Key`.
-
 ### CLI approval
 
 At the approval step you can **[a]pprove** (saves to the tracker and
@@ -179,7 +157,6 @@ See [architecture.md](architecture.md) for the full picture.
 ```
 main.py               CLI: start here
 app.py                web UI (Streamlit)
-api.py                HTTP API (FastAPI), used by n8n
 compare_models.py     run the same task on several models
 phaseN_*.py           the learning steps, each runnable on its own
 job_agent/
@@ -194,6 +171,13 @@ job_agent/
   graph.py            the main workflow
   tracing.py          Langfuse / LangSmith switch
 infra/langfuse/       self-hosted Langfuse (Docker Compose + our override)
-infra/n8n/            n8n (Docker Compose) + the job-hunt workflow JSON
 tests/                pytest suite
 ```
+
+## Using it / deployment
+
+This is a personal, open-source project: clone the repo and run it locally,
+for **$0** (local Ollama model, local SQLite, self-hosted tracing). A
+Windows desktop app is the planned next step; see the "Deployment
+decision" section at the end of [progress.md](progress.md) for the cost
+comparison of website vs. desktop app.

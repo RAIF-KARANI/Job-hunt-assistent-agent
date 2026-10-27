@@ -17,7 +17,8 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ✅ |
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ✅ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ✅ |
-| 8 | Optional extras | Score in code, web UI, tracing, n8n | ✅ |
+| 8 | Optional extras | Score in code, web UI, tracing (n8n tried, removed) | ✅ |
+| 9 | Windows desktop app | Packaging, local-first distribution | ⏳ future |
 
 ---
 
@@ -161,17 +162,25 @@ callbacks; self-hosting with Docker Compose.
 - [x] Traced a full run and analyzed it via the API (54 observations, 9 LLM calls)
 - [ ] **Your turn:** explore the trace at http://localhost:3000
 
-### 8d — n8n integration ✅
+### 8d — n8n integration ↩️ built, then removed
 **Concepts:** agents inside automation tools; exposing an agent as an API;
 async jobs (202 + callback/webhook); API keys; human-in-the-loop in n8n
 (Wait node + resume URL) mirroring LangGraph's interrupt.
-- [x] `api.py` (FastAPI): `/runs`, `/runs/{id}`, `/runs/{id}/decision`, `/jobs`, `/health`
-- [x] `X-API-Key` auth, localhost only, one run at a time, shared SQLite checkpoints
-- [x] `infra/n8n`: n8n in Docker (localhost only, telemetry off, key via env)
-- [x] Workflow: Form → POST /runs (callback = resumeUrl) → Wait → IF → review form → decision → result page
-- [x] End-to-end tested by driving the form like a browser (reject path)
-- [x] 6 API tests (32 total)
-- [ ] **Your turn:** create your n8n owner account, open the workflow, try it
+- [x] Built and tested end to end: FastAPI `api.py` + n8n form workflow (commit `f41b7f9`)
+- [x] **Removed** after the deployment decision: personal use + a future
+      Windows app don't need an HTTP server or an automation tool.
+      Lessons kept in progress.md 8d.
+
+## Phase 9 — Windows desktop app (future, planned)
+**Why:** chosen after comparing deployment costs (see progress.md,
+"Deployment decision"): the LLM runs on each user's own PC, so running
+costs are **$0**, and no user data is stored on a server.
+**Concepts:** packaging Python apps; local-first apps; first-run setup.
+- [ ] Choose the UI: wrap the Streamlit app in a desktop window, or a native toolkit
+- [ ] Package as an `.exe` with PyInstaller; release on GitHub Releases (free)
+- [ ] First-run wizard: check Ollama + model, pick resume PDFs, or enter an API key instead
+- [ ] Store data in the user's AppData folder instead of `data/`
+- [ ] Optional: code-signing certificate (~$100–400/yr) to avoid the SmartScreen warning
 
 ### Other ideas (not planned)
 - Follow-up reminders for jobs applied > 7 days ago

@@ -16,9 +16,10 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
-| 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API |
+| 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) |
+| 9 — Windows desktop app | ⏳ Future | Chosen after the deployment cost comparison (end of this file) |
 
-**Progress: every phase (0–8) complete. 🎉 The project is finished. See "Where to go next" at the end.**
+**Progress: every phase (0–8) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
 
 ---
 
@@ -889,7 +890,12 @@ shorter talking points); shrinking the prompts matters much less.
 4. Docker: `cd infra\langfuse` then `docker compose stop` (keep data) /
    `docker compose up -d` (start) / `docker compose down -v` (delete all).
 
-### 8d — n8n + an HTTP API around the agent ✅
+### 8d — n8n + an HTTP API around the agent ↩️ (built, tested, then removed)
+
+> **Status:** everything below was built and tested end to end (commit
+> `f41b7f9`), then **removed on purpose** (see "Why it was removed" at the
+> end of this section). The notes stay because the lessons apply to any
+> future website or integration.
 
 #### Goal
 Let an **automation tool** use the agent: n8n shows a form, runs the agent,
@@ -981,31 +987,61 @@ same tracker, same traces; just a different "front door".
 - **Platform quirks are real:** Git Bash path rewriting, HTML sanitizing,
   escaping layers. Test the real thing end to end.
 
-#### Try it
-1. Start the pieces (each in its own terminal, venv activated):
-   ```cmd
-   python api.py
-   cd infra\n8n && docker compose up -d
-   ```
-2. Open http://localhost:5678 → create your **owner account** (local only) →
-   open the **Job Hunt Assistant** workflow to see the nodes.
-3. Open **http://localhost:5678/form/job-hunt**, paste a job URL, wait for the
-   draft page, choose Approve or Reject.
-4. Check the run in n8n's **Executions** tab, in the tracker
-   (`python main.py list`) and in Langfuse (tag `api`).
+#### Why it was removed
+- **"Do we even need n8n?"** For a personal tool, no: the web UI already
+  does everything the n8n form did, with fewer moving parts. n8n earns its
+  place only when you connect the agent to *other apps* (Telegram, Gmail,
+  Sheets, schedules).
+- **The deployment decision** (next section) picked a **Windows desktop app**,
+  which runs the agent directly on the user's PC, so there is no need for
+  an HTTP server (`api.py`) either.
+- **Removed:** `api.py`, `tests/test_api.py`, `infra/n8n/`, `fastapi` and
+  `uvicorn`, the `AGENT_API_KEY` setting, and the project's n8n container
+  and data volume. (An older, unrelated n8n container/volume on this PC was
+  left untouched.)
+- **Recoverable:** `git show f41b7f9` has the full working version.
+- **Lesson:** building something and then deliberately removing it is
+  normal engineering. **Every extra component is something to run, secure
+  and maintain**, so keep only what the real use case needs.
+
+---
+
+## Deployment decision
+
+Asked: *"If I turned this into a website or a Windows app, what would I pay?"*
+
+**Usage per full run** (measured with Langfuse in 8c): ~15,000 input +
+~5,000 output tokens. With a cloud LLM (prices checked October 2026; Claude
+counts tokens a bit differently and its thinking adds output, so ~1.5× buffer):
+
+| Model | $ per 1M tokens (in / out) | One run | 2,000 runs/month (100 users × 20) |
+|---|---|---|---|
+| Claude Haiku 5.5 | 0.10 / 0.50 | ~$0.004–0.006 | ~$8–12 |
+| Claude Sonnet 5.5 | 2 / 10 | ~$0.08–0.12 | ~$160–240 |
+| Claude Opus 5.5 | 4 / 20 | ~$0.16–0.24 | ~$320–480 |
+
+| | **Website** | **Windows app** | **Open-source repo (now)** |
+|---|---|---|---|
+| LLM | the table above (or a GPU server ~$150–700+/month to self-host Qwen) | **$0 to you**: user's own Ollama or API key | $0 |
+| Hosting | free tier (Streamlit Cloud / HF Spaces) or ~$5–12/month server | none (GitHub Releases) | none |
+| Extras | domain ~$10–15/yr; paid search API at scale | code signing ~$100–400/yr (optional, avoids SmartScreen warning) | — |
+| Hidden work | logins, per-user data separation, **privacy law for stored resumes** (India DPDP Act / GDPR), spending limits, abuse protection | installer, first-run setup, users need ~16 GB RAM for a local model | none |
+
+*(Hosting and certificate prices are rough ranges; check current provider pricing.)*
+
+**Decision:** keep it a **personal, open-source project** for now ($0), with
+a **Windows desktop app** as the next step: no server costs, no LLM bill,
+and nobody's resume stored on a server. See plan.md, Phase 9.
 
 ---
 
 ## Where to go next
 
-The project is complete. Some directions if you want to keep learning:
+- **Phase 9 — Windows desktop app** (plan.md): package with PyInstaller,
+  first-run setup that checks Ollama, data in the user's AppData folder.
 - **Write the verdict from the final facts** (after the judge), the last
   open item from 8a.
-- **n8n extensions:** Telegram/Slack trigger (send job links from your
-  phone), Gmail node (email yourself approved notes), a daily schedule that
-  sends follow-up reminders for jobs applied > 7 days ago.
 - **Evaluation:** build a small dataset of jobs with the "right" answers
   and use Langfuse datasets to measure prompt changes.
 - **Shorter outputs for speed:** tracing showed output tokens dominate
   latency, so trim talking points and descriptions and measure the gain.
-- **Deploy:** run api.py + n8n on a small server or Raspberry Pi.
