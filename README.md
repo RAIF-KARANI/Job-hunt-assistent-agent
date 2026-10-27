@@ -94,6 +94,17 @@ http://localhost:3000. Every run appears as a session, tagged `cli`/`web`
 and with the model name, and your approve/edit/reject decision is attached
 as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
 
+### Monitoring dashboard
+
+```powershell
+streamlit run monitor.py --server.port 8502   # http://localhost:8502
+```
+
+One page combining **Langfuse traces** (runs, LLM calls, tokens, latency
+per step, search tool success, your approve/reject decisions) with **your
+tracker** (fit scores, application status). Filter by time range and by
+where a run started (cli/web). Needs Langfuse running for the trace part.
+
 ### CLI approval
 
 At the approval step you can **[a]pprove** (saves to the tracker and
@@ -157,6 +168,7 @@ See [architecture.md](architecture.md) for the full picture.
 ```
 main.py               CLI: start here
 app.py                web UI (Streamlit)
+monitor.py            monitoring dashboard (Streamlit + Altair)
 compare_models.py     run the same task on several models
 phaseN_*.py           the learning steps, each runnable on its own
 job_agent/
@@ -170,6 +182,7 @@ job_agent/
   cover_note.py       draft + approval subgraph
   graph.py            the main workflow
   tracing.py          Langfuse / LangSmith switch
+  monitoring.py       data layer for the dashboard (Langfuse API + tracker)
 infra/langfuse/       self-hosted Langfuse (Docker Compose + our override)
 tests/                pytest suite
 ```

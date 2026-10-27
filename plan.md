@@ -17,7 +17,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 5 | Cover note + approval | Human-in-the-loop, `interrupt()`, checkpointer | ✅ |
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ✅ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ✅ |
-| 8 | Optional extras | Score in code, web UI, tracing (n8n tried, removed) | ✅ |
+| 8 | Optional extras | Score in code, web UI, tracing, monitoring dashboard (n8n tried, removed) | ✅ |
 | 9 | Windows desktop app | Packaging, local-first distribution | ⏳ future |
 
 ---
@@ -170,6 +170,18 @@ async jobs (202 + callback/webhook); API keys; human-in-the-loop in n8n
 - [x] **Removed** after the deployment decision: personal use + a future
       Windows app don't need an HTTP server or an automation tool.
       Lessons kept in progress.md 8d.
+
+### 8e — Monitoring dashboard ✅
+**Concepts:** monitoring vs. tracing; KPIs; reading an observability API;
+pure data layer + thin UI; choosing chart forms; validating colors;
+render-and-look testing.
+- [x] `job_agent/monitoring.py`: fetch Langfuse observations/scores (cursor
+      paging, no prompts) + tracker; pure `build_*` tables
+- [x] `monitor.py`: KPI tiles, time per step, latency vs tokens, tokens per run,
+      tool ok/failed, decisions, fit scores, status funnel, recent runs → Langfuse links
+- [x] Filters (time range, cli/web), 60 s cache, works with Langfuse down
+- [x] Palette validated (light + dark); blue accent theme (`.streamlit/config.toml`)
+- [x] Rendered in a real browser and fixed 4 layout bugs; 6 tests (32 total)
 
 ## Phase 9 — Windows desktop app (future, planned)
 **Why:** chosen after comparing deployment costs (see progress.md,

@@ -1,0 +1,8 @@
+# Streamlit settings for both app.py and monitor.py.
+[theme]
+# Accent color for buttons, selected chips, sliders. Streamlit's default is
+# red, which on a monitoring page reads as "error". Palette blue instead.
+primaryColor = "#2a78d6"
+
+[browser]
+gatherUsageStats = false

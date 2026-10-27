@@ -16,10 +16,10 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
-| 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) |
+| 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
 | 9 — Windows desktop app | ⏳ Future | Chosen after the deployment cost comparison (end of this file) |
 
-**Progress: every phase (0–8) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
+**Progress: every phase (0–8, incl. 8e monitoring dashboard) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
 
 ---
 
@@ -1003,6 +1003,103 @@ same tracker, same traces; just a different "front door".
 - **Lesson:** building something and then deliberately removing it is
   normal engineering. **Every extra component is something to run, secure
   and maintain**, so keep only what the real use case needs.
+
+---
+
+### 8e — Monitoring dashboard ✅
+
+#### Goal
+Answer "where can I see how my agent is doing?" with our own dashboard,
+combining Langfuse traces with the job tracker.
+
+#### Where things live in Langfuse (http://localhost:3000)
+| What | Where |
+|---|---|
+| One run step by step | Tracing → Sessions → open a session |
+| Each LLM call | Tracing → Observations (type Generation) |
+| Your approve/edit/reject | Scores → `cover_note_decision` |
+| Generic charts | Dashboards |
+| Evals | Evaluators / Datasets (not set up yet; our "evals" are your decisions + the in-agent checks + the judge) |
+
+#### Tracing vs monitoring
+- **Tracing** = one run in full detail (every prompt, every step).
+- **Monitoring** = many runs boiled down to a few numbers you watch over
+  time: how many runs, how slow, how many tokens, how often searches
+  fail, how often you approve.
+Langfuse is great at tracing; our dashboard adds **our domain** (fit
+scores, job status, cli/web) that Langfuse knows nothing about.
+
+#### What was done
+1. **`job_agent/monitoring.py`** (data layer, no UI code):
+   - fetches observations via `/api/public/v2/observations` with `fields=`
+     groups **without `io`** (prompts contain your resume; skipping them keeps
+     refreshes light), following the **cursor** pages; tool calls separately
+     *with* outputs (small) to detect failed searches; scores via
+     `/api/public/v3/scores` (max page size 100, larger returns 400);
+     tracker via `list_jobs()`.
+   - pure `build_*` functions → DataFrames: runs, LLM calls, node latency,
+     tool stats, decisions, status funnel.
+   - **agent time** per run = sum of root spans, so the time a run sat paused
+     waiting for you doesn't count as "slow".
+2. **`monitor.py`** (Streamlit + Altair, port 8502): filters row (time
+   range, started from cli/web) → 5 KPI tiles → time per pipeline step →
+   latency vs output tokens / vs input tokens (side by side, same axis) →
+   tokens per run → search tool ok/failed → your decisions → fit score per
+   job → application status → recent runs with "open ↗" links into Langfuse.
+   60 s cache + Refresh button. If Langfuse is down, tracker charts still show.
+3. **Chart design** followed the dataviz guidelines: chart form chosen by
+   the data's job; one color for single series; blue + orange for two
+   series, **validated with the palette script** (colorblind ΔE 24.7 light /
+   31.8 dark, all checks PASS); ok/failed in reserved status colors *with*
+   text labels; tooltips on every chart; whole-number ticks for counts.
+4. **`.streamlit/config.toml`**: accent color blue instead of Streamlit's
+   default red (red reads as "error" on a monitoring page). Affects app.py too.
+5. **6 tests** (`tests/test_monitoring.py`) with fake Langfuse records. **32 total.**
+
+#### Render-and-look found 4 bugs the tests couldn't
+Screenshots were taken with Playwright driving your installed Edge
+(headless, separate profile, nothing downloaded):
+
+| Bug seen in the screenshot | Cause | Fix |
+|---|---|---|
+| Step bars overlapping, half the labels missing | Altair silently **drops axis labels that would overlap** | more height per row, band padding, `labelOverlap=False` |
+| "vs input tokens" chart cut off | `alt.hconcat` charts don't shrink to the column | two Streamlit columns, one chart each |
+| Small charts squashed (rows on top of each other) | Streamlit fits the **whole** chart (title + axes + legend) into `height`; bars get only what's left | `rows_height()` budgets 36 px/row + chrome + legend |
+| Black outlines around stacked bars | `st.context.theme` said "dark" while the page rendered light, so the "surface-colored" separator was black | dropped theme-guessed separators |
+
+Plus: a plain headless-Edge screenshot only captured Streamlit's **loading
+skeleton** (Streamlit draws over a websocket), hence Playwright, which waits
+for the charts.
+
+#### A mistake from the n8n revert, caught here
+Uninstalling `uvicorn` with FastAPI **broke `streamlit run`**: Streamlit
+1.66 runs its server on uvicorn. Headless tests don't start a real server,
+so nothing noticed until the dashboard was launched. Fixed by reinstalling;
+`pip check` now reports no broken requirements.
+**Lesson: after uninstalling a package, run `pip check`**, and test the
+real thing, not only the headless version.
+
+#### What the first data already says
+- Correlation with LLM latency: **output tokens 0.90, input tokens 0.16**,
+  the 8c insight confirmed as a number.
+- `analyze_fit` is the slowest step (~85 s: two analyses + two judge calls).
+- Approval rate 17 % (1 of 6), most decisions so far were test rejects.
+
+#### Concepts learned
+- Tracing vs monitoring; KPIs; observability APIs and pagination.
+- Separate the data layer (pure, tested) from the UI (thin).
+- Don't fetch what you don't need (`io` excluded).
+- Measure what the user experiences (agent time, not wall-clock with waits).
+- Charts: pick the form first, color last, validate colors, label state.
+- **Always look at the rendered result:** layout bugs are invisible to code tests.
+
+#### Try it
+```cmd
+.venv\Scripts\activate.bat
+streamlit run monitor.py --server.port 8502
+```
+Run a few jobs (`python main.py <url>` or the web UI), press **Refresh now**,
+and watch the numbers move.
 
 ---
 

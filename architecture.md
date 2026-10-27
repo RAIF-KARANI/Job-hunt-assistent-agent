@@ -164,6 +164,22 @@ main.py / app.py
   SDK drops events if the server is down. The CLI `flush()`es before exiting.
 - Self-hosted → prompts (incl. your resume) stay on this PC.
 
+### 3.6b Monitoring dashboard — `monitor.py` + `job_agent/monitoring.py` (Phase 8e)  ✅
+
+```
+Langfuse API (v2 observations, v3 scores) ─┐        pure build_* functions
+                                          ├─► monitoring.py ─► DataFrames ─► monitor.py (Streamlit + Altair)
+SQLite tracker (jobs, fit, status) ───────┘     (tested)                    KPIs, charts, recent runs
+```
+
+- **Tracing vs monitoring:** tracing = one run in detail (Langfuse);
+  monitoring = many runs summarized into numbers you watch over time.
+- The data layer skips prompts/outputs (`io`), except small tool outputs
+  needed to tell failed searches from good ones.
+- "Agent time" = sum of root spans per session, so time paused waiting for
+  you isn't counted as slowness.
+- Langfuse down → tracker charts still show, with a warning.
+
 ### 3.7 Not included: HTTP API + n8n (Phase 8d, built and removed)
 
 An HTTP API (FastAPI) plus an n8n workflow were built, tested end to end,
@@ -380,6 +396,7 @@ Job-hunt-assistent-agent/
 ├── phase5_cover_note.py      Phase 5: draft + approve a note for a tracked job
 ├── main.py                   the CLI — start here
 ├── app.py                    web UI (Streamlit)
+├── monitor.py                monitoring dashboard (Streamlit + Altair)
 ├── compare_models.py         same task on several models, side by side
 ├── README.md                 setup + usage
 ├── tests/                    pytest suite (no LLM, temp database)
@@ -394,7 +411,8 @@ Job-hunt-assistent-agent/
 │   ├── tracker.py            SQLite tracker
 │   ├── cover_note.py         draft + approval graph
 │   ├── graph.py              main workflow (all phases wired together)
-│   └── tracing.py            Langfuse / LangSmith / off switch
+│   ├── tracing.py            Langfuse / LangSmith / off switch
+│   └── monitoring.py         dashboard data layer (Langfuse API + tracker)
 └── data/                     git-ignored personal data
 ```
 
