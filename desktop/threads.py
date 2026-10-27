@@ -35,11 +35,26 @@ class _Task(QRunnable):
             self.signals.done.emit(result)
 
 
+# Tasks that are still running. Without this, Python could garbage-collect a
+# task (and its signals object) as soon as run_in_background() returns - the
+# thread keeps running, then crashes with "Signal source has been deleted"
+# when it tries to report back. (Found by the packaging self-test, 9f.)
+_running: set = set()
+
+
 def run_in_background(fn, *args, on_done=None, on_error=None) -> None:
     """Call fn(*args) in Qt's thread pool; on_done(result) runs on the GUI thread."""
     task = _Task(fn, *args)
+    task.setAutoDelete(False)  # Python owns the task's lifetime, not Qt
+    _running.add(task)
+
+    def finished(*_):
+        _running.discard(task)  # runs on the GUI thread, after the result arrived
+
     if on_done:
         task.signals.done.connect(on_done)
     if on_error:
         task.signals.failed.connect(on_error)
+    task.signals.done.connect(finished)
+    task.signals.failed.connect(finished)
     QThreadPool.globalInstance().start(task)

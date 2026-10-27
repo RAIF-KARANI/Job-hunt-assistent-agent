@@ -28,3 +28,7 @@ venv/
 
 # ---- Personal data: resume, tracker DB, generated cover notes ----
 data/
+
+# ---- PyInstaller build output (Phase 9f) ----
+build/
+dist/

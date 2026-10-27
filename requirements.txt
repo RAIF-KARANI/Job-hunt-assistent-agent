@@ -35,3 +35,5 @@ langchain-anthropic>=0.3  # optional Claude provider (API key in Settings)
 # ---- Phase 8c: tracing (TRACING=langfuse in .env) ----
 langfuse>=3.0           # SDK + LangChain callback handler; server: infra/langfuse
 # langsmith             # already installed with langchain; TRACING=langsmith needs only a key
+# ---- Phase 9f: packaging ----
+pyinstaller>=6.0        # build: pyinstaller joblens.spec --noconfirm

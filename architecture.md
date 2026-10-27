@@ -1,4 +1,4 @@
-# Architecture — Job Hunt Assistant
+# Architecture — JobLens (Job Hunt Assistant)
 
 This document explains **how the system is built and why**. For *what* we're
 building see [idea.md](idea.md); for *the order we build it in* see
@@ -163,6 +163,29 @@ main.py / app.py
 - Tracing never blocks a run: `check_tracing_ready()` only warns, and the
   SDK drops events if the server is down. The CLI `flush()`es before exiting.
 - Self-hosted → prompts (incl. your resume) stay on this PC.
+
+### 3.6a JobLens desktop app — `desktop_app.py` + `desktop/` (Phase 9)  ✅
+
+```
+JobLens.exe (PyInstaller: Python + Qt + libraries in one folder)
+  └── MainWindow (QTabWidget) ── tabs connected only through signals
+        ├── Analyze   ── signals ──► AgentWorker on a QThread ──► same LangGraph workflow
+        │                ◄── log / paused / finished ──           (SQLite checkpointer)
+        ├── Tracker   ── JobsModel → QSortFilterProxyModel → QTableView
+        ├── Dashboard ── monitoring.py (shared with monitor.py) → matplotlib in Qt
+        └── Settings  ── settings.py (.env) · llm_status() · resume PDFs
+```
+
+- **Same agent, fourth front door** (CLI, web UI, desktop; `job_agent/`
+  unchanged).
+- **Developer vs installed mode** (`paths.py`): repo `data/` + `.env` when run
+  from source; `%LOCALAPPDATA%\JobLens\` when frozen.
+- **GUI thread only draws**; the agent and network calls run on worker
+  threads and report back with queued signals.
+- **Packaging:** `joblens.spec` (one-folder build, no console, icon, library
+  metadata, Streamlit/pyarrow/pytest excluded) → ~230 MB.
+  `JobLens.exe --self-test` imports everything, builds the window, and runs
+  one real web search + one structured LLM call.
 
 ### 3.6b Monitoring dashboard — `monitor.py` + `job_agent/monitoring.py` (Phase 8e)  ✅
 
@@ -397,6 +420,11 @@ Job-hunt-assistent-agent/
 ├── main.py                   the CLI — start here
 ├── app.py                    web UI (Streamlit)
 ├── monitor.py                monitoring dashboard (Streamlit + Altair)
+├── desktop_app.py            JobLens desktop app entry (+ --self-test)
+├── desktop/                  Qt UI: main_window, analyze/tracker/dashboard/settings tabs,
+│                             agent_worker (QThread), threads (thread pool helper)
+├── joblens.spec              PyInstaller recipe → dist/JobLens/JobLens.exe
+├── assets/ · scripts/        app icon + the script that draws it
 ├── compare_models.py         same task on several models, side by side
 ├── README.md                 setup + usage
 ├── tests/                    pytest suite (no LLM, temp database)
@@ -412,7 +440,9 @@ Job-hunt-assistent-agent/
 │   ├── cover_note.py         draft + approval graph
 │   ├── graph.py              main workflow (all phases wired together)
 │   ├── tracing.py            Langfuse / LangSmith / off switch
-│   └── monitoring.py         dashboard data layer (Langfuse API + tracker)
+│   ├── monitoring.py         dashboard data layer (Langfuse API + tracker)
+│   ├── paths.py              where files live (developer vs installed mode)
+│   └── settings.py           read/write settings (.env) from code
 └── data/                     git-ignored personal data
 ```
 

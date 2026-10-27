@@ -1,4 +1,4 @@
-# Build Plan — Job Hunt Assistant
+# Build Plan — JobLens (Job Hunt Assistant)
 
 Each phase adds **one working piece** and teaches **one or two agent
 concepts**. Every phase ends with a test script you can run yourself.
@@ -18,7 +18,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 6 | Full pipeline + CLI | Workflow graph, shared state | ✅ |
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ✅ |
 | 8 | Optional extras | Score in code, web UI, tracing, monitoring dashboard (n8n tried, removed) | ✅ |
-| 9 | Windows desktop app | Packaging, local-first distribution | ⏳ future |
+| 9 | Windows desktop app **JobLens** | Qt GUI, threads, model/view, packaging | ✅ |
 
 ---
 
@@ -183,7 +183,7 @@ render-and-look testing.
 - [x] Palette validated (light + dark); blue accent theme (`.streamlit/config.toml`)
 - [x] Rendered in a real browser and fixed 4 layout bugs; 6 tests (32 total)
 
-## Phase 9 — Windows desktop app 🚧
+## Phase 9 — Windows desktop app: JobLens ✅
 **Why:** chosen after comparing deployment costs (see progress.md,
 "Deployment decision"): the LLM runs on each user's own PC, so running
 costs are **$0**, and no user data is stored on a server.
@@ -199,7 +199,7 @@ signals & slots; keeping the GUI thread free; packaging Python apps.
 | 9c | **Analyze** tab: agent in a background thread, live log, approve / rewrite / reject | ✅ |
 | 9d | **Tracker** tab: jobs table, details, status changes | ✅ |
 | 9e | **Dashboard** tab: tracker charts + trace charts when Langfuse is up | ✅ |
-| 9f | Package with PyInstaller (folder + `.exe`), docs | 🚧 |
+| 9f | Name (**JobLens**) + icon; package with PyInstaller (folder + `.exe`); frozen self-test; docs | ✅ |
 | — | Optional: code-signing certificate (~$100–400/yr) to avoid the SmartScreen warning | not planned |
 
 ### Other ideas (not planned)

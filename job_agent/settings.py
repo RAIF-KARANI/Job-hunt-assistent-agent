@@ -6,7 +6,7 @@ for the user: pick a model, paste an API key, turn tracing on/off.
 
 How it fits together:
     - Settings live in paths.ENV_FILE (repo .env in developer mode,
-      %LOCALAPPDATA%\\JobHuntAssistant\\.env in the installed app).
+      %LOCALAPPDATA%\\JobLens\\.env in the installed app).
     - load_settings() copies them into os.environ at startup.
     - get_llm() reads os.environ on EVERY call, so save_settings() takes
       effect immediately - no restart needed.

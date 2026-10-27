@@ -37,7 +37,7 @@ QLabel#kpi   { font-size: 18pt; }
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Job Hunt Assistant")
+        self.setWindowTitle("JobLens — AI job application assistant")
         self.resize(1100, 760)
         self.setStyleSheet(STYLE)
 

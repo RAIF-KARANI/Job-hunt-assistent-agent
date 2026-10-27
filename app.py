@@ -1,5 +1,5 @@
 """
-Phase 8b: a web UI for the Job Hunt Assistant, built with Streamlit.
+Phase 8b: a web UI for JobLens (the Job Hunt Assistant), built with Streamlit.
 
 Run:
     streamlit run app.py          (opens http://localhost:8501)
@@ -38,7 +38,7 @@ from job_agent.paths import CHECKPOINT_DB, DATA_DIR
 from job_agent.tracker import STATUSES, get_job, list_jobs, update_status
 from job_agent.tracing import flush, record_decision, tracing_config
 
-st.set_page_config(page_title="Job Hunt Assistant", page_icon="🧭", layout="wide")
+st.set_page_config(page_title="JobLens", page_icon="🔎", layout="wide")
 
 
 # ---------------------------------------------------------------------------
@@ -278,7 +278,7 @@ def tracker_tab() -> None:
 # Page
 # ---------------------------------------------------------------------------
 
-st.title("🧭 Job Hunt Assistant")
+st.title("🔎 JobLens")
 analyze, tracker = st.tabs(["Analyze a job", "Tracker"])
 with analyze:
     analyze_tab()

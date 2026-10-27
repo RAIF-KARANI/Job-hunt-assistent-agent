@@ -1,5 +1,5 @@
 """
-Job Hunt Assistant - the command-line interface.
+JobLens (Job Hunt Assistant) - the command-line interface.
 
     python main.py <job-url>              full run: read, fit, research, save, cover note
     python main.py <job-url> --fresh      re-analyze even if the URL is already tracked

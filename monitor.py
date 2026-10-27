@@ -1,5 +1,5 @@
 """
-Monitoring dashboard for the Job Hunt Assistant (Streamlit + Altair).
+Monitoring dashboard for JobLens (Streamlit + Altair).
 
 Run:
     streamlit run monitor.py --server.port 8502     (the web UI uses 8501)
@@ -99,7 +99,7 @@ def show(chart):
 # ---------------------------------------------------------------------------
 
 st.title("📈 Agent Monitor")
-st.caption("How the Job Hunt Assistant behaves (from Langfuse traces) and what it "
+st.caption("How JobLens behaves (from Langfuse traces) and what it "
            "produced (from your tracker). Refreshes every 60 s.")
 
 # Filters: one row above everything.

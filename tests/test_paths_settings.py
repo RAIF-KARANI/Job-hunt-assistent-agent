@@ -25,8 +25,8 @@ def test_installed_mode_uses_localappdata(monkeypatch, tmp_path):
     monkeypatch.setattr("sys.frozen", True, raising=False)  # what PyInstaller sets
     p = importlib.reload(paths)
     assert p.IS_INSTALLED
-    assert p.APP_HOME == tmp_path / "JobHuntAssistant"
-    assert p.DB_PATH == tmp_path / "JobHuntAssistant" / "data" / "jobs.db"
+    assert p.APP_HOME == tmp_path / "JobLens"
+    assert p.DB_PATH == tmp_path / "JobLens" / "data" / "jobs.db"
     monkeypatch.undo()
     importlib.reload(paths)  # back to developer mode for the other tests
 

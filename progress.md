@@ -1,4 +1,4 @@
-# Progress Log — Job Hunt Assistant
+# Progress Log — JobLens (Job Hunt Assistant)
 
 A detailed record of **what was built in each phase, why, what went wrong,
 and what it teaches**. Read it top to bottom as a learning journal.
@@ -17,9 +17,9 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
-| 9 — Windows desktop app | 🚧 In progress | 9a data folder ✅ · 9b Qt window + Settings ✅ · 9c Analyze ✅ · 9d Tracker ✅ · 9e Dashboard ✅ · 9f packaging next |
+| 9 — Windows desktop app **JobLens** | ✅ Done | Qt app with 4 tabs, packaged as `JobLens.exe` (230 MB folder), frozen self-test passes |
 
-**Progress: every phase (0–8, incl. 8e monitoring dashboard) complete. 🎉 Next: a Windows desktop app (Phase 9). See "Deployment decision" and "Where to go next" at the end.**
+**Progress: every phase (0–9) complete. 🎉 The agent runs as a CLI, a web UI, and a packaged Windows app, JobLens. See "Where to go next" at the end.**
 
 ---
 
@@ -1103,7 +1103,7 @@ and watch the numbers move.
 
 ---
 
-## Phase 9 — Windows desktop app (Qt) 🚧
+## Phase 9 — Windows desktop app: JobLens (Qt) ✅
 
 **Goal:** double-click an icon and use the assistant in a native window,
 on a PC without Python. **Your choices:** native Qt (PySide6) rewrite of
@@ -1119,8 +1119,8 @@ instead of Qt's chart module (which needs the other ~150 MB).
 - **`job_agent/paths.py`**, the one place that decides where files live:
   | | Developer mode (from the repo) | Installed mode (packaged `.exe`) |
   |---|---|---|
-  | settings | `<repo>/.env` | `%LOCALAPPDATA%\JobHuntAssistant\.env` |
-  | data | `<repo>/data/` | `%LOCALAPPDATA%\JobHuntAssistant\data\` |
+  | settings | `<repo>/.env` | `%LOCALAPPDATA%\JobLens\.env` |
+  | data | `<repo>/data/` | `%LOCALAPPDATA%\JobLens\data\` |
   Installed mode is detected by `sys.frozen` (set by PyInstaller);
   `JOB_HUNT_HOME` overrides both (used for tests / a second profile).
   **Why:** an installed app's code folder may not be writable and it can be
@@ -1297,6 +1297,68 @@ rich-text widgets; tabs decoupled through signals.
 for metrics; embedding matplotlib in Qt; lazy loading; degrading
 gracefully when an optional service is down.
 
+### The name: JobLens
+Chosen to match your **CodeLens** project, so they read as a family: "a lens
+on each job" (reads the posting, checks your fit, shows the evidence).
+Used in the window title, `JobLens.exe`, the data folder
+(`%LOCALAPPDATA%\JobLens\`), the web UI and docs; internal names (repo,
+packages) unchanged. *Check for existing products/trademarks before
+publishing widely.*
+
+### 9f — Packaging: `JobLens.exe` ✅
+1. **Icon** (`scripts/make_icon.py` → `assets/joblens.png/.ico`): drawn in
+   code (blue lens + white check), at 4× size then shrunk for smooth edges;
+   the `.ico` holds 7 sizes (16–256 px) so Windows picks the right one.
+   Also set as the window/taskbar icon.
+2. **`paths.resource_path()`**: files *shipped with* the app (icon) live in
+   PyInstaller's unpack folder (`sys._MEIPASS`) when frozen, in the repo
+   otherwise. User data never goes there (that's `DATA_DIR`).
+3. **`joblens.spec`** (PyInstaller recipe): starts from `desktop_app.py`
+   and follows every import; one-folder build (fast start, easy to
+   inspect); `console=False`; icon; copies library **metadata** (some
+   libraries read their own version at import time); hidden imports for
+   providers imported inside functions; **excludes** Streamlit, Altair,
+   pyarrow, pytest, tkinter… (not used by the desktop app).
+   `build/` and `dist/` are git-ignored.
+4. **`JobLens.exe --self-test report.txt`**: a windowed `.exe` has no
+   console, and packaging bugs only exist in the frozen app, so it writes a
+   report: mode + data folder, bundled icon, imports, builds the workflow,
+   opens the tracker, model status, **one real web search, one real
+   structured LLM call**, builds the main window.
+
+**Results**
+| Check | Result |
+|---|---|
+| Build | ✅ ~3.5 min, **230 MB** folder (`JobLens.exe` 28 MB + `_internal\`), well under the 400–700 MB estimate thanks to the excludes |
+| Self-test, frozen, **installed mode** (AppData pointed at a temp folder so your real one isn't touched) | ✅ PASS: `mode: installed`, fresh `JobLens\data\jobs.db` + `checkpoints.db` created on first launch |
+| Real web search inside the `.exe` | ✅ 5 results |
+| Real structured LLM call inside the `.exe` | ✅ "Paris" |
+| All 4 tabs built | ✅ |
+
+**A real bug the self-test found (in developer mode, before packaging):**
+`RuntimeError: Signal source has been deleted`. Cause: the window starts a
+background connection check; when the program exited while that check was
+still running, the thread's final report hit already-deleted objects. In
+the app this would happen when closing right after opening. Fixes:
+the app (and the self-test) now **wait briefly for background tasks before
+exiting** (`QThreadPool.waitForDone`), and `threads.py` **keeps a reference
+to each running task** until it reports back (otherwise Python may
+garbage-collect a task's signal object mid-run, a known PySide pitfall).
+Verified: 0 occurrences in 3 runs (was 3/3).
+
+**Distribution:** zip the whole `dist\JobLens` folder (or publish it as a
+GitHub Release). Not code-signed → Windows SmartScreen shows "unknown
+publisher" on first run (More info → Run anyway); a certificate costs
+~$100–400/yr.
+
+**Concepts learned:** freezing a Python app (PyInstaller analysis →
+bundle); one-folder vs one-file builds; resources vs user data; metadata
+and hidden imports; excluding unused packages; smoke tests for packaged
+apps that actually *run* code; process-exit races with background threads.
+
+**Try it:** double-click `dist\JobLens\JobLens.exe`. It opens in installed
+mode with a fresh `%LOCALAPPDATA%\JobLens\`; add your resumes in Settings.
+
 ---
 
 ## Deployment decision
@@ -1330,8 +1392,10 @@ and nobody's resume stored on a server. See plan.md, Phase 9.
 
 ## Where to go next
 
-- **Phase 9 — Windows desktop app** (plan.md): package with PyInstaller,
-  first-run setup that checks Ollama, data in the user's AppData folder.
+- **Publish JobLens:** zip `dist\JobLens` and attach it to a GitHub
+  Release, with a screenshot in the README (good for your portfolio).
+- **Installer:** wrap the folder with Inno Setup (Start-menu shortcut,
+  uninstaller) instead of a zip.
 - **Write the verdict from the final facts** (after the judge), the last
   open item from 8a.
 - **Evaluation:** build a small dataset of jobs with the "right" answers
