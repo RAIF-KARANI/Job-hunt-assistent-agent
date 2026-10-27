@@ -81,6 +81,35 @@ class FitAnalysis(BaseModel):
     )
 
 
+class CompanyBrief(BaseModel):
+    """Short company research summary. Produced by the LLM in Phase 3."""
+
+    what_they_do: str = Field(
+        description="2-3 sentences: what the company does and for whom"
+    )
+    products: list[str] = Field(description="Main products or services")
+    size_and_stage: str = Field(
+        description="Employees, funding stage / public, founding year, HQ - "
+        "whatever the research found. 'Unknown' if not found."
+    )
+    recent_news: list[str] = Field(
+        description="Up to 4 notable recent events (launches, funding, "
+        "acquisitions, results), each with its date if known"
+    )
+    culture_and_values: list[str] = Field(
+        description="Stated values, work style (e.g. remote, async), mission"
+    )
+    cover_note_hooks: list[str] = Field(
+        description="2-3 specific, concrete facts (a recent launch, a product "
+        "direction, a stated value) that connect the company to the applicant's "
+        "role. NOT marketing slogans or generic descriptions."
+    )
+    sources: list[str] = Field(
+        description="URLs the facts came from. Only URLs that appeared in the "
+        "search results."
+    )
+
+
 class ResumeMatch(BaseModel):
     """A FitAnalysis plus which resume it was for. Built by code, not the LLM."""
 

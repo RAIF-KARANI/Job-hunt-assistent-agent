@@ -16,6 +16,6 @@ beautifulsoup4>=4.12    # strip HTML down to readable text
 # ---- Phase 2: reading resume PDFs ----
 pypdf>=5.0              # extract text from PDF files
 
-# ---- Added in later phases ----
-# ddgs                 # Phase 3: DuckDuckGo web search (free, no key)
-# tavily-python         # Phase 3 alternative: better results, needs TAVILY_API_KEY
+# ---- Phase 3: company research ----
+ddgs>=9.0               # DuckDuckGo web + news search (free, no API key)
+# langchain-tavily      # alternative: better results, needs TAVILY_API_KEY
