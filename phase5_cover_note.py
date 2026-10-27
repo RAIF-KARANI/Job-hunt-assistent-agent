@@ -23,7 +23,7 @@ if data is None:
 
 job, best = data["job"], data["best_match"]
 print(f"Cover note for #{data['id']}: {job.title} @ {job.company}")
-print(f"Using resume: {best.resume_name} (fit {best.analysis.fit_score}/100)\n")
+print(f"Using resume: {best.resume_name} (fit {best.fit_score}/100)\n")
 
 graph = build_cover_note_graph()
 

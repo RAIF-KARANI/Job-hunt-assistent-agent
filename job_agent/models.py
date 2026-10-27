@@ -58,23 +58,24 @@ class FitAnalysis(BaseModel):
     """How well ONE resume matches ONE job. Produced by the LLM in Phase 2."""
 
     # Field order matters: the model writes fields top to bottom, so asking for
-    # evidence (skills, gaps) BEFORE the score makes the score better grounded.
+    # evidence (skills, gaps) BEFORE the verdict makes the verdict better grounded.
+    #
+    # Phase 8a: there is deliberately NO fit_score field any more. The LLM
+    # used to invent a 0-100 number (qwen3:14b once gave 4/100 to a resume
+    # with 4 proven matches). Now the LLM only lists FACTS (proven matches,
+    # gaps), code verifies them, and code computes the score from them:
+    # see fit.compute_fit_score(). Don't ask an LLM for what code can compute.
     matching_skills: list[SkillMatch] = Field(
         description="ONLY requirements the resume proves. Never list a missing "
         "skill here; put those in missing_skills."
     )
     missing_skills: list[str] = Field(
-        description="Required skills/qualifications NOT shown anywhere in the resume"
+        description="Job requirements (required AND nice-to-have) NOT shown "
+        "anywhere in the resume, one per item"
     )
     talking_points: list[str] = Field(
         description="3-5 short, specific achievements or projects FROM THE RESUME "
         "(with numbers if the resume has them) worth highlighting for THIS job"
-    )
-    fit_score: int = Field(
-        ge=0,
-        le=100,
-        description="0-100. 80+ strong match, 60-79 good, 40-59 partial, <40 weak. "
-        "Weigh required skills much more than nice-to-haves.",
     )
     verdict: str = Field(
         description="One honest sentence: should the candidate apply, and why?"
@@ -151,3 +152,7 @@ class ResumeMatch(BaseModel):
     # Phase 7: real quotes the judge said don't prove the claim ("req - reason").
     # The default [] keeps older tracker rows (saved before Phase 7) loadable.
     unsupported_matches: list[str] = []
+    # Phase 8a: computed by code from the verified facts (fit.compute_fit_score).
+    # 0 / "" for rows saved before 8a until `python main.py rescore` is run.
+    fit_score: int = 0
+    score_breakdown: str = ""

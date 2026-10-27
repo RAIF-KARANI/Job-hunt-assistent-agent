@@ -124,15 +124,38 @@ retries; testing non-deterministic systems; measuring model choices.
 - [x] LLM-as-judge: second call checks each `SkillMatch` quote really proves the
       requirement; unproven claims move to gaps (`JUDGE_EVIDENCE` in `.env`)
 - [x] `compare_models.py` + 8b vs 14b comparison on job #1
-- [x] `pytest` suite: 18 tests for code-only parts (no LLM, temp DB)
+- [x] `pytest` suite: 19 tests for code-only parts (no LLM, temp DB)
 - [x] README with setup + usage
 - [ ] **Your turn:** run `compare_models.py` on 2–3 more jobs before switching models
 **Done when:** a broken URL or offline search doesn't crash the run. ✅
 
-## Phase 8 — Optional extras ⏳
-Pick any:
-- **n8n** trigger: a form/webhook in n8n calls `main.py`, emails you the draft
-- **Web UI** with Streamlit: paste URL, see steps live, approve with a button
-- **LangSmith** (or Langfuse, self-hosted) tracing to inspect every LLM call
-- **Status updates:** `python main.py status <id> applied`
-- **Follow-up reminders** for jobs applied > 7 days ago
+## Phase 8 — Optional extras 🚧
+You chose all four, built in this order.
+
+### 8a — Fit score computed in code ✅
+**Concepts:** deterministic scoring; facts vs. numbers; explainability.
+- [x] Remove `fit_score` from the LLM's `FitAnalysis`
+- [x] `compute_fit_score()`: proven / (proven + required gaps + 0.3 × nice-to-have gaps)
+- [x] `ResumeMatch.fit_score` + `score_breakdown`, set after the judge
+- [x] `python main.py rescore` (no LLM) + 7 tests
+- [ ] Next small fix: write the verdict from the final facts (after the judge)
+
+### 8b — Streamlit web UI ⏳
+**Concepts:** UI for agents; persistent checkpointer (SQLite) so a paused run
+survives page reloads; streaming steps to a UI.
+- [ ] Paste URL → live step log → draft with Approve / Edit / Reject buttons
+- [ ] Tracker table with status changes
+- [ ] Paste-text fallback in the UI
+
+### 8c — Tracing ⏳
+**Concepts:** observability; spans, tokens, latency per LLM call.
+- [ ] Langfuse (self-hostable, keeps data private) or LangSmith (cloud)
+- [ ] One config switch in `.env`, off by default
+
+### 8d — n8n integration ⏳
+**Concepts:** agents inside automation tools; exposing an agent as an API.
+- [ ] Small HTTP API around the workflow
+- [ ] n8n workflow: form/webhook → agent → email/notification with the draft
+
+### Other ideas (not planned)
+- Follow-up reminders for jobs applied > 7 days ago

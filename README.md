@@ -63,6 +63,7 @@ python main.py list                   # tracked jobs, best fit first
 python main.py show 3                 # details of one job (fit, gaps, company)
 python main.py status 3 applied       # researched → cover_note_ready → applied → interviewing → offer / rejected
 python main.py graph                  # workflow diagram (paste into https://mermaid.live)
+python main.py rescore                # recompute all fit scores in code (no LLM)
 ```
 
 At the approval step you can **[a]pprove** (saves to the tracker and

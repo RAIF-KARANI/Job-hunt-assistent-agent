@@ -43,8 +43,7 @@ def test_empty_evidence_is_rejected():
 def _match(*requirements):
     skills = [SkillMatch(requirement=r, resume_evidence="quote") for r in requirements]
     analysis = FitAnalysis(
-        matching_skills=skills, missing_skills=["Rust"], talking_points=[],
-        fit_score=80, verdict="ok",
+        matching_skills=skills, missing_skills=["Rust"], talking_points=[], verdict="ok",
     )
     return ResumeMatch(resume_name="cv", analysis=analysis)
 

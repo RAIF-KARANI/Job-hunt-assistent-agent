@@ -36,7 +36,7 @@ for m in all_matches:
     marker = "  <- best" if m is best else ""
     verified = len(m.analysis.matching_skills)
     print(
-        f"  {m.analysis.fit_score:>3}/100  {m.resume_name}"
+        f"  {m.fit_score:>3}/100  {m.resume_name}"
         f"  ({verified} verified, {len(m.rejected_matches)} rejected){marker}"
     )
 

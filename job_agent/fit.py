@@ -147,6 +147,48 @@ def apply_judgments(match: ResumeMatch, judgments: list[SkillJudgment]) -> Resum
     return match.model_copy(update={"analysis": analysis, "unsupported_matches": unsupported})
 
 
+# ---------------------------------------------------------------------------
+# Phase 8a: the fit score, computed by code
+# The LLM's job is to list facts (proven matches, gaps); code verifies them
+# and turns them into a number. Same input -> same score, every time, and the
+# breakdown shows exactly why.
+# ---------------------------------------------------------------------------
+
+# A missing nice-to-have hurts less than a missing requirement.
+NICE_TO_HAVE_WEIGHT = 0.3
+
+
+def _similar(text: str, other: str) -> bool:
+    """True if most of text's words appear in other (wording often differs)."""
+    words = set(_words(text))
+    return bool(words) and len(words & set(_words(other))) / len(words) >= 0.5
+
+
+def compute_fit_score(analysis: FitAnalysis, job: JobPosting) -> tuple[int, str]:
+    """score = proven / (proven + required gaps + 0.3 x nice-to-have gaps)."""
+    proven = len(analysis.matching_skills)
+    nice_gaps = sum(
+        1
+        for gap in analysis.missing_skills
+        if any(_similar(gap, nice) for nice in job.nice_to_have_skills)
+    )
+    required_gaps = len(analysis.missing_skills) - nice_gaps
+
+    total = proven + required_gaps + NICE_TO_HAVE_WEIGHT * nice_gaps
+    score = round(100 * proven / total) if total else 0
+    breakdown = (
+        f"{proven} proven / ({proven} proven + {required_gaps} required gaps + "
+        f"{NICE_TO_HAVE_WEIGHT} x {nice_gaps} nice-to-have gaps) = {score}"
+    )
+    return score, breakdown
+
+
+def score_match(match: ResumeMatch, job: JobPosting) -> ResumeMatch:
+    """Return a copy of the match with fit_score + breakdown filled in."""
+    score, breakdown = compute_fit_score(match.analysis, job)
+    return match.model_copy(update={"fit_score": score, "score_breakdown": breakdown})
+
+
 def pick_best_resume(
     job: JobPosting, resumes: dict[str, str]
 ) -> tuple[ResumeMatch, list[ResumeMatch]]:
@@ -162,12 +204,14 @@ def pick_best_resume(
             if match.unsupported_matches:
                 print(f"    [judge] {len(match.unsupported_matches)} claim(s) not "
                       "actually proven by their quote -> moved to gaps")
-        matches.append(match)
+        # Score LAST, after code verification and the judge, so the number is
+        # built only from facts that survived every check.
+        matches.append(score_match(match, job))
 
     # The decision is plain code: highest score wins; on a tie, the resume
     # with more VERIFIED matching skills wins.
     best = max(
         matches,
-        key=lambda m: (m.analysis.fit_score, len(m.analysis.matching_skills)),
+        key=lambda m: (m.fit_score, len(m.analysis.matching_skills)),
     )
     return best, matches

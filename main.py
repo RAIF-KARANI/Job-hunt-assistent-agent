@@ -8,6 +8,7 @@ Job Hunt Assistant - the command-line interface.
     python main.py show <id>              details of one job
     python main.py status <id> <status>   e.g. status 1 applied
     python main.py graph                  print the workflow as a Mermaid diagram
+    python main.py rescore                recompute all fit scores in code (no LLM)
 
 This file only talks to the user. All the logic lives in job_agent/.
 """
@@ -18,9 +19,10 @@ import uuid
 
 from langgraph.types import Command
 
+from job_agent.fit import score_match
 from job_agent.graph import build_job_hunt_graph
 from job_agent.llm import check_llm_ready
-from job_agent.tracker import STATUSES, get_job, list_jobs, update_status
+from job_agent.tracker import STATUSES, get_job, list_jobs, save_job, update_status
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +62,7 @@ def ask_for_posting_text(payload: dict) -> str:
     """The page couldn't be fetched: let the user paste the job description."""
     print("\nThe graph is PAUSED: I couldn't read that page "
           "(it may need a login or JavaScript).")
+    print(f"Reason: {payload['reason']}")
     print("Open it in your browser, copy the job description, paste it here,")
     print("then type END on its own line and press Enter.\n")
     lines = []
@@ -115,6 +118,21 @@ def show_list() -> None:
               f"{r['company'][:14]:<14} {r['title'][:55]}")
 
 
+def rescore() -> None:
+    """Recompute every tracked job's fit score in code - no LLM calls.
+
+    Possible only because Phase 4 stores the full analysis as JSON: when the
+    scoring formula changes, old results can be re-scored instantly.
+    """
+    for row in list_jobs():
+        data = get_job(row["id"])
+        best = score_match(data["best_match"], data["job"])
+        save_job(data["url"], data["job"], best, data["company_brief"])
+        print(f"#{row['id']:<3} {row['fit_score']:>3} -> {best.fit_score:>3}   "
+              f"{data['job'].title[:45]}")
+        print(f"      {best.score_breakdown}")
+
+
 def show(job_id: int) -> None:
     data = get_job(job_id)
     if data is None:
@@ -124,7 +142,8 @@ def show(job_id: int) -> None:
     print(f"URL:      {data['url']}")
     print(f"Status:   {data['status']}")
     print(f"Location: {job.location}   Salary: {job.salary}")
-    print(f"Fit:      {best.analysis.fit_score}/100 with {best.resume_name}")
+    print(f"Fit:      {best.fit_score}/100 with {best.resume_name}")
+    print(f"Score:    {best.score_breakdown or 'not computed yet - run: python main.py rescore'}")
     print(f"Verdict:  {best.analysis.verdict}")
     print("Gaps:     " + (", ".join(best.analysis.missing_skills) or "none found"))
     if brief:
@@ -142,7 +161,9 @@ if __name__ == "__main__":
         print(f"Job #{args[1]} -> {args[2]}")
     elif args == ["graph"]:
         print(build_job_hunt_graph().get_graph(xray=True).draw_mermaid())
-    elif args and args[0] not in ("list", "show", "status", "graph"):
+    elif args == ["rescore"]:
+        rescore()
+    elif args and args[0] not in ("list", "show", "status", "graph", "rescore"):
         run(args[0], fresh="--fresh" in args[1:])
     else:
         sys.exit(__doc__ + f"\nStatuses: {', '.join(STATUSES)}")

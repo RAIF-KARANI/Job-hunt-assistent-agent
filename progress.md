@@ -16,9 +16,9 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
-| 8 — Optional extras | ⏳ Optional | n8n, web UI, tracing… |
+| 8 — Optional extras | 🚧 In progress | 8a ✅ score in code · 8b web UI · 8c tracing · 8d n8n |
 
-**Progress: all 8 core phases (0–7) complete. 🎉 Phase 8 is optional extras.**
+**Progress: all 8 core phases (0–7) complete. 🎉 Phase 8 (extras) in progress.**
 
 ---
 
@@ -637,7 +637,74 @@ python main.py https://www.linkedin.com/jobs/view/123  # blocked → paste fallb
 
 ---
 
-## Phase 8 — Optional extras ⏳
-See [plan.md](plan.md#phase-8--optional-extras-). Ideas: n8n trigger, a
-Streamlit web UI, LangSmith/Langfuse tracing, computing `fit_score` in code,
-a SQLite checkpointer.
+## Phase 8 — Optional extras 🚧
+
+You chose all four extras, built in this order: **8a** fit score in code →
+**8b** Streamlit web UI → **8c** tracing → **8d** n8n.
+
+### 8a — Fit score computed in code ✅
+
+#### Goal
+Stop trusting the LLM's made-up 0–100 number (qwen3:14b gave **4/100** to a
+resume with 4 proven matches). Compute the score from the **verified facts**.
+
+#### What was done
+1. **Removed `fit_score` from `FitAnalysis`** (what the LLM fills in). The LLM
+   now only lists facts: proven matches (with quotes), gaps, talking points,
+   verdict. `missing_skills` now asks for nice-to-have gaps too.
+2. **`compute_fit_score(analysis, job)`** in `job_agent/fit.py`:
+   ```
+   score = proven / (proven + required gaps + 0.3 × nice-to-have gaps)
+   ```
+   A gap counts as nice-to-have if ≥ 50 % of its words appear in one of the
+   job's `nice_to_have_skills` (the wording is usually different).
+3. **`ResumeMatch.fit_score` + `score_breakdown`** — set by `score_match()`
+   **after** the code check and the judge, so the score uses only facts that
+   survived every check. The breakdown is printed during a run and in
+   `main.py show`, e.g.
+   `4 proven / (4 proven + 2 required gaps + 0.3 x 1 nice-to-have gaps) = 63`.
+4. **`python main.py rescore`** — recomputes every tracked job's score from
+   the stored JSON with **zero LLM calls**. That's possible only because
+   Phase 4 kept the full analysis as JSON.
+5. Old rows still load: the old LLM `fit_score` inside the stored JSON is
+   ignored, and the computed score defaults to 0 until `rescore`.
+6. **7 new tests** (`tests/test_fit_score.py`): 100 / 0 / empty edge cases,
+   required vs nice-to-have weighting, Job #1's real situation (= 63),
+   determinism, loading pre-8a rows. **26 tests total.**
+
+#### Results
+| Job | LLM's number | Code score on old facts | Code score after `--fresh` (judge applied) |
+|---|---|---|---|
+| #1 GitLab Python AI | 85 | 95 | **63** |
+| #3 GitLab Rust | 70 | **50** | — |
+| #4 ByteDance (yours!) | 95 | **90** | — |
+
+#### Lessons from the results
+- **The score can only be as good as its facts.** Job #1 first went *up*
+  (85 → 95) because its stored analysis was from before the Phase 7 judge and
+  still counted the two weak claims. After `--fresh` ran the judge, the score
+  dropped to the honest **63**, exactly what the unit test predicted.
+- **Stale free text:** the LLM's *verdict* for job #1 still says "worked in a
+  remote, cross-functional environment… only missing Ruby/Vue", because it
+  was written **before** the judge removed those claims. A summary generated
+  before a check isn't updated by the check. **Next fix:** generate the
+  verdict from the final facts (after the judge), or in code.
+- **The Rust job dropped 70 → 50.** The new number reflects the 5 real
+  required gaps (Rust among them) that the LLM's optimistic 70 glossed over.
+
+#### Concepts learned
+- **Don't ask an LLM for what code can compute.** LLMs are good at reading
+  and judging text, but unreliable at producing consistent numbers.
+- **Separate facts from judgments from numbers:** LLM lists facts → code and
+  the judge verify them → code turns them into a score.
+- **Explainability:** a score with a visible formula can be argued with and
+  improved; an LLM's "85" can't.
+- **Store raw results, derive the rest:** keeping the JSON let us re-score
+  history instantly when the formula changed.
+
+#### Try it
+```powershell
+python main.py rescore
+python main.py show 1          # see "Score:" with the breakdown
+python -m pytest tests/test_fit_score.py -v
+```

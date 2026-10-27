@@ -89,8 +89,8 @@ Field `description`s are sent to the LLM as instructions.
 |---|---|---|
 | `JobPosting` | LLM (Phase 1) | title, company, location, type, seniority, salary, summary, skills, responsibilities |
 | `SkillMatch` | LLM (Phase 2) | requirement + exact quote from the resume as evidence |
-| `FitAnalysis` | LLM (Phase 2) | matching skills, missing skills, talking points, score 0–100, verdict |
-| `ResumeMatch` | Code (Phase 2) | which resume + its verified FitAnalysis + rejected claims + judge-unproven claims |
+| `FitAnalysis` | LLM (Phase 2) | matching skills, missing skills, talking points, verdict (no score since 8a) |
+| `ResumeMatch` | Code (Phase 2) | which resume + verified FitAnalysis + rejected claims + judge-unproven claims + **`fit_score` / `score_breakdown` computed in code** (8a) |
 | `SkillJudgment` / `EvidenceReview` | LLM judge (Phase 7) | per claim: id, supported yes/no, reason |
 | `CompanyBrief` | LLM (Phase 3) | what they do, products, size, news, culture, cover-note hooks, sources |
 | `CoverNote` | LLM (Phase 5) | hooks used + note text |
@@ -101,7 +101,7 @@ Field `description`s are sent to the LLM as instructions.
 |---|---|---|---|---|
 | `posting.py` | Read posting | extracting fields | download + clean HTML | ✅ |
 | `resume.py` | Load resumes | — | PDF → text | ✅ |
-| `fit.py` | Analyze fit | judging each resume; **judge** reviewing the evidence | verifying quotes, applying verdicts, picking the winner | ✅ |
+| `fit.py` | Analyze fit | listing proven matches + gaps; **judge** reviewing the evidence | verifying quotes, applying verdicts, **computing the score** (8a), picking the winner | ✅ |
 | `research.py` | Research company | deciding searches, summarizing | running searches, verifying URLs | ✅ |
 | `tracker.py` | Save job | — | SQLite upsert, list, status updates | ✅ |
 | `cover_note.py` | Draft + approve | writing the note | number check, approval gate, saving | ✅ |
@@ -291,8 +291,10 @@ needing a column per field.
    (resume quotes, source URLs, news dates, numbers). Unverified claims are
    dropped and shown. Where checking needs *judgment*, a second, stricter
    LLM call (**LLM-as-judge**) reviews the first one's work.
-4. **LLM judges, code decides.** The LLM scores each option separately; plain
-   Python picks the winner. Transparent and reproducible.
+4. **LLM judges, code decides.** The LLM lists facts for each option
+   separately; code turns verified facts into a score (8a) and picks the
+   winner. Transparent and reproducible. Don't ask an LLM for what code can
+   compute.
 5. **Guardrails live in code, not prompts.** Tool-call limits, the approval
    gate — enforced by code so a misbehaving model can't bypass them.
 6. **Make the agent observable.** Every step prints what it's doing.
@@ -360,11 +362,11 @@ Job-hunt-assistent-agent/
 
 - **JavaScript-only / login-walled job pages** (e.g. LinkedIn) can't be
   fetched → the run pauses and asks you to paste the text.
-- **`fit_score` isn't recalculated after the judge** — it's the first LLM's
-  score; the judge only moves claims to gaps. The score is also the least
-  stable output (qwen3:14b once gave 4/100 to a resume with 4 proven
-  matches). A future fix: compute the score in code from proven vs missing
-  requirements.
+- **The verdict sentence can go stale:** the LLM writes it before the judge
+  runs, so it may still mention claims the judge removed. The *score* is
+  safe (computed in code after the judge, Phase 8a); the verdict text isn't.
+- **Score quality depends on the fact lists:** if the LLM forgets to list a
+  requirement as either proven or missing, the formula never sees it.
 - **The judge is an LLM too** — stricter and more reliable than the writer
   in tests, but not infallible.
 - **Unverified facts:** research facts without a URL or date (e.g. employee

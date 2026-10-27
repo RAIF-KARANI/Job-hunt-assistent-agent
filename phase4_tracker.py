@@ -27,7 +27,7 @@ def add(url: str) -> None:
 
     print("Step 2/4: comparing resumes...")
     best, _ = pick_best_resume(job, load_resumes())
-    print(f"  -> best: {best.resume_name} ({best.analysis.fit_score}/100)\n")
+    print(f"  -> best: {best.resume_name} ({best.fit_score}/100)\n")
 
     print("Step 3/4: researching the company (agent)...")
     try:
@@ -66,7 +66,7 @@ def show(job_id: int) -> None:
     print(f"URL:      {data['url']}")
     print(f"Status:   {data['status']}   (added {data['created_at']}, updated {data['updated_at']})")
     print(f"Location: {job.location}   Salary: {job.salary}")
-    print(f"Fit:      {best.analysis.fit_score}/100 with {best.resume_name}")
+    print(f"Fit:      {best.fit_score}/100 with {best.resume_name}")
     print(f"Verdict:  {best.analysis.verdict}")
     if brief:
         print(f"Company:  {brief.what_they_do}")

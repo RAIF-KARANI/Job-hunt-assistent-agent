@@ -37,7 +37,7 @@ for model in sys.argv[2:]:
 
     for m in all_matches:
         a = m.analysis
-        print(f"  {a.fit_score:>3}/100  {m.resume_name}: "
+        print(f"  {m.fit_score:>3}/100  {m.resume_name}: "
               f"{len(a.matching_skills)} proven, {len(m.rejected_matches)} fake quotes, "
               f"{len(m.unsupported_matches)} judged unproven, {len(a.missing_skills)} gaps")
     print(f"  best: {best.resume_name}   time: {elapsed:.0f}s")

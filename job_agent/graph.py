@@ -77,7 +77,7 @@ def check_tracker(state: JobHuntState) -> dict:
     print(f"\nAlready tracked as job #{job_id} - reusing saved analysis "
           f"(use --fresh to redo it).")
     print(f"  {data['job'].title} @ {data['job'].company}, "
-          f"fit {best.analysis.fit_score}/100 with {best.resume_name}")
+          f"fit {best.fit_score}/100 with {best.resume_name}")
     return {
         "reused": True,
         "job_id": job_id,
@@ -118,7 +118,7 @@ def analyze_fit(state: JobHuntState) -> dict:
     resumes = load_resumes()
     best, all_matches = pick_best_resume(state["job"], resumes)
     for m in all_matches:
-        print(f"  {m.analysis.fit_score:>3}/100  {m.resume_name}")
+        print(f"  {m.fit_score:>3}/100  {m.resume_name}   [{m.score_breakdown}]")
     print(f"  -> best: {best.resume_name}")
     print(f"  -> {best.analysis.verdict}")
     return {

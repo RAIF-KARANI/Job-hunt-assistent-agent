@@ -102,7 +102,7 @@ def save_job(
         "location": job.location,
         "seniority": job.seniority,
         "salary": job.salary,
-        "fit_score": best.analysis.fit_score,
+        "fit_score": best.fit_score,
         "best_resume": best.resume_name,
         "job_json": job.model_dump_json(),
         "fit_json": best.model_dump_json(),

@@ -29,10 +29,9 @@ def _job(title="Backend Engineer"):
 
 def _best(score=80):
     analysis = FitAnalysis(
-        matching_skills=[], missing_skills=[], talking_points=[],
-        fit_score=score, verdict="ok",
+        matching_skills=[], missing_skills=[], talking_points=[], verdict="ok",
     )
-    return ResumeMatch(resume_name="cv", analysis=analysis)
+    return ResumeMatch(resume_name="cv", analysis=analysis, fit_score=score)
 
 
 URL = "https://example.com/job/1"
