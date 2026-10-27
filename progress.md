@@ -16,7 +16,7 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 5 — Cover note + approval | ✅ Done | Graph pauses for your approve / edit / reject; nothing saved without approval |
 | 6 — Full pipeline + CLI | ✅ Done | `python main.py <url>` runs everything; tracked URLs skip to the cover note |
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
-| 8 — Optional extras | 🚧 In progress | 8a ✅ score in code · 8b web UI · 8c tracing · 8d n8n |
+| 8 — Optional extras | 🚧 In progress | 8a ✅ score in code · 8b ✅ web UI · 8c tracing · 8d n8n |
 
 **Progress: all 8 core phases (0–7) complete. 🎉 Phase 8 (extras) in progress.**
 
@@ -708,3 +708,88 @@ python main.py rescore
 python main.py show 1          # see "Score:" with the breakdown
 python -m pytest tests/test_fit_score.py -v
 ```
+
+### 8b — Streamlit web UI ✅
+
+#### Goal
+Use the assistant from a browser: paste a URL, watch the agent work, edit
+and approve the cover note with buttons, manage the tracker.
+
+#### The design problem
+Streamlit **re-runs the whole script on every click**. In `main.py`, the
+paused graph simply waits inside a `while` loop; in Streamlit, there is no
+loop to wait in, and normal variables are wiped on every click.
+
+**Solution: make the pause durable.**
+1. **SQLite checkpointer** (`langgraph-checkpoint-sqlite`): every step,
+   including the pause at `interrupt()`, is saved to `data/checkpoints.db`
+   (git-ignored, separate from `jobs.db`).
+2. **The `thread_id` lives in the page URL** (`?thread=...`).
+3. On every rerun, `graph.get_state(config)` tells us where the run is, and we
+   draw the matching screen:
+   | State | Screen |
+   |---|---|
+   | no thread in URL | start form |
+   | `interrupts` with `kind == "paste_posting"` | paste the job description |
+   | `interrupts` with `kind == "approval"` | draft + Approve / Rewrite / Reject |
+   | `next == ()` | done (saved or rejected) |
+   | `next` not empty, no interrupt | "stopped unexpectedly → Resume" |
+
+   This is the same `interrupt()` / `Command(resume=…)` mechanism as the CLI.
+   Only the "waiting" moved from a Python loop to a database.
+
+#### What was done
+1. **`app.py`** — two tabs:
+   - **Analyze a job:** URL form (+ "re-analyze" checkbox) → live log of the
+     agent's steps in an `st.status` box → approval screen with the fit score
+     (breakdown on hover), proven matches, gaps, company research, number
+     warnings, and an **editable** draft.
+   - **Tracker:** table of all jobs, details per job, status dropdown,
+     "Draft a cover note for this job" button.
+2. **Live progress:** `LogBuffer` temporarily replaces `sys.stdout`, so the
+   `print()`s our nodes already make show up in the browser. The graph runs
+   with `stream(stream_mode="updates")`, and the log is redrawn after each
+   node. Prints can come from worker threads, so the buffer only appends and
+   the main thread draws.
+3. **Edit before approving:** `review_node` now accepts an optional `text` in
+   the resume value. If present, your edited text replaces the draft, so
+   **your words** are what gets saved. The guardrail is unchanged.
+4. `@st.cache_resource` builds the graph and DB connection once per server
+   (`check_same_thread=False` because Streamlit uses several threads).
+5. `check_llm_ready()` errors are shown as a red message, not a crash.
+6. Switched to Streamlit's current `width="stretch"` (old
+   `use_container_width` is being phased out).
+
+#### Tests run (headless, with `streamlit.testing.v1.AppTest`)
+| Test | Result |
+|---|---|
+| Page loads, tabs, start form, no exceptions | ✅ |
+| Tracker: 3 jobs, columns, score 90/100 for #4, status loaded | ✅ |
+| Start job #1 → paused at approval: title, 63/100, 170-word draft, 3 buttons | ✅ |
+| **Reload:** new session with only `?thread=` → **same draft** shown | ✅ |
+| Reject → "nothing was saved"; tracker unchanged | ✅ |
+| Verified first with a toy graph: parent `get_state().interrupts` includes **subgraph** interrupts | ✅ |
+
+#### Problems hit
+| Problem | Fix |
+|---|---|
+| `pip install` kept timing out (slow PyPI connection) | Stopped the background install (two pips in one venv can corrupt it); you ran it in your own terminal with `--default-timeout=300 --retries 10` ✅ |
+
+#### Concepts learned
+- **UIs re-run; agents pause.** A web UI can't "wait" inside a Python loop,
+  so the agent's state must be **persisted** and looked up on every request.
+  That's the main reason checkpointers exist.
+- **`thread_id` = a resumable conversation.** Put it in the URL and any
+  page load can continue the same run.
+- **`get_state()` drives the UI:** `interrupts`, `next` and `values` tell
+  you exactly which screen to show.
+- **Human edits beat LLM rewrites** for small changes; offer both.
+- **Test UIs headlessly** (`AppTest`) instead of only clicking around.
+
+#### Try it
+```cmd
+.venv\Scripts\activate.bat
+streamlit run app.py
+```
+Then try: reload the page while the draft is showing (it's still there), edit
+a sentence yourself and Approve, or use "Draft a cover note" in the Tracker tab.

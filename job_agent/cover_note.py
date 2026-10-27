@@ -200,7 +200,12 @@ def review_node(state: CoverNoteState) -> dict:
             "word_count": len(state["draft"].split()),
         }
     )
-    return {"decision": answer["decision"], "feedback": answer.get("feedback", "")}
+    update = {"decision": answer["decision"], "feedback": answer.get("feedback", "")}
+    # Phase 8b: the web UI lets you edit the text yourself before approving.
+    # Your edited version replaces the draft, so YOUR words are what gets saved.
+    if answer.get("text"):
+        update["draft"] = answer["text"]
+    return update
 
 
 def route_after_review(state: CoverNoteState) -> str:

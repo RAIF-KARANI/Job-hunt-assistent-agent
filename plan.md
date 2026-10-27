@@ -140,12 +140,15 @@ You chose all four, built in this order.
 - [x] `python main.py rescore` (no LLM) + 7 tests
 - [ ] Next small fix: write the verdict from the final facts (after the judge)
 
-### 8b — Streamlit web UI ⏳
+### 8b — Streamlit web UI ✅
 **Concepts:** UI for agents; persistent checkpointer (SQLite) so a paused run
-survives page reloads; streaming steps to a UI.
-- [ ] Paste URL → live step log → draft with Approve / Edit / Reject buttons
-- [ ] Tracker table with status changes
-- [ ] Paste-text fallback in the UI
+survives page reloads; streaming steps to a UI; headless UI tests.
+- [x] Paste URL → live step log → draft with Approve / Rewrite / Reject buttons
+- [x] Edit the draft text directly before approving
+- [x] Tracker table, score breakdown, status changes, "draft a note" per job
+- [x] Paste-text fallback in the UI
+- [x] SQLite checkpointer + thread id in the URL → reload-safe
+- [x] Tested headlessly with Streamlit's `AppTest` (incl. reload + reject)
 
 ### 8c — Tracing ⏳
 **Concepts:** observability; spans, tokens, latency per LLM call.

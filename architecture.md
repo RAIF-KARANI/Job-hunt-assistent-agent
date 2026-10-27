@@ -121,6 +121,24 @@ A command-line program that only talks to the user; all logic is in
 
 The `phaseN_*.py` scripts remain as learning examples of each phase alone.
 
+### 3.5 Web UI — `app.py` (Phase 8b)  ✅
+`streamlit run app.py`. The same graph as the CLI, but compiled with a
+**SQLite checkpointer** (`data/checkpoints.db`), because Streamlit re-runs the
+script on every click and can't wait inside a Python loop:
+
+```
+click ─► script re-runs ─► thread_id from URL ─► graph.get_state(config)
+                                                     │
+          ┌──────────────────┬───────────────────────┼───────────────────┐
+     no thread          interrupt kind=           interrupt kind=     next == ()
+     → start form       paste_posting → paste     approval → draft    → done
+                                                  + Approve/Rewrite/Reject
+button ─► graph.stream(Command(resume=...)) ─► log redrawn per node ─► st.rerun()
+```
+
+A paused run survives reloads and restarts. The approval screen lets you
+edit the draft directly; `review_node` saves your edited text.
+
 ---
 
 ## 4. The research agent in detail (Phase 3)
@@ -324,6 +342,7 @@ Job-hunt-assistent-agent/
 ├── phase4_tracker.py         Phase 4 CLI: add / list / show / status
 ├── phase5_cover_note.py      Phase 5: draft + approve a note for a tracked job
 ├── main.py                   the CLI — start here
+├── app.py                    web UI (Streamlit)
 ├── compare_models.py         same task on several models, side by side
 ├── README.md                 setup + usage
 ├── tests/                    pytest suite (no LLM, temp database)
@@ -374,4 +393,7 @@ Job-hunt-assistent-agent/
 - **DuckDuckGo** may rate-limit heavy use and returns only short snippets;
   failed searches are retried by the agent.
 - **Speed:** a full run is ~3 min on qwen3:8b (~4× slower on qwen3:14b).
-- **In-memory checkpointer:** a paused run doesn't survive closing the program.
+- **In-memory checkpointer in the CLI:** a paused `main.py` run doesn't
+  survive closing the terminal (the web UI uses SQLite and does).
+- **`data/checkpoints.db` grows** with every run; it's safe to delete when
+  no run is paused.

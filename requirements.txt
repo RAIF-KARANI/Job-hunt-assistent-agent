@@ -22,3 +22,7 @@ ddgs>=9.0               # DuckDuckGo web + news search (free, no API key)
 
 # ---- Phase 7: testing ----
 pytest>=8.0             # run: python -m pytest
+
+# ---- Phase 8b: web UI ----
+streamlit>=1.40                    # run: streamlit run app.py
+langgraph-checkpoint-sqlite>=2.0   # paused runs saved to disk (survive page reloads)

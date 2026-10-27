@@ -66,6 +66,20 @@ python main.py graph                  # workflow diagram (paste into https://mer
 python main.py rescore                # recompute all fit scores in code (no LLM)
 ```
 
+### Web UI
+
+```powershell
+streamlit run app.py          # opens http://localhost:8501
+```
+
+Paste a URL, watch the agent's steps live, then edit the draft yourself
+and **Approve**, ask for a rewrite, or **Reject**. The **Tracker** tab shows
+all jobs, their score breakdown and status. A paused run is saved to
+`data/checkpoints.db`, so you can reload the page or come back later with
+the same URL.
+
+### CLI approval
+
 At the approval step you can **[a]pprove** (saves to the tracker and
 `data/cover_notes/`), **[e]dit** (describe changes and get a new draft), or
 **[r]eject** (nothing is saved).
@@ -125,6 +139,7 @@ See [architecture.md](architecture.md) for the full picture.
 
 ```
 main.py               CLI: start here
+app.py                web UI (Streamlit)
 compare_models.py     run the same task on several models
 phaseN_*.py           the learning steps, each runnable on its own
 job_agent/
