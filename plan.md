@@ -19,6 +19,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 7 | Polish | Error handling, observability, LLM-as-judge, tests | ✅ |
 | 8 | Optional extras | Score in code, web UI, tracing, monitoring dashboard (n8n tried, removed) | ✅ |
 | 9 | Windows desktop app **JobLens** | Qt GUI, threads, model/view, packaging | ✅ |
+| 10 | Installer + first-run setup | Hardware detection, setup wizard, Inno Setup, uninstall | ✅ |
 
 ---
 
@@ -201,6 +202,20 @@ signals & slots; keeping the GUI thread free; packaging Python apps.
 | 9e | **Dashboard** tab: tracker charts + trace charts when Langfuse is up | ✅ |
 | 9f | Name (**JobLens**) + icon; package with PyInstaller (folder + `.exe`); frozen self-test; docs | ✅ |
 | — | Optional: code-signing certificate (~$100–400/yr) to avoid the SmartScreen warning | not planned |
+
+## Phase 10 — Installer + first-run setup ✅
+**Why:** users downloading JobLens got a zip, had to install Ollama and pull a
+model in a terminal, and had no proper uninstall.
+**Decisions:** user chooses local AI or API; for local, JobLens checks the PC
+and recommends models; Inno Setup installer; uninstaller asks to keep data.
+
+| Step | What | Status |
+|---|---|---|
+| 10a | `system_check.py`: RAM / GPU (nvidia-smi) / disk → model advice; rules calibrated on a real `ollama ps` measurement | ✅ |
+| 10b | `ollama_setup.py`: detect / start Ollama, winget install, model download with streamed progress | ✅ |
+| 10c | First-run **Setup Wizard** (local vs API branches; re-runnable from Settings) | ✅ |
+| 10d | `installer/joblens.iss` (Inno Setup): per-user install, shortcuts, Apps entry, uninstaller asks to keep data; long-path guard | ✅ |
+| 10e | `scripts/build_installer.py`: PyInstaller → self-test gate → installer; real install/uninstall round trip; release v0.2.0 | ✅ |
 
 ### Other ideas (not planned)
 - Follow-up reminders for jobs applied > 7 days ago

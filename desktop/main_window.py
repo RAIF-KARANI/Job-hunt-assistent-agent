@@ -54,17 +54,28 @@ class MainWindow(QMainWindow):
         self.analyze_tab.jobs_changed.connect(self.tracker_tab.refresh)
         self.analyze_tab.jobs_changed.connect(self.dashboard_tab.draw_tracker)
         self.tracker_tab.draft_requested.connect(self.draft_for)
+        self.settings_tab.wizard_requested.connect(self.run_setup_wizard)
         self.tabs.addTab(self.dashboard_tab, "Dashboard")
         self.tabs.addTab(self.settings_tab, "Settings")
         self.setCentralWidget(self.tabs)
 
+        from job_agent import __version__
         mode = "installed" if paths.IS_INSTALLED else "developer"
-        self.statusBar().showMessage(f"{mode} mode · data: {paths.DATA_DIR}")
+        self.statusBar().showMessage(f"JobLens {__version__} · {mode} mode · data: {paths.DATA_DIR}")
 
         # First run: nothing to work with yet -> start on the Settings tab.
         if not self.settings_tab.is_ready():
             self.tabs.setCurrentWidget(self.settings_tab)
         self.settings_tab.check_connection()
+
+    def run_setup_wizard(self):
+        """Open the Setup Wizard; on Finish, show the new settings everywhere."""
+        from desktop.setup_wizard import SetupWizard
+
+        if SetupWizard(self).exec():
+            self.settings_tab.load()
+            self.settings_tab.check_connection()
+            self.tabs.setCurrentWidget(self.analyze_tab)
 
     def draft_for(self, url: str):
         """Tracker -> Analyze: a tracked URL skips straight to drafting."""

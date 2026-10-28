@@ -18,8 +18,9 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 7 — Polish | ✅ Done | Retries, paste fallback, LLM-as-judge, 19 tests, README, model comparison |
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
 | 9 — Windows desktop app **JobLens** | ✅ Done | Qt app with 4 tabs, packaged as `JobLens.exe` (230 MB folder), frozen self-test passes |
+| 10 — Installer + first-run setup | ✅ Done | `JobLens-Setup-0.2.0.exe` (81 MB), PC check + model advice, setup wizard, uninstaller asks to keep data |
 
-**Progress: every phase (0–9) complete. 🎉 The agent runs as a CLI, a web UI, and a packaged Windows app, JobLens. See "Where to go next" at the end.**
+**Progress: every phase (0–10) complete. 🎉 The agent runs as a CLI, a web UI, and a packaged Windows app, JobLens. See "Where to go next" at the end.**
 
 ---
 
@@ -1361,6 +1362,116 @@ mode with a fresh `%LOCALAPPDATA%\JobLens\`; add your resumes in Settings.
 
 ---
 
+## Phase 10 — Installer + first-run setup ✅
+
+**Your questions that started it:** *Does the app set up everything
+automatically? Does a user need Docker? Is there a JobLens-Setup.exe? How
+does uninstall work, and can it ask whether to keep the data?*
+**Honest answers before Phase 10:** no (users had to install Ollama and run
+`ollama pull` in a terminal); no Docker needed (only for optional Langfuse);
+no installer (just a zip); uninstall = delete folders by hand.
+**Your design:** let the user choose **local AI or an API**; for local,
+**analyze their PC and suggest models**.
+
+### 10a — System check + model advice (`job_agent/system_check.py`)
+- `detect_system()`: RAM (Windows API via `ctypes`), GPU + memory, free
+  disk, CPU threads. `recommend_models()`: **pure rules**, unit-tested with
+  made-up PCs.
+- **Trap found:** Windows' standard GPU query (`Win32_VideoController.AdapterRAM`)
+  reported your RTX 4060 as **4 GB**; it's a 32-bit field capped at 4 GB.
+  `nvidia-smi` gives the truth (8188 MB). The check prefers `nvidia-smi`
+  and never promises "fast" based on the capped number.
+- **Boundary bug found on real hardware:** first rule estimated qwen3:8b
+  needs 8.0 GB; the GPU has 7.996 GB → wrongly "slower". The unit test
+  used a round 8.0 and missed it. **Measured instead of guessed:** `ollama
+  ps` showed qwen3:8b using **6.3 GB, 100 % GPU** → rule recalibrated to
+  "download size + 1.2 GB", keeping 0.5 GB VRAM for the display. Now your
+  PC: ★ qwen3:8b *fast*; qwen3:14b *slower* (matches the 3.8× measured in 7).
+- 7 tests (this laptop with the real 7.996 GB, big GPU, CPU-only, small GPU,
+  low RAM → API, capped Windows number, no disk).
+
+### 10b — Ollama helper (`job_agent/ollama_setup.py`)
+- Find `ollama.exe` (PATH or `%LOCALAPPDATA%\Programs\Ollama`), check /
+  start the server (`ollama serve`, no console window), list models.
+- Install with **winget** (`--scope user`, no admin, non-interactive);
+  fallback: open the download page.
+- Download via Ollama's HTTP API (`/api/pull`, streamed JSON lines) →
+  `parse_pull_line()` → progress message + fraction. Small layers showed
+  "0.00 of 0.00 GB" → sizes now pick GB / MB / KB.
+- Verified against the real Ollama (streamed manifest → 5.23 GB → verify →
+  success). 6 tests.
+
+### 10c — First-run Setup Wizard (`desktop/setup_wizard.py`)
+```
+Welcome → How should JobLens run the AI?
+            ├─ On this PC → PC check + model list (✔ fast / ⚠ slower / ✖ too big, ★ recommended)
+            │               [Install Ollama] (QProcess + winget) → [Download model] ▓▓▓░ 62%
+            └─ Cloud API  → paste key → [Test key]
+        → Add resumes → Done (settings saved only on Finish)
+```
+- `QWizard` concepts: pages, `nextId()` branching, `isComplete()` +
+  `completeChanged` (Next unlocks only when the step is really done),
+  `registerField()`.
+- No blocking: PC check on the thread pool, installer as a `QProcess`
+  (streams winget's output into a log box), download on a `QThread` with
+  progress signals.
+- Opens on first launch (`setup_needed()`: never finished + no resumes),
+  from `desktop_app.main()`, not the window constructor, so tests and
+  `--self-test` never block on it. "Run setup wizard…" button in Settings.
+- Tested by driving it offscreen in a **fresh temp profile**: recommended
+  qwen3:8b, Ollama ✔, model ✔ → Next unlocked; resumes page locked until a
+  PDF; Finish saved `LLM_PROVIDER=ollama, LLM_MODEL=qwen3:8b,
+  SETUP_DONE=true`; API branch locked until a key. 6 GUI tests.
+- **Test-isolation bug fixed:** `save_settings()` also writes `os.environ`,
+  so the wizard + 9a tests leaked `LLM_PROVIDER=anthropic` and a fake key
+  into later tests. Now restored by `monkeypatch`; verified afterwards.
+
+### 10d — `JobLens-Setup.exe` (`installer/joblens.iss`, Inno Setup)
+- Per user, **no admin** (`PrivilegesRequired=lowest`) →
+  `%LOCALAPPDATA%\Programs\JobLens`; Start-menu entry, optional desktop
+  shortcut, "Launch JobLens" at the end; closes a running JobLens first.
+- A fixed **AppId** (GUID) so future versions upgrade in place.
+- **Uninstaller asks:** *"Do you want to KEEP your JobLens data?"* Yes keeps
+  `%LOCALAPPDATA%\JobLens\`, No deletes it. Silent uninstalls keep it.
+  Ollama and models are never touched.
+- **Long-path guard:** Windows paths max out at 260 characters; JobLens'
+  deepest file adds ~105. The installer refuses install folders over 140
+  characters with a clear message.
+
+### 10e — One-command build + real install test
+- `job_agent/__version__ = "0.2.0"`: one place for the version (status
+  bar shows it; installer reads it).
+- **`python scripts/build_installer.py`**: PyInstaller → **self-test gate**
+  (frozen app in installed mode, temp AppData; no installer if it fails) →
+  Inno Setup → `dist\JobLens-Setup-0.2.0.exe` (**81 MB**, smaller than the
+  111 MB zip; better compression).
+- **Real install / uninstall round trip** (silent, temp folder, no shortcuts):
+  | Check | Result |
+  |---|---|
+  | First attempt | ✖ exit 5: **path longer than 260 chars** (my test folder was ~170 chars deep) → led to the long-path guard |
+  | Install into a normal-length folder | ✅ registered as *JobLens 0.2.0, Raif Karani* in Apps |
+  | Installed app self-test | ✅ PASS (web search 5 results, LLM "Paris") |
+  | Silent uninstall | ✅ folder + registry entry removed; test leftovers cleaned |
+
+### Problems hit (and what they taught)
+| Problem | Lesson |
+|---|---|
+| GPU memory reported as 4 GB | Know your data source's limits; prefer the vendor tool |
+| 7.996 GB vs a rule of 8.0 | Real numbers aren't round; **measure** (ollama ps) instead of guessing |
+| Tests leaking settings into later tests | Anything that writes global state must be restored |
+| Install failed: path > 260 chars | Windows path limit; guard it in the installer |
+| `#13#10` at a line start broke compiling | Inno's preprocessor treats a leading `#` as a directive |
+| Git Bash rewrote `/DAppVersion=`, and `cmd //c` misbehaved | Shell quirks: run Windows tools from Python (`subprocess`) in build scripts |
+
+**73 tests total.**
+
+**What a user does now:** download `JobLens-Setup-0.2.0.exe` → run it (no
+admin) → wizard: local (PC check → install Ollama → download model) or
+API key → add resumes → analyze jobs. Uninstall from Windows Settings → Apps,
+choosing whether to keep their data.
+
+---
+
 ## Deployment decision
 
 Asked: *"If I turned this into a website or a Windows app, what would I pay?"*
@@ -1392,10 +1503,10 @@ and nobody's resume stored on a server. See plan.md, Phase 9.
 
 ## Where to go next
 
-- **Publish JobLens:** zip `dist\JobLens` and attach it to a GitHub
-  Release, with a screenshot in the README (good for your portfolio).
-- **Installer:** wrap the folder with Inno Setup (Start-menu shortcut,
-  uninstaller) instead of a zip.
+- **Make the repo public** so anyone can download the installer (now only
+  you can: the repo is private), and add a screenshot to the README.
+- **Code signing** (~$100–400/yr) to remove the SmartScreen warning.
+- **Auto-update:** check GitHub Releases for a newer version on startup.
 - **Write the verdict from the final facts** (after the judge), the last
   open item from 8a.
 - **Evaluation:** build a small dataset of jobs with the "right" answers

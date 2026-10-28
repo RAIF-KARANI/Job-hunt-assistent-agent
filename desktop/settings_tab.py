@@ -29,6 +29,8 @@ PROVIDERS = [("Local: Ollama (free, private)", "ollama"),
 class SettingsTab(QWidget):
     # Emitted after saving, so other tabs can refresh (e.g. resume count).
     settings_changed = Signal()
+    # Asks the main window to open the Setup Wizard (Phase 10c).
+    wizard_requested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -72,6 +74,11 @@ class SettingsTab(QWidget):
         check_row = QHBoxLayout()
         self.check_button = QPushButton("Check connection")
         self.check_button.clicked.connect(self.check_connection)
+        wizard_button = QPushButton("Run setup wizard...")
+        wizard_button.setToolTip("Check this PC, get a recommended model, install Ollama, "
+                                 "or switch to an API key")
+        wizard_button.clicked.connect(self.wizard_requested)
+        check_row.addWidget(wizard_button)
         self.status = QLabel("")
         self.status.setWordWrap(True)
         self.status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)

@@ -122,6 +122,15 @@ def main() -> int:
     app.setWindowIcon(QIcon(str(resource_path("assets/joblens.png"))))  # title bar + taskbar
     window = MainWindow()
     window.show()
+
+    # First launch: open the Setup Wizard once the window is on screen.
+    # (Here, not in MainWindow, so tests and --self-test never block on it.)
+    from PySide6.QtCore import QTimer
+
+    from desktop.setup_wizard import setup_needed
+    if setup_needed():
+        QTimer.singleShot(300, window.run_setup_wizard)
+
     code = app.exec()  # Qt's event loop: waits for clicks, redraws, until closed
     # Let short background tasks (e.g. a connection check) finish before
     # Python tears everything down, or they'd report to deleted objects.

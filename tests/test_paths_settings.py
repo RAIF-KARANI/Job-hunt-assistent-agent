@@ -43,7 +43,10 @@ def test_save_settings_writes_file_and_applies_now(monkeypatch, tmp_path):
     env_file = tmp_path / ".env"
     monkeypatch.setattr(settings, "ENV_FILE", env_file)
     monkeypatch.setattr(settings, "APP_HOME", tmp_path)
+    # save_settings() writes os.environ too: register both keys so monkeypatch
+    # restores them after the test (LLM_PROVIDER used to leak into later tests).
     monkeypatch.setenv("LLM_MODEL", "qwen3:8b")
+    monkeypatch.setenv("LLM_PROVIDER", os.environ.get("LLM_PROVIDER", "ollama"))
 
     settings.save_settings({"LLM_PROVIDER": "anthropic", "LLM_MODEL": "claude-haiku-5-5"})
 
