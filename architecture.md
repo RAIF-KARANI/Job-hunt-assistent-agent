@@ -172,12 +172,16 @@ JobLens.exe (PyInstaller: Python + Qt + libraries in one folder)
         ├── Analyze   ── signals ──► AgentWorker on a QThread ──► same LangGraph workflow
         │                ◄── log / paused / finished ──           (SQLite checkpointer)
         ├── Tracker   ── JobsModel → QSortFilterProxyModel → QTableView
-        ├── Dashboard ── monitoring.py (shared with monitor.py) → matplotlib in Qt
+        ├── Dashboard ── monitoring.py → local run log (runlog.py) → matplotlib in Qt
         └── Settings  ── settings.py (.env) · llm_status() · resume PDFs
 ```
 
 - **Same agent, fourth front door** (CLI, web UI, desktop; `job_agent/`
   unchanged).
+- **Built-in evals (Phase 11):** `tracing_config()` always adds a
+  `RunRecorder` callback that writes runs, steps, LLM calls, tokens and
+  quality checks to the tracker database; the Analyze tab saves your
+  ratings; the Dashboard charts it all. No Langfuse/Docker needed.
 - **Developer vs installed mode** (`paths.py`): repo `data/` + `.env` when run
   from source; `%LOCALAPPDATA%\JobLens\` when frozen.
 - **GUI thread only draws**; the agent and network calls run on worker
@@ -440,7 +444,10 @@ Job-hunt-assistent-agent/
 │   ├── cover_note.py         draft + approval graph
 │   ├── graph.py              main workflow (all phases wired together)
 │   ├── tracing.py            Langfuse / LangSmith / off switch
-│   ├── monitoring.py         dashboard data layer (Langfuse API + tracker)
+│   ├── monitoring.py         dashboard data layer (run log, Langfuse API, tracker)
+│   ├── runlog.py             built-in run log + quality checks + feedback (Phase 11)
+│   ├── system_check.py       PC check + model advice (Phase 10)
+│   ├── ollama_setup.py       detect / install Ollama, pull models (Phase 10)
 │   ├── paths.py              where files live (developer vs installed mode)
 │   └── settings.py           read/write settings (.env) from code
 └── data/                     git-ignored personal data

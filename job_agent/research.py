@@ -166,8 +166,13 @@ URL_PATTERN = re.compile(r"https?://[^\s)\]>\"']+")
 DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 
 
-def research_company(company: str, role_context: str = "") -> CompanyBrief:
-    """Run the research agent, then turn its notes into a verified CompanyBrief."""
+def research_company(company: str, role_context: str = "",
+                     stats: dict | None = None) -> CompanyBrief:
+    """Run the research agent, then turn its notes into a verified CompanyBrief.
+
+    stats (Phase 11b): if a dict is passed, it's filled with how many invented
+    URLs / dates the verification removed - quality data for the run log.
+    """
     request = f"Research the company '{company}'."
     if role_context:
         request += f" The applicant is applying for: {role_context}."
@@ -204,6 +209,10 @@ def research_company(company: str, role_context: str = "") -> CompanyBrief:
     if news != brief.recent_news:
         print("  [verify] removed invented date(s) from news items")
 
+    if stats is not None:
+        stats["invented_urls"] = len(brief.sources) - len(verified)
+        stats["invented_dates"] = sum(item.count("date unknown") for item in news) - sum(
+            item.count("date unknown") for item in brief.recent_news)
     return brief.model_copy(update={"sources": verified, "recent_news": news})
 
 

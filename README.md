@@ -112,6 +112,13 @@ code-signed): **More info → Run anyway**.
    the model with a progress bar.
 3. Add your resume PDFs. Done. (Re-run it any time: Settings → *Run setup wizard*.)
 
+**Built-in evals (no Docker):** every run is recorded on your PC (steps,
+LLM calls, tokens, timings) together with **automatic quality checks**
+(fake resume quotes caught, claims the judge rejected, evidence pass rate,
+invented URLs/dates removed, failed searches). After each run you can
+**rate** the fit score and the cover note. The **Dashboard** tab charts all
+of it; nothing is sent anywhere.
+
 **Uninstall:** Windows Settings → Apps → JobLens → Uninstall. It asks
 whether to **keep your data** (`%LOCALAPPDATA%\JobLens\`: tracker, cover
 notes, resume copies, settings). Ollama and downloaded models are separate
@@ -214,7 +221,10 @@ job_agent/
   cover_note.py       draft + approval subgraph
   graph.py            the main workflow
   tracing.py          Langfuse / LangSmith switch
-  monitoring.py       data layer for the dashboard (Langfuse API + tracker)
+  monitoring.py       data layer for the dashboards (run log, Langfuse API, tracker)
+  runlog.py           built-in run log, quality checks, feedback (local SQLite)
+  system_check.py     PC check + model recommendations
+  ollama_setup.py     detect / install Ollama, download models
 desktop_app.py        JobLens desktop app entry point (+ --self-test)
 desktop/              Qt tabs: analyze, tracker, dashboard, settings; agent worker thread
 joblens.spec          PyInstaller recipe for JobLens.exe

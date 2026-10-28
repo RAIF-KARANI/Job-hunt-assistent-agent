@@ -19,12 +19,13 @@ import re
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QCheckBox, QDialog, QDialogButtonBox, QGroupBox, QHBoxLayout, QLabel,
-    QLineEdit, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton,
+    QButtonGroup, QCheckBox, QDialog, QDialogButtonBox, QGroupBox, QHBoxLayout, QLabel,
+    QLineEdit, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QRadioButton,
     QSplitter, QTextBrowser, QTextEdit, QVBoxLayout, QWidget,
 )
 
 from desktop.agent_worker import AgentWorker
+from job_agent import runlog
 from job_agent.llm import llm_status
 
 STEP_LINE = re.compile(r"^\[(\d)/5\]\s*(.*)")
@@ -58,6 +59,8 @@ class AnalyzeTab(QWidget):
     paste_requested = Signal(str)     # pasted job text (when a page can't be read)
     # Tells other tabs (Tracker, Dashboard) that the tracker changed.
     jobs_changed = Signal()
+    # Phase 11c: a rating was saved -> the Dashboard can refresh.
+    feedback_saved = Signal()
 
     def __init__(self):
         super().__init__()
@@ -104,6 +107,7 @@ class AnalyzeTab(QWidget):
         split.addWidget(self._build_review())
         split.setSizes([420, 680])
         layout.addWidget(split, 1)
+        layout.addWidget(self._build_feedback())
 
     def _build_review(self) -> QWidget:
         self.review = QGroupBox("Review the cover note (the agent is paused, waiting for you)")
@@ -155,6 +159,71 @@ class AnalyzeTab(QWidget):
         v.addLayout(buttons)
         return self.review
 
+    def _build_feedback(self) -> QWidget:
+        """Phase 11c: 'How did JobLens do?' - shown when a run ends.
+
+        Your ratings are the one thing automatic checks can't measure: whether
+        the fit score matched your own judgment, and whether the note was
+        actually usable. They're saved locally and shown on the Dashboard.
+        """
+        self.feedback_box = QGroupBox("How did JobLens do? (saved on this PC, shown on the Dashboard)")
+        v = QVBoxLayout(self.feedback_box)
+        self.rating_groups = {}
+        for aspect, label in [("fit_score", "The fit score was"),
+                              ("cover_note", "The cover note was")]:
+            row = QHBoxLayout()
+            row.addWidget(QLabel(label))
+            group = QButtonGroup(self)
+            for i, option in enumerate(runlog.FEEDBACK_OPTIONS[aspect]):
+                button = QRadioButton(option)
+                group.addButton(button, i)
+                row.addWidget(button)
+            row.addStretch()
+            self.rating_groups[aspect] = group
+            v.addLayout(row)
+        row = QHBoxLayout()
+        self.feedback_comment = QLineEdit()
+        self.feedback_comment.setPlaceholderText("Optional comment, e.g. 'missed my Kubernetes experience'")
+        save = QPushButton("Save feedback")
+        save.clicked.connect(self.save_feedback)
+        skip = QPushButton("Skip")
+        skip.clicked.connect(self.feedback_box.hide)
+        row.addWidget(self.feedback_comment, 1)
+        row.addWidget(save)
+        row.addWidget(skip)
+        v.addLayout(row)
+        self.feedback_box.hide()
+        return self.feedback_box
+
+    def _ask_for_feedback(self, job_id):
+        self.feedback_run = (self.worker.thread_id if hasattr(self, "worker") else None, job_id)
+        for group in self.rating_groups.values():
+            group.setExclusive(False)       # allow clearing a previous choice
+            for b in group.buttons():
+                b.setChecked(False)
+            group.setExclusive(True)
+        # Pre-select the cover-note rating from what you actually did.
+        suggested = runlog.cover_note_outcome(self.decision, self.ai_draft, self.final_text,
+                                              self.revision)
+        options = runlog.FEEDBACK_OPTIONS["cover_note"]
+        self.rating_groups["cover_note"].button(options.index(suggested)).setChecked(True)
+        self.feedback_comment.clear()
+        self.feedback_box.show()
+
+    def save_feedback(self):
+        run_id, job_id = self.feedback_run
+        comment = self.feedback_comment.text().strip()
+        saved = 0
+        for aspect, group in self.rating_groups.items():
+            button = group.checkedButton()
+            if button:
+                runlog.save_feedback(run_id, job_id, aspect, button.text(), comment)
+                saved += 1
+        self.feedback_box.hide()
+        if saved:
+            self.step.setText(self.step.text() + "  ·  Thanks, feedback saved.")
+            self.feedback_saved.emit()
+
     # ---- worker thread ---------------------------------------------------------
 
     def _start_worker(self):
@@ -187,14 +256,18 @@ class AnalyzeTab(QWidget):
             return
         self.log.clear()
         self.review.hide()
+        self.feedback_box.hide()   # never rate the previous run by mistake
+        self.ai_draft = None
         self.progress.setValue(0)
         self.set_busy(True, "Starting...")
         self.start_requested.emit(url, self.fresh.isChecked())
 
     def approve(self):
-        self._answer({"decision": "approve", "text": self.draft.toPlainText().strip()})
+        self.decision, self.final_text = "approve", self.draft.toPlainText().strip()
+        self._answer({"decision": "approve", "text": self.final_text})
 
     def reject(self):
+        self.decision, self.final_text = "reject", ""
         self._answer({"decision": "reject"})
 
     def rewrite(self):
@@ -234,6 +307,7 @@ class AnalyzeTab(QWidget):
                               "research: " + ", ".join(warn) if warn else "")
         self.warnings.setVisible(bool(warn))
         self.draft.setPlainText(payload["draft"])
+        self.ai_draft, self.revision = payload["draft"], payload["revision"]  # for 11c
         self.review.setTitle(f"Review draft #{payload['revision']} "
                              "(the agent is paused, waiting for you)")
         self.review.setEnabled(True)
@@ -248,6 +322,8 @@ class AnalyzeTab(QWidget):
         else:
             self.set_busy(False, "Rejected: nothing was saved. The job is in your tracker.")
         self.jobs_changed.emit()
+        if getattr(self, "ai_draft", None) is not None:
+            self._ask_for_feedback(result.get("job_id"))
 
     def on_failed(self, message: str):
         self.set_busy(False, "✖ Something went wrong (details in the log).")

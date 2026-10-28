@@ -51,16 +51,15 @@ def tab(app, monkeypatch):
     return DashboardTab()
 
 
-def test_without_langfuse_tracker_charts_still_work(tab):
+def test_unreadable_run_log_is_reported_and_tracker_charts_still_work(tab):
     tab.draw_tracker()
-    tab.draw_traces(None)
-    assert "need Langfuse" in tab.source.text()
-    assert tab.tiles["runs"].value.text() == "–"
+    tab.draw_runs(None, error="disk error")
+    assert "disk error" in tab.source.text()
     assert tab.refresh_button.isEnabled()
 
 
-def test_with_trace_data_fills_kpis(tab):
-    data = {
+def run_log_data(quality_rows=True, feedback=True):
+    return {
         "runs": pd.DataFrame({"sessionId": ["s1"], "llm_calls": [9], "agent_seconds": [186.0],
                               "input_tokens": [15431], "output_tokens": [5260], "interface": ["cli"]}),
         "calls": pd.DataFrame({"input_tokens": [3000, 4000, 2000], "output_tokens": [800, 100, 300],
@@ -68,10 +67,68 @@ def test_with_trace_data_fills_kpis(tab):
         "nodes": pd.DataFrame({"node": ["read_posting", "analyze_fit"],
                                "avg_seconds": [36.0, 85.0], "max_seconds": [36.0, 85.0], "count": [1, 1]}),
         "decisions": pd.DataFrame({"decision": ["approve", "edit", "reject"], "count": [1, 0, 1]}),
+        "quality": (pd.DataFrame({"check": ["Claims rejected by the judge"], "per_run": [5.0],
+                                  "total": [5.0], "runs": [1]}) if quality_rows
+                    else pd.DataFrame(columns=["check", "per_run", "total", "runs"])),
+        "pass_rate": 0.58 if quality_rows else None,
+        "feedback": m.build_feedback(pd.DataFrame({"aspect": ["fit_score"], "rating": ["about right"]})
+                                     if feedback else pd.DataFrame()),
     }
-    tab.draw_traces(data)
+
+
+def test_run_log_fills_kpis_from_this_pc(tab):
+    tab.draw_runs(run_log_data())
     assert tab.tiles["runs"].value.text() == "1"
     assert tab.tiles["tokens"].value.text() == "10,200"
     assert tab.tiles["median"].value.text() == "186 s"
     assert tab.tiles["approval"].value.text() == "50%"
-    assert "Langfuse" in tab.source.text()
+    assert "on this PC" in tab.source.text()               # no Langfuse needed
+
+
+def test_quality_title_shows_evidence_pass_rate(tab):
+    tab.draw_runs(run_log_data())
+    title = tab.quality_chart.figure.axes[0].get_title(loc="left")
+    assert "evidence verified 58% of claims" in title
+
+
+def test_empty_quality_and_feedback_show_hints(tab):
+    tab.draw_runs(run_log_data(quality_rows=False, feedback=False))
+    texts = [t.get_text() for t in tab.feedback_chart.figure.axes[0].texts]
+    assert any("Rate a run" in t for t in texts)
+
+
+# ---- local run-log tables (temp database, filled by the real recorder) ----------
+
+
+@pytest.fixture()
+def temp_db(tmp_path, monkeypatch):
+    from job_agent import tracker
+    monkeypatch.setattr(tracker, "DB_PATH", tmp_path / "jobs.db")
+
+
+def test_local_tables_from_a_recorded_run(temp_db):
+    from job_agent import runlog
+    rec = runlog.RunRecorder("r1", "desktop", "ollama", "qwen3:8b")
+    rec.segment_started_at = runlog._now()
+    rec.steps = [("analyze_fit", 80.0, runlog._now())]
+    rec.llm_calls = [("analyze_fit", "qwen3:8b", 2500, 800, 30.0, runlog._now())]
+    rec.tool_calls, rec.tool_failures = 2, 1
+    from job_agent.models import FitAnalysis, ResumeMatch, SkillMatch
+    analysis = FitAnalysis(matching_skills=[SkillMatch(requirement="a", resume_evidence="q")],
+                           missing_skills=[], talking_points=[], verdict="ok")
+    match = ResumeMatch(resume_name="cv", analysis=analysis, unsupported_matches=["b - no"])
+    rec._write(120.0, {"job_id": 1, "all_matches": [match], "decision": "approve"})
+    runlog.save_feedback("r1", 1, "fit_score", "too high")
+
+    runs = m.local_runs(None)
+    assert runs.loc[0, "sessionId"] == "r1" and runs.loc[0, "decision"] == "approve"
+    assert m.local_llm_calls(None)["output_tokens"].tolist() == [800]
+    assert m.local_node_latency(None)["node"].tolist() == ["analyze_fit"]
+    assert m.local_decisions(None).set_index("decision").loc["approve", "count"] == 1
+    quality, pass_rate = m.local_quality(None)
+    assert pass_rate == 0.5                                  # 1 verified of 2 claims
+    per_run = quality.set_index("check")["per_run"]
+    assert per_run["Claims rejected by the judge"] == 1
+    assert per_run["Web searches that failed"] == 1          # from the runs table
+    fb = m.local_feedback().set_index("label")["count"]
+    assert fb["Fit score: too high"] == 1 and fb["Cover note: usable as is"] == 0

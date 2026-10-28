@@ -19,8 +19,9 @@ Plan: [plan.md](plan.md) · Design: [architecture.md](architecture.md) · Idea: 
 | 8 — Optional extras | ✅ Done | 8a score in code · 8b web UI · 8c tracing · 8d n8n + API (built, then removed) · 8e monitoring dashboard |
 | 9 — Windows desktop app **JobLens** | ✅ Done | Qt app with 4 tabs, packaged as `JobLens.exe` (230 MB folder), frozen self-test passes |
 | 10 — Installer + first-run setup | ✅ Done | `JobLens-Setup-0.2.0.exe` (81 MB), PC check + model advice, setup wizard, uninstaller asks to keep data |
+| 11 — Built-in evals (no Docker) | ✅ Done | Local run log, automatic quality checks, your ratings; Dashboard works for every user (v0.3.0) |
 
-**Progress: every phase (0–10) complete. 🎉 The agent runs as a CLI, a web UI, and a packaged Windows app, JobLens. See "Where to go next" at the end.**
+**Progress: every phase (0–11) complete. 🎉 The agent runs as a CLI, a web UI, and a packaged Windows app, JobLens. See "Where to go next" at the end.**
 
 ---
 
@@ -1472,6 +1473,91 @@ choosing whether to keep their data.
 
 ---
 
+## Phase 11 — Built-in evals (no Docker) ✅
+
+**Your question:** *"So there's no Langfuse if someone downloads the app? I
+want an eval system in the app too."* Correct: Langfuse needs a server
+(6 Docker containers), so downloaded copies had tracing off, the Dashboard's
+run charts said "Needs Langfuse", and nothing measured quality.
+**Your choice:** A (run log) + B (quality checks) + C (your ratings).
+
+### Key fact checked first
+Does LangGraph's top-level "graph finished" callback fire when a run
+**pauses** at `interrupt()`? A 10-line probe graph said **yes, and it carries
+the full state**. So one callback can record every segment, and no front
+end needed special code.
+
+### 11a — Run log (`job_agent/runlog.py`)
+- **`RunRecorder`**, a LangChain **callback handler** (the same mechanism
+  Langfuse uses): times graph steps (only the node itself, not its insides,
+  via `metadata["langgraph_node"]`), records every LLM call's tokens
+  (`usage_metadata`) and seconds, counts tool calls and failures. Buffers in
+  memory (lock: callbacks arrive from several threads) and writes one
+  SQLite transaction per segment. A logging error can never break a run.
+- Tables in the tracker database: `runs` (upsert: one row per run, segments
+  add up), `run_steps`, `run_llm_calls`, `run_quality`, `run_feedback`.
+- **Always on:** `tracing_config()` now always includes the recorder,
+  whatever `TRACING` is set to, so CLI, web UI and desktop all record runs.
+- **Schema migration:** `CREATE TABLE IF NOT EXISTS` never changes an
+  existing table, so `init_db()` adds columns introduced later
+  (`runs.decision`) with `ALTER TABLE`: databases from older versions keep
+  working.
+- **Real run (temp profile, tracing off, no Langfuse):** 1 run row,
+  2 segments, `done`, 174 s agent time, 9 LLM calls (13,824 in / 4,338 out
+  tokens), 2 searches / 0 failures; steps analyze_fit 78 s, research 50 s,
+  read_posting 34 s, draft 12 s.
+- Bug found in that data: `started_at` was when the first segment
+  *finished*. Now the real start time; a resume keeps it.
+- Learned from a failing test: a node that pauses at `interrupt()` doesn't
+  "finish" (it ends with a `GraphInterrupt` event); it completes on resume.
+
+### 11b — Automatic quality checks
+`quality_from_state()` (pure) turns the run's final state into numbers:
+claims checked, **fake quotes caught** (Phase 2 check), **judge rejections**
+(Phase 7), **evidence pass rate**, invented URLs / dates removed (research
+now reports them via a `stats` dict → `research_checks` in state), number
+warnings, draft revisions; search failures come from the tool callbacks.
+Stored with `INSERT OR REPLACE` per (run, check), so resumes never
+double-count. **First real reading: the judge rejected 5 of 12 claims →
+evidence pass rate 58 %.** The first LLM over-claims, and the judge is doing
+real work. That's what evals are for.
+
+### 11c — Your ratings
+When a run ends, the Analyze tab asks **"How did JobLens do?"**: fit score
+*too low / about right / too high*, cover note *usable as is / needed edits
+/ not usable*, plus an optional comment. The cover-note rating is
+**pre-selected from what you actually did** (approved unchanged / edited or
+rewrote / rejected; compared with the AI's draft as shown, because after
+approval the state already holds your edited text). The fit rating is never
+pre-filled. Saved locally; Skip is always possible; a new analysis hides the
+panel so you can't rate the wrong run.
+
+### Dashboard (desktop) now runs on the run log
+`monitoring.py` got local versions of the run tables (`local_runs`,
+`local_llm_calls`, `local_node_latency`, `local_decisions`, `local_quality`,
+`local_feedback`) **in the same shape as the Langfuse ones**, so `build_kpis()`
+and the charts are unchanged. New third row: **safety-net catches per run**
+(title: evidence verified X % of claims) and **your ratings**; charts sit in
+a scroll area. Two render fixes after looking at it: the quality title was
+cut off (now two lines), and a single bar filled the whole chart (at least
+4 rows reserved). Langfuse stays as an optional developer tool for the
+Streamlit monitor.
+
+**Tests:** run log with a real tiny graph (pause → resume = one row, two
+segments, decision; steps; LLM calls; quality not duplicated; errors
+recorded; old-database migration), quality math, ratings + validation,
+suggested cover-note rating, local tables from a recorded run, Dashboard
+tab, feedback panel GUI. **89 tests total.**
+
+**Concepts learned:** callbacks as an observability hook; buffering + one
+write per segment; idempotent upserts; schema migrations; offline/automatic
+evals (safety-net counters) vs. human evals (ratings); an eval's job is to
+turn "seems fine" into numbers you can track.
+
+**Try it:** `python desktop_app.py` → analyze a job → rate it → Dashboard.
+
+---
+
 ## Deployment decision
 
 Asked: *"If I turned this into a website or a Windows app, what would I pay?"*
@@ -1509,6 +1595,9 @@ and nobody's resume stored on a server. See plan.md, Phase 9.
 - **Auto-update:** check GitHub Releases for a newer version on startup.
 - **Write the verdict from the final facts** (after the judge), the last
   open item from 8a.
+- **Eval suite (option D from Phase 11):** an Evaluate tab that re-runs saved
+  jobs on chosen models offline and compares consistency, evidence quality,
+  speed and tokens.
 - **Evaluation:** build a small dataset of jobs with the "right" answers
   and use Langfuse datasets to measure prompt changes.
 - **Shorter outputs for speed:** tracing showed output tokens dominate

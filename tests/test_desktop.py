@@ -69,6 +69,50 @@ def test_finished_reports_saved_or_rejected(tab):
     assert "nothing was saved" in tab.step.text()
 
 
+def _finish_run(tab, edit_text=None, decision="approve"):
+    tab.on_paused({"kind": "approval", "draft": "AI draft", "warnings": [],
+                   "word_count": 2, "revision": 1}, {})
+    if edit_text:
+        tab.draft.setPlainText(edit_text)
+    tab.approve() if decision == "approve" else tab.reject()
+    tab.on_finished({"saved_path": "x.md" if decision == "approve" else None, "job_id": 4})
+
+
+def checked(tab, aspect):
+    button = tab.rating_groups[aspect].checkedButton()
+    return button.text() if button else None
+
+
+def test_feedback_panel_suggests_cover_note_rating(tab):
+    _finish_run(tab)                                   # approved as written
+    assert not tab.feedback_box.isHidden()
+    assert checked(tab, "cover_note") == "usable as is"
+    assert checked(tab, "fit_score") is None           # your call, never pre-filled
+    _finish_run(tab, edit_text="My own version")
+    assert checked(tab, "cover_note") == "needed edits"
+    _finish_run(tab, decision="reject")
+    assert checked(tab, "cover_note") == "not usable"
+
+
+def test_saving_feedback_records_both_ratings(tab, monkeypatch):
+    saved = []
+    monkeypatch.setattr("job_agent.runlog.save_feedback", lambda *a: saved.append(a))
+    _finish_run(tab)
+    tab.rating_groups["fit_score"].buttons()[2].setChecked(True)   # "too high"
+    tab.feedback_comment.setText("overrated my Rust")
+    tab.save_feedback()
+    assert [(s[1], s[2], s[3], s[4]) for s in saved] == [
+        (4, "fit_score", "too high", "overrated my Rust"),
+        (4, "cover_note", "usable as is", "overrated my Rust")]
+    assert tab.feedback_box.isHidden()
+
+
+def test_no_feedback_panel_without_a_draft(tab):
+    tab.ai_draft = None
+    tab.on_finished({"saved_path": None, "job_id": None})
+    assert tab.feedback_box.isHidden()
+
+
 def test_rewrite_needs_feedback(tab):
     sent = []
     tab.resume_requested.connect(sent.append)

@@ -31,16 +31,22 @@ def tracing_config(session_id: str, interface: str) -> dict:
     session_id: the run's thread_id. A run is often several graph calls (start,
         then a resume after each approval decision); sharing a session groups
         them together in the dashboard.
-    interface: "cli" or "web", added as a tag so you can filter by it.
+    interface: "cli", "web" or "desktop", added as a tag so you can filter by it.
     """
     model = os.getenv("LLM_MODEL", "qwen3:8b")
     tags = [interface, model]
+
+    # Phase 11: JobLens' own run log is ALWAYS on, whatever TRACING says. It
+    # writes to the local SQLite database, so every user gets the Dashboard's
+    # run, quality and feedback charts without Langfuse or Docker.
+    from job_agent.runlog import RunRecorder
+    local = RunRecorder(session_id, interface, os.getenv("LLM_PROVIDER", "ollama"), model)
 
     if TRACING == "langfuse":
         from langfuse.langchain import CallbackHandler
 
         return {
-            "callbacks": [CallbackHandler()],  # keys come from LANGFUSE_* in .env
+            "callbacks": [local, CallbackHandler()],  # keys come from LANGFUSE_* in .env
             # Langfuse reads these special metadata keys from the config:
             "metadata": {
                 "langfuse_session_id": session_id,
@@ -57,9 +63,9 @@ def tracing_config(session_id: str, interface: str) -> dict:
         if not os.getenv("LANGSMITH_API_KEY"):
             print("! TRACING=langsmith but LANGSMITH_API_KEY is not set - no traces will be sent")
         # LangSmith groups runs into a "thread" via the session_id metadata key.
-        return {"tags": tags, "metadata": {"session_id": session_id}}
+        return {"callbacks": [local], "tags": tags, "metadata": {"session_id": session_id}}
 
-    return {}
+    return {"callbacks": [local]}
 
 
 def record_decision(session_id: str, decision: str) -> None:

@@ -56,6 +56,7 @@ class JobHuntState(CoverNoteState, total=False):
     fresh: bool           # True = re-analyze even if already tracked
     reused: bool          # True = loaded from the tracker, analysis skipped
     all_matches: list[ResumeMatch]
+    research_checks: dict  # Phase 11b: invented URLs / dates removed by verification
 
 
 def _step(n: int, text: str) -> None:
@@ -130,14 +131,15 @@ def analyze_fit(state: JobHuntState) -> dict:
 
 def research(state: JobHuntState) -> dict:
     _step(3, "Researching the company (agent picks its own searches)...")
+    checks: dict = {}
     try:
-        brief = research_company(state["job"].company, state["job"].title)
+        brief = research_company(state["job"].company, state["job"].title, stats=checks)
         print(f"  -> {len(brief.sources)} verified sources")
     except Exception as e:
         # Graceful degradation: research is nice-to-have, not essential.
         print(f"  ! research failed ({e}) - continuing without it")
         brief = None
-    return {"company_brief": brief}
+    return {"company_brief": brief, "research_checks": checks}
 
 
 def save_to_tracker(state: JobHuntState) -> dict:

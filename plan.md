@@ -20,6 +20,7 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started
 | 8 | Optional extras | Score in code, web UI, tracing, monitoring dashboard (n8n tried, removed) | ✅ |
 | 9 | Windows desktop app **JobLens** | Qt GUI, threads, model/view, packaging | ✅ |
 | 10 | Installer + first-run setup | Hardware detection, setup wizard, Inno Setup, uninstall | ✅ |
+| 11 | Built-in evals (no Docker) | Callback-based run log, quality checks, human feedback | ✅ |
 
 ---
 
@@ -216,6 +217,19 @@ and recommends models; Inno Setup installer; uninstaller asks to keep data.
 | 10c | First-run **Setup Wizard** (local vs API branches; re-runnable from Settings) | ✅ |
 | 10d | `installer/joblens.iss` (Inno Setup): per-user install, shortcuts, Apps entry, uninstaller asks to keep data; long-path guard | ✅ |
 | 10e | `scripts/build_installer.py`: PyInstaller → self-test gate → installer; real install/uninstall round trip; release v0.2.0 | ✅ |
+
+## Phase 11 — Built-in evals for every user ✅
+**Why:** Langfuse needs a Docker server, so people who download JobLens had no
+way to see how the agent performs. **Your choice:** A + B + C (not the
+benchmark suite).
+
+| Step | What | Status |
+|---|---|---|
+| 11a | `runlog.py`: `RunRecorder` callback → local SQLite (`runs`, `run_steps`, `run_llm_calls`); always on via `tracing_config()` | ✅ |
+| 11b | Quality checks per run: fake quotes caught, judge rejections, evidence pass rate, invented URLs / dates removed, number warnings, search failures | ✅ |
+| 11c | "How did JobLens do?" panel: fit score + cover note ratings (cover note pre-selected from what you did) | ✅ |
+| — | Desktop Dashboard reads the run log (no Langfuse); quality + feedback charts; version 0.3.0 | ✅ |
+| — | Not built (your choice): D. eval suite / benchmark across models | — |
 
 ### Other ideas (not planned)
 - Follow-up reminders for jobs applied > 7 days ago

@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         # Tabs talk through signals, never by reaching into each other:
         self.analyze_tab.jobs_changed.connect(self.tracker_tab.refresh)
         self.analyze_tab.jobs_changed.connect(self.dashboard_tab.draw_tracker)
+        self.analyze_tab.feedback_saved.connect(self.dashboard_tab.refresh)
         self.tracker_tab.draft_requested.connect(self.draft_for)
         self.settings_tab.wizard_requested.connect(self.run_setup_wizard)
         self.tabs.addTab(self.dashboard_tab, "Dashboard")

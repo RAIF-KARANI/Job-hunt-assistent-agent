@@ -232,6 +232,104 @@ def build_kpis(runs: pd.DataFrame, calls: pd.DataFrame, decisions: pd.DataFrame)
     }
 
 
+# ---------------------------------------------------------------------------
+# Phase 11: the same tables from JobLens' OWN run log (local SQLite), so the
+# desktop Dashboard works for every user - no Langfuse, no Docker. Column
+# names match the Langfuse builders above, so build_kpis() works on both.
+# ---------------------------------------------------------------------------
+
+QUALITY_LABELS = {  # check name -> what the user sees
+    "fake_quotes_caught": "Fake resume quotes caught",
+    "judge_rejections": "Claims rejected by the judge",
+    "invented_urls_removed": "Invented source URLs removed",
+    "invented_dates_removed": "Invented news dates removed",
+    "number_warnings": "Unverified numbers flagged",
+    "search_failures": "Web searches that failed",
+}
+
+
+def _local(sql: str, params=()) -> pd.DataFrame:
+    from job_agent import runlog, tracker
+
+    runlog.init_db()
+    with tracker._db() as conn:
+        return pd.read_sql_query(sql, conn, params=params)
+
+
+def _since(days: int | None) -> str:
+    if not days:
+        return "1970-01-01"
+    return (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def local_runs(days: int | None = 30) -> pd.DataFrame:
+    df = _local("SELECT * FROM runs WHERE started_at >= ? ORDER BY started_at DESC", (_since(days),))
+    return df.rename(columns={"run_id": "sessionId", "started_at": "started"})
+
+
+def local_llm_calls(days: int | None = 30) -> pd.DataFrame:
+    return _local("""SELECT c.model, c.input_tokens, c.output_tokens, c.seconds AS latency, c.step
+                     FROM run_llm_calls c JOIN runs r ON r.run_id = c.run_id
+                     WHERE r.started_at >= ?""", (_since(days),))
+
+
+def local_node_latency(days: int | None = 30) -> pd.DataFrame:
+    steps = _local("""SELECT s.step AS name, s.seconds AS latency FROM run_steps s
+                      JOIN runs r ON r.run_id = s.run_id WHERE r.started_at >= ?""", (_since(days),))
+    steps["startTime"] = "1970-01-01T00:00:00Z"   # build_node_latency() expects these columns
+    return build_node_latency(steps)
+
+
+def local_decisions(days: int | None = 30) -> pd.DataFrame:
+    runs = local_runs(days)
+    counts = runs["decision"].value_counts() if not runs.empty else pd.Series(dtype=int)
+    return pd.DataFrame({"decision": ["approve", "edit", "reject"],
+                         "count": [int(counts.get(k, 0)) for k in ("approve", "edit", "reject")]})
+
+
+def build_quality(quality: pd.DataFrame, runs: pd.DataFrame) -> pd.DataFrame:
+    """Average safety-net catches per run that ran that check (pure)."""
+    q = quality.copy()
+    if not runs.empty:  # search failures come from the runs table
+        q = pd.concat([q, pd.DataFrame({"run_id": runs["sessionId"], "check_name": "search_failures",
+                                        "value": runs["tool_failures"]})[runs["tool_calls"] > 0]])
+    q = q[q["check_name"].isin(QUALITY_LABELS)] if not q.empty else q
+    if q.empty:
+        return pd.DataFrame(columns=["check", "per_run", "total", "runs"])
+    out = q.groupby("check_name")["value"].agg(["mean", "sum", "count"]).reset_index()
+    out.columns = ["check_name", "per_run", "total", "runs"]
+    out["order"] = out["check_name"].map(list(QUALITY_LABELS).index)
+    out["check"] = out["check_name"].map(QUALITY_LABELS)
+    return out.sort_values("order")[["check", "per_run", "total", "runs"]].reset_index(drop=True)
+
+
+def local_quality(days: int | None = 30) -> tuple[pd.DataFrame, float | None]:
+    """(average catches per run, overall evidence pass rate)."""
+    quality = _local("""SELECT q.run_id, q.check_name, q.value FROM run_quality q
+                        JOIN runs r ON r.run_id = q.run_id WHERE r.started_at >= ?""", (_since(days),))
+    rates = quality[quality["check_name"] == "evidence_pass_rate"]["value"]
+    return build_quality(quality, local_runs(days)), (float(rates.mean()) if len(rates) else None)
+
+
+def build_feedback(feedback: pd.DataFrame) -> pd.DataFrame:
+    """Counts per (aspect, rating) in a fixed order, zeros included (pure)."""
+    from job_agent.runlog import FEEDBACK_OPTIONS
+
+    rows = []
+    for aspect, ratings in FEEDBACK_OPTIONS.items():
+        sub = feedback[feedback["aspect"] == aspect] if not feedback.empty else feedback
+        counts = sub["rating"].value_counts() if not sub.empty else pd.Series(dtype=int)
+        label = "Fit score" if aspect == "fit_score" else "Cover note"
+        rows += [{"label": f"{label}: {r}", "aspect": aspect, "rating": r,
+                  "count": int(counts.get(r, 0))} for r in ratings]
+    return pd.DataFrame(rows)
+
+
+def local_feedback(days: int | None = None) -> pd.DataFrame:
+    return build_feedback(_local("SELECT aspect, rating FROM run_feedback WHERE created_at >= ?",
+                                 (_since(days),)))
+
+
 def build_status_funnel(jobs: pd.DataFrame) -> pd.DataFrame:
     """How many tracked jobs are at each stage, in lifecycle order."""
     counts = jobs["status"].value_counts() if not jobs.empty else pd.Series(dtype=int)
