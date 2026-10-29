@@ -43,9 +43,11 @@ UI code, so a UI rewrite doesn't touch the agent, and its tests keep
 guarding it. Exception: a feature that is pure agent logic with no new
 screen can go in any time.
 
-## D7 — UI technology ✅ (accepted 29 Oct 2026, to be checked by the 12a spike)
+## D7 — UI technology ✅ (confirmed by the 12a spike, 29 Oct 2026)
 You approved the visual concept, which needs a web front end (three.js).
-The spike in 12a measures it before the rewrite starts.
+The spike confirmed it: the frozen build is 134 MB (Qt app: 230 MB), the
+window is ready in 2.7 s, and a bridge call takes ~1.5 ms. Details:
+[spike-12a-results-version-2.md](spike-12a-results-version-2.md).
 
 **Proposal:** a web front end (HTML/CSS/JS + three.js) shown in a native
 window through **pywebview + Microsoft Edge WebView2**. The Python agent
@@ -111,6 +113,15 @@ first public, stable release. Fixes in between use 1.0.x.
 ## D11 — The repository goes public ✅ (29 Oct 2026)
 You make it public yourself (the pre-public check was done on 28–29 Oct).
 This also lets auto-update (Phase 13) read GitHub Releases.
+
+## D12 — 3D is capped at 30 FPS and paused during runs ✅ (29 Oct 2026, measured)
+The spike measured qwen3:8b's speed with the scene running:
+- uncapped (~144 FPS): 25–35 % slower
+- capped at 30 FPS: 5–7 % slower
+- paused: no slowdown
+
+So the scene runs at 30 FPS at most, pauses while the agent runs, and
+stops when the window is hidden (WebView2 already does this).
 
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

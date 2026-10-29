@@ -26,7 +26,7 @@ with a three.js "job galaxy" on the Dashboard. The agent (`job_agent/`) stays as
 
 | Step | What | Done when |
 |---|---|---|
-| 12a | **Spike (1 day, throwaway):** pywebview window + a three.js scene + one JS→Python call + one Python→JS event; package it with PyInstaller | numbers measured: installer size, startup time, GPU use with Ollama running; D7 confirmed or changed |
+| 12a ✅ | **Spike (1 day, throwaway):** [results](spike-12a-results-version-2.md): pywebview window + a three.js scene + one JS→Python call + one Python→JS event; package it with PyInstaller | numbers measured: installer size, startup time, GPU use with Ollama running; D7 confirmed or changed |
 | 12b | **Bridge** (`desktop_web/bridge.py`): `start_run`, `resume(decision)`, `paste_text`, `list_jobs`, `get_job`, `set_status`, settings read/write; agent events → JS (`log`/`paused`/`finished`/`failed`) | bridge unit tests pass with no window |
 | 12c | **Design tokens + app shell**: colors, type, spacing; sidebar; light/dark | shell runs in the window |
 | 12d | **Analyze** screen: steps timeline, live log, draft editor, approve / rewrite / reject, paste-text fallback | full run approved from the new UI |

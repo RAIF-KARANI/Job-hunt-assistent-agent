@@ -1,0 +1,107 @@
+{
+  "frozen": false,
+  "window_ready_after_start_s": 1.96,
+  "js_to_python_round_trip_ms": {
+    "median": 1.1,
+    "max": 7.5
+  },
+  "webview": {
+    "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Laptop GPU (0x000028E0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "pixel_ratio": 1,
+    "width": 1264,
+    "height": 761
+  },
+  "agent_import_s": 2.59,
+  "agent_ready_after_start_s": 2.99,
+  "tracker_jobs": 7,
+  "python_to_js_event_ms": {
+    "median": -0.1370849609375,
+    "max": 1.313232421875,
+    "n": 200
+  },
+  "fps_idle_gpu": 143.3,
+  "gpu_scene_on_idle": {
+    "util": 34,
+    "mem_mb": 7454
+  },
+  "gpu_scene_paused_idle": {
+    "util": 28,
+    "mem_mb": 7454
+  },
+  "memory": {
+    "python_mb": 163,
+    "total_mb": 509,
+    "processes": 7
+  },
+  "llm_runs": [
+    {
+      "tokens_per_s": 18.8,
+      "tokens": 256,
+      "gpu_util_avg": 84.7,
+      "scene": "paused"
+    },
+    {
+      "tokens_per_s": 12.0,
+      "tokens": 256,
+      "gpu_util_avg": 89.7,
+      "scene": "on_uncapped",
+      "fps_during": 144.0
+    },
+    {
+      "tokens_per_s": 17.3,
+      "tokens": 256,
+      "gpu_util_avg": 87.0,
+      "scene": "on_30fps",
+      "fps_during": 28.8
+    },
+    {
+      "tokens_per_s": 18.6,
+      "tokens": 256,
+      "gpu_util_avg": 83.3,
+      "scene": "paused"
+    },
+    {
+      "tokens_per_s": 11.2,
+      "tokens": 256,
+      "gpu_util_avg": 91.8,
+      "scene": "on_uncapped",
+      "fps_during": 144.0
+    },
+    {
+      "tokens_per_s": 12.8,
+      "tokens": 256,
+      "gpu_util_avg": 87.8,
+      "scene": "on_30fps",
+      "fps_during": 28.8
+    },
+    {
+      "tokens_per_s": 13.4,
+      "tokens": 256,
+      "gpu_util_avg": 91.4,
+      "scene": "paused"
+    },
+    {
+      "tokens_per_s": 14.5,
+      "tokens": 256,
+      "gpu_util_avg": 88.0,
+      "scene": "on_uncapped",
+      "fps_during": 142.8
+    },
+    {
+      "tokens_per_s": 17.8,
+      "tokens": 256,
+      "gpu_util_avg": 85.9,
+      "scene": "on_30fps",
+      "fps_during": 28.8
+    }
+  ],
+  "llm_median_tokens_per_s": {
+    "paused": 18.6,
+    "on_uncapped": 12.0,
+    "on_30fps": 17.3
+  },
+  "llm_slowdown_pct": {
+    "on_uncapped": 35.5,
+    "on_30fps": 7.0
+  }
+}

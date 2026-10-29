@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JobLens spike 12a</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0A0F1C; color: #E6ECF5;
+               font: 14px "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  #scene { position: fixed; inset: 0; }
+  #hud { position: fixed; left: 16px; top: 16px; padding: 12px 14px; border-radius: 12px;
+         background: rgba(17,24,41,.85); border: 1px solid #1E2840; min-width: 320px; }
+  #hud b { color: #9BE3FF; }
+  #log { position: fixed; right: 16px; bottom: 16px; width: 420px; height: 220px; overflow: auto;
+         padding: 10px 12px; border-radius: 12px; background: rgba(7,11,21,.9);
+         border: 1px solid #1E2840; font: 12px Consolas, monospace; color: #A9B6CB; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="hud">
+  <div><b>JobLens spike 12a</b> · pywebview + WebView2 + three.js</div>
+  <div>FPS: <span id="fps">-</span> · scene: <span id="state">on</span></div>
+  <div>GPU: <span id="gpu">-</span></div>
+  <div>Step: <span id="step">starting</span></div>
+</div>
+<div id="log"></div>
+
+<script type="module">
+import * as THREE from './three.module.min.js';
+
+// ---- the "job galaxy": you in the middle, jobs closer = better fit ----
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 5000);
+camera.position.set(0, 220, 620);
+camera.lookAt(0, 0, 0);
+
+const galaxy = new THREE.Group();
+scene.add(galaxy);
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const light = new THREE.PointLight(0x9BE3FF, 3, 0, 0);
+scene.add(light);
+
+const core = new THREE.Mesh(new THREE.SphereGeometry(26, 48, 48),
+  new THREE.MeshStandardMaterial({ color: 0x4CC3F0, emissive: 0x1B5C86, roughness: 0.3 }));
+galaxy.add(core);
+
+for (const r of [95, 160, 235]) {
+  const pts = [];
+  for (let i = 0; i <= 128; i++) {
+    const a = (i / 128) * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r));
+  }
+  galaxy.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color: 0x3A8FD0, transparent: true, opacity: 0.4 })));
+}
+
+const fits = [86, 78, 72, 64, 58, 47, 39, 81, 52];
+fits.forEach((fit, i) => {
+  const color = fit >= 75 ? 0x9BE3FF : fit >= 55 ? 0x3A8FD0 : 0x56647D;
+  const m = new THREE.Mesh(new THREE.SphereGeometry(6 + fit / 12, 32, 32),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35 }));
+  const a = (i * 40) * Math.PI / 180, radius = 40 + (100 - fit) * 3.2;
+  m.position.set(Math.cos(a) * radius, (i % 3 - 1) * 20, Math.sin(a) * radius);
+  galaxy.add(m);
+});
+
+const starPos = new Float32Array(3000 * 3);
+for (let i = 0; i < starPos.length; i++) starPos[i] = (Math.random() - 0.5) * 3000;
+const stars = new THREE.BufferGeometry();
+stars.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+scene.add(new THREE.Points(stars, new THREE.PointsMaterial({ color: 0x93A1B8, size: 2 })));
+
+// ---- render loop that can be paused (the plan: pause while the agent runs) ----
+let running = true, frames = 0, rafId = null, minFrameMs = 0, lastDraw = 0;
+function frame(now) {
+  rafId = requestAnimationFrame(frame);
+  if (now - lastDraw < minFrameMs) return;   // FPS cap: skip this display refresh
+  lastDraw = now;
+  galaxy.rotation.y += 0.0015 * (minFrameMs ? minFrameMs / 7 : 1);
+  renderer.render(scene, camera);
+  frames++;
+}
+window.setFpsCap = (fps) => { minFrameMs = fps ? 1000 / fps - 1 : 0; };
+window.setScene = (on) => {
+  if (on && !running) { running = true; rafId = requestAnimationFrame(frame); }
+  if (!on && running) { running = false; cancelAnimationFrame(rafId); }
+  document.getElementById('state').textContent = on ? 'on' : 'paused';
+};
+window.frameCount = () => frames;
+window.measureFps = (ms) => new Promise((resolve) => {
+  const f0 = frames, t0 = performance.now();
+  setTimeout(() => resolve((frames - f0) / ((performance.now() - t0) / 1000)), ms);
+});
+setInterval(async () => {
+  document.getElementById('fps').textContent = running ? (await window.measureFps(1000)).toFixed(0) : '-';
+}, 1500);
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+rafId = requestAnimationFrame(frame);
+
+// Which GPU does WebView2 draw on? (laptops: NVIDIA or the integrated GPU)
+const gl = renderer.getContext();
+const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+const gpuName = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+document.getElementById('gpu').textContent = gpuName;
+
+// ---- Python -> JS: agent events (the 4 signals: log / paused / finished / failed) ----
+const logEl = document.getElementById('log');
+const latencies = [];
+window.onAgentEvent = (ev) => {
+  if (ev.sent_ms) latencies.push(Date.now() - ev.sent_ms);
+  if (ev.type === 'step') { document.getElementById('step').textContent = ev.text; return; }
+  const line = document.createElement('div');
+  line.textContent = `[${ev.type}] ${ev.text || ''}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+};
+window.takeEventLatencies = () => latencies.splice(0);
+
+// ---- JS -> Python: round trips through the bridge ----
+async function bridgeRoundTrips(n) {
+  const times = [];
+  for (let i = 0; i < n; i++) {
+    const t0 = performance.now();
+    await window.pywebview.api.echo(i);
+    times.push(performance.now() - t0);
+  }
+  return times;
+}
+
+async function start() {
+  const roundTrips = await bridgeRoundTrips(50);
+  await window.pywebview.api.ready({ gpu: gpuName, pixel_ratio: window.devicePixelRatio,
+                                     width: window.innerWidth, height: window.innerHeight,
+                                     round_trips_ms: roundTrips });
+}
+// Module scripts run late: pywebviewready may already have fired.
+if (window.pywebview && window.pywebview.api && window.pywebview.api.ready) start();
+else window.addEventListener('pywebviewready', start, { once: true });
+</script>
+</body>
+</html>

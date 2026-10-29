@@ -13,3 +13,6 @@ data/
 # ---- PyInstaller build output (Phase 9f) ----
 build/
 dist/
+
+# ---- Node (spikes / front end) ----
+node_modules/
