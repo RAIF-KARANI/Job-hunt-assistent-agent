@@ -123,6 +123,43 @@ The spike measured qwen3:8b's speed with the scene running:
 So the scene runs at 30 FPS at most, pauses while the agent runs, and
 stops when the window is hidden (WebView2 already does this).
 
+## D13 — Front end: React + TypeScript + Vite ✅ (30 Oct 2026)
+Closes Q3.
+- React has the biggest ecosystem, and it's a useful skill for the job search.
+- three.js through react-three-fiber.
+- TypeScript catches bridge mistakes (typed events and API).
+- Vite builds static files that ship inside the app (no server, works offline).
+
+Node is needed only to **build**, not to run the app.
+
+## D14 — The user chooses the 3D level, in setup and in Settings ✅ (30 Oct 2026)
+**Why:** a friend's laptop (no dedicated GPU, a smaller local model) would
+be slowed by the 3D scene. The spike showed that 3D takes GPU time away
+from a local LLM.
+
+Three levels, stored as `UI_3D` in `.env`:
+
+| Level | What it does | GPU cost |
+|---|---|---|
+| `animated` | 3D galaxy, slow rotation, max 30 FPS | small (−5–7 % LLM speed, measured) |
+| `still` | 3D galaxy that moves only while you drag or zoom | ~0 when idle |
+| `off` | flat 2D orbit map (SVG) with the same information: fit = distance | none |
+
+- **Setup Wizard:** a new "Look and feel" step, pre-selected from the PC
+  check, with the reason shown. The rules:
+  - **off** when there's no dedicated GPU, the local model doesn't fully fit
+    in graphics memory, or WebGL isn't available
+  - **still** when the local model fits but leaves less than ~2 GB of
+    graphics memory free
+  - **animated** when there's spare graphics memory, or when you use the
+    Claude API (the GPU isn't busy with the LLM)
+- **Settings → Appearance:** change it any time; takes effect immediately,
+  no restart.
+- **Always on, whatever the level:**
+  - pause during agent runs, and when the window is hidden (D12)
+  - follow Windows' "reduce motion" setting (`animated` acts as `still`)
+  - if WebGL fails, switch to `off` automatically and say so once
+- No information is lost: every 3D view has the same data in 2D.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)
-- Q3: Front-end framework: vanilla TypeScript, React, or Svelte (decided in the 12a spike).
