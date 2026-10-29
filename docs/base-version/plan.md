@@ -233,3 +233,8 @@ benchmark suite).
 
 ### Other ideas (not planned)
 - Follow-up reminders for jobs applied > 7 days ago
+
+## Next version (planned, after v0.3.0)
+- Auto-update: check GitHub Releases on startup, on/off option in Settings
+- System tray icon
+- New features and an upgraded UI (order to be decided)

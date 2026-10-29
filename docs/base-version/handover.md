@@ -3,6 +3,7 @@
 Everything needed to **run, change, build, release and continue** JobLens.
 For *what* it is and the results, see `report.md`; for *how each part was
 built and why*, see `progress.md`; for the design, `architecture.md`.
+All of these are in `docs/base-version/` (the docs as of v0.3.0).
 
 **State at handover (29 Oct 2026):** version **0.3.0**, all phases 0–11
 done, 92 tests passing, working tree clean, latest release **v0.3.0**,
@@ -108,6 +109,7 @@ joblens.spec  installer/joblens.iss  scripts/build_installer.py   packaging
 tests/            92 tests (no LLM, temp databases)
 infra/langfuse/   self-hosted Langfuse (official compose + our override)
 phaseN_*.py hello_llm.py compare_models.py   learning scripts per phase
+docs/base-version/  idea, plan, progress, architecture, report, handover (v0.3.0)
 ```
 
 ---
@@ -181,7 +183,8 @@ Uses a lot of RAM; currently **stopped**. JobLens works fully without it.
    chosen models and compares consistency, evidence quality, speed, tokens.
 4. **Shorter LLM outputs** for speed (output tokens dominate latency).
 5. **Code signing** (~$100–400/yr) to remove the SmartScreen warning.
-6. **Auto-update:** check GitHub Releases on startup.
+6. **Auto-update:** check GitHub Releases on startup, with an on/off option
+   in Settings and a system tray icon. *Planned for the next version.*
 7. Point the Streamlit monitor at the built-in run log too.
 
 ---

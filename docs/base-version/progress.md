@@ -1547,7 +1547,8 @@ Streamlit monitor.
 segments, decision; steps; LLM calls; quality not duplicated; errors
 recorded; old-database migration), quality math, ratings + validation,
 suggested cover-note rating, local tables from a recorded run, Dashboard
-tab, feedback panel GUI. **89 tests total.**
+tab, feedback panel GUI. **89 tests total** (92 after the later
+setup-wizard "already installed" fix).
 
 **Concepts learned:** callbacks as an observability hook; buffering + one
 write per segment; idempotent upserts; schema migrations; offline/automatic
