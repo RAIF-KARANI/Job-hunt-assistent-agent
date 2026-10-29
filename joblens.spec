@@ -14,7 +14,9 @@
 from PyInstaller.utils.hooks import copy_metadata
 
 # Files the app opens at runtime (read via paths.resource_path()).
-datas = [("assets/joblens.png", "assets"), ("assets/joblens.ico", "assets")]
+datas = [("assets/joblens.png", "assets"), ("assets/joblens.ico", "assets"),
+         # Licenses travel with the app (also the portable zip): Qt is LGPL-3.0.
+         ("LICENSE", "."), ("THIRD_PARTY_NOTICES.md", ".")]
 
 # Some libraries look up their own version at import time
 # (importlib.metadata.version("langsmith") ...). That information lives in

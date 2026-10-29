@@ -242,3 +242,9 @@ for **$0** (local Ollama model, local SQLite, self-hosted tracing). A
 Windows desktop app is the planned next step; see the "Deployment
 decision" section at the end of [progress.md](progress.md) for the cost
 comparison of website vs. desktop app.
+
+## License
+
+JobLens is released under the [MIT License](LICENSE). The downloadable app
+bundles third-party components (including Qt for Python / PySide6 under
+LGPL-3.0); see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

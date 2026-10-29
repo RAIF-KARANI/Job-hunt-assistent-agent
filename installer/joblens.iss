@@ -50,6 +50,9 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 [Files]
 ; The whole PyInstaller folder: JobLens.exe + _internal\
 Source: "..\dist\JobLens\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Licenses: JobLens (MIT) + bundled components (Qt/PySide6 is LGPL-3.0)
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\JobLens"; Filename: "{app}\JobLens.exe"

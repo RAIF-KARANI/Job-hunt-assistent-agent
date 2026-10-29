@@ -680,7 +680,7 @@ resume with 4 proven matches). Compute the score from the **verified facts**.
 |---|---|---|---|
 | #1 GitLab Python AI | 85 | 95 | **63** |
 | #3 GitLab Rust | 70 | **50** | — |
-| #4 ByteDance (yours!) | 95 | **90** | — |
+| #4 a real application (yours!) | 95 | **90** | — |
 
 #### Lessons from the results
 - **The score can only be as good as its facts.** Job #1 first went *up*
@@ -884,8 +884,8 @@ shorter talking points); shrinking the prompts matters much less.
   endpoints and parameters.
 
 #### Try it
-1. Open http://localhost:3000 and log in with **karaniraif@gmail.com** and the
-   password in `infra\langfuse\.env` (`LANGFUSE_INIT_USER_PASSWORD`).
+1. Open http://localhost:3000 and log in with the email and password in
+   `infra\langfuse\.env` (`LANGFUSE_INIT_USER_EMAIL` / `LANGFUSE_INIT_USER_PASSWORD`).
 2. **Tracing → Sessions:** open the latest session and expand the tree:
    `analyze_fit` → the judge's `ChatOllama` call → read its exact prompt.
 3. **Scores:** filter runs by `cover_note_decision`.
@@ -1256,7 +1256,7 @@ updates.
   approved note shown + copied to clipboard, draft button sends the URL,
   notes newest first, sort role returns numbers. **50 tests total.**
 - Screenshot with your real tracker checked: 4 jobs sorted 90 / 84 / 63 / 42,
-  ByteDance details with breakdown and evidence.
+  the top job's details with breakdown and evidence.
 
 **Qt concepts learned:** model/view; item roles; proxy models for sorting
 and filtering; mapping proxy ↔ source rows; escaping untrusted text in
