@@ -111,7 +111,8 @@ def llm_status() -> tuple[bool, str]:
         return False, (f"Can't reach Ollama at {base_url}. Install it from "
                        "https://ollama.com and start the Ollama app.")
     installed = {m["name"] for m in tags.get("models", [])}
-    if model not in installed:
+    from job_agent.ollama_setup import has_model  # 'llama3.2' == 'llama3.2:latest'
+    if not has_model(model, list(installed)):
         return False, (f"Model '{model}' isn't installed in Ollama. Run "
                        f"`ollama pull {model}`. Installed: "
                        f"{', '.join(sorted(installed)) or 'none'}")

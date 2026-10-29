@@ -30,6 +30,15 @@ def test_server_errors_are_raised():
         o.parse_pull_line('{"error": "pull model manifest: file does not exist"}')
 
 
+def test_untagged_name_means_latest():
+    # Found in the wizard: llama3.2 was installed as 'llama3.2:latest' but the
+    # list looked for another spelling and offered to download it again.
+    assert o.has_model("llama3.2", ["llama3.2:latest", "qwen3:8b"])
+    assert o.has_model("llama3.2:latest", ["llama3.2"])
+    assert o.has_model("qwen3:8b", ["qwen3:8b"])
+    assert not o.has_model("qwen3:4b", ["qwen3:8b"])
+
+
 def test_install_command_is_per_user_and_non_interactive():
     cmd = o.install_command()
     assert cmd[:4] == ["winget", "install", "--id", "Ollama.Ollama"]

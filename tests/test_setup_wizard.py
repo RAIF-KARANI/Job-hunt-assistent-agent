@@ -62,6 +62,26 @@ def test_local_page_needs_ollama_running_and_model_downloaded(wizard):
     assert not page.isComplete()                   # Ollama stopped
 
 
+def test_already_installed_says_so_and_hides_download(wizard):
+    page = wizard.local_page
+    fake_local_state(page, models_installed=["qwen3:8b"])
+    assert "already installed" in page.ollama_status.text()
+    assert "already on this PC" in page.model_status.text()
+    assert page.download_button.isHidden()                  # nothing to download
+    labels = {a.name: b.text() for a, b in zip(page.advice, page.model_buttons.buttons())}
+    assert "already on this PC" in labels["qwen3:8b"]
+    assert "GB download" in labels["qwen3:4b"]
+
+
+def test_just_downloaded_is_not_called_already(wizard):
+    page = wizard.local_page
+    fake_local_state(page, models_installed=[])               # first check: nothing yet
+    assert not page.download_button.isHidden()
+    page._ollama_checked((True, True, ["qwen3:8b"]))          # after the download finished
+    assert page.model_status.text() == "✔ qwen3:8b downloaded."
+    assert page.download_button.isHidden()
+
+
 def test_too_big_models_cannot_be_chosen(wizard):
     page = wizard.local_page
     pc = SystemInfo(ram_gb=8, gpu_name=None, vram_gb=None, vram_exact=False,

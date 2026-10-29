@@ -71,6 +71,16 @@ def start(wait_seconds: float = 20) -> bool:
     return False
 
 
+def canonical(name: str) -> str:
+    """Ollama treats a name without a tag as ':latest' ('llama3.2' == 'llama3.2:latest')."""
+    return name if ":" in name else f"{name}:latest"
+
+
+def has_model(name: str, installed: list[str]) -> bool:
+    """Is `name` among the installed models, whichever way the tag is written?"""
+    return canonical(name) in {canonical(m) for m in installed}
+
+
 def installed_models() -> list[str]:
     try:
         tags = requests.get(f"{base_url()}/api/tags", timeout=5).json()

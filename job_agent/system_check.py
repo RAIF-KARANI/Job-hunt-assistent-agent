@@ -30,7 +30,9 @@ MODELS = [
     ("qwen3:14b", 9.3, "Highest quality of the local options"),
     ("qwen3:8b", 5.2, "Best balance - JobLens was built and tested with it"),
     ("qwen3:4b", 2.6, "Lighter, for 8 GB PCs; noticeably less accurate"),
-    ("llama3.2:3b", 2.0, "Smallest; weakest at the structured answers JobLens needs"),
+    # 'llama3.2' (= llama3.2:latest = the 3B model): written without a tag so
+    # it matches what `ollama pull llama3.2` installs.
+    ("llama3.2", 2.0, "Smallest (3B); weakest at the structured answers JobLens needs"),
 ]
 DEFAULT_MODEL = "qwen3:8b"
 OS_RESERVE_GB = 4.0   # RAM left for Windows and other apps

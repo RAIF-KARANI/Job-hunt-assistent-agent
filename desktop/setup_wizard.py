@@ -165,15 +165,22 @@ class LocalPage(QWizardPage):
             self.model_buttons.removeButton(b)
             b.deleteLater()
         for i, a in enumerate(advice):
-            star = "  ★ recommended" if a.recommended else ""
-            b = QRadioButton(f"{VERDICT_ICON[a.verdict]} {a.name}  ·  {a.verdict}: {a.reason}  ·  "
-                             f"{a.download_gb:.1f} GB download{star}\n      {a.description}")
+            b = QRadioButton()
             b.setEnabled(a.verdict in ("fast", "slower"))
             b.setChecked(a.recommended)
             self.model_buttons.addButton(b, i)
             self.model_box.addWidget(b)
         self.advice = advice
         self._refresh()
+
+    def _model_label(self, a) -> str:
+        star = "  ★ recommended" if a.recommended else ""
+        # Tell people what they already have, so nothing looks like it will
+        # download twice (user feedback after Phase 11).
+        size = ("already on this PC" if ollama_setup.has_model(a.name, self.models)
+                else f"{a.download_gb:.1f} GB download")
+        return (f"{VERDICT_ICON[a.verdict]} {a.name}  ·  {a.verdict}: {a.reason}  ·  "
+                f"{size}{star}\n      {a.description}")
 
     def chosen_model(self) -> str | None:
         i = self.model_buttons.checkedId()
@@ -189,9 +196,15 @@ class LocalPage(QWizardPage):
 
     def _ollama_checked(self, result):
         installed, running, models = result
+        # Remember what was on the PC at the FIRST check, to tell "already
+        # there" apart from "the wizard just installed / downloaded it".
+        if not hasattr(self, "installed_before"):
+            self.installed_before, self.models_before = installed, set(models)
         self.installed, self.running, self.models = installed, running, models
-        if running:
-            self.ollama_status.setText("✔ Ollama is installed and running.")
+        if running and self.installed_before:
+            self.ollama_status.setText("✔ Ollama is already installed and running. Nothing to install.")
+        elif running:
+            self.ollama_status.setText("✔ Ollama installed and running.")
         elif installed:
             self.ollama_status.setText("⚠ Ollama is installed but not running. Start the Ollama app.")
         else:
@@ -252,20 +265,29 @@ class LocalPage(QWizardPage):
         running = getattr(self, "running", False)
         installed = getattr(self, "installed", False)
         model = self.chosen_model() if hasattr(self, "advice") else None
-        have_model = model in self.models if model else False
+        have_model = ollama_setup.has_model(model, self.models) if model else False
         self.install_button.setVisible(not installed)
         busy = self.pull_worker is not None and self.pull_worker.isRunning()
-        self.download_button.setEnabled(running and bool(model) and not have_model and not busy)
+        # Already have it -> no Download button at all (a greyed-out one made
+        # people think it would download again).
+        self.download_button.setVisible(not have_model)
+        self.download_button.setEnabled(running and bool(model) and not busy)
         self.download_button.setText(f"Download {model}" if model else "Download model")
         if model and have_model:
-            self.model_status.setText(f"✔ {model} is downloaded.")
+            already = ollama_setup.has_model(model, list(getattr(self, "models_before", [])))
+            self.model_status.setText(f"✔ {model} is already on this PC. No download needed."
+                                      if already else f"✔ {model} downloaded.")
         elif model and running and not busy:
             self.model_status.setText(f"{model} isn't downloaded yet.")
+        if hasattr(self, "advice"):  # relabel: "already on this PC" vs "5.2 GB download"
+            for a, button in zip(self.advice, self.model_buttons.buttons()):
+                button.setText(self._model_label(a))
         self.completeChanged.emit()
 
     def isComplete(self):
         model = self.chosen_model() if hasattr(self, "advice") else None
-        return bool(getattr(self, "running", False) and model and model in self.models)
+        return bool(getattr(self, "running", False) and model
+                    and ollama_setup.has_model(model, self.models))
 
     def nextId(self):
         return RESUMES
