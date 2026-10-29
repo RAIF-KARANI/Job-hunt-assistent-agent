@@ -1,0 +1,164 @@
+"""
+The API the web page calls, and the events it receives (Phase 12b).
+
+JS -> Python: pywebview exposes every public method of `Api` to the page:
+
+    const jobs = await window.pywebview.api.list_jobs()
+
+Each call runs on its own thread, returns JSON, and a raised exception
+rejects the JS promise (the page shows the message). So slow calls like
+llm_status() never freeze the window.
+
+Python -> JS: events (see runner.py) are pushed with evaluate_js:
+
+    window.joblens.onEvent({"type": "log", "text": "..."})
+
+Lessons from spike 12a:
+- The page must ask `app_info()` itself once `window.pywebview.api` exists;
+  Python never assumes the page is listening yet.
+- evaluate_js doesn't wait for promises, so data flows JS -> Python as
+  calls, and Python -> JS only as fire-and-forget events.
+- Events sent while the page is (re)loading are lost; `run_state()`
+  returns what the page needs to catch up (busy? paused for review?).
+
+Security: the page is local, but it renders text from the web (job
+postings). So the API key is never sent to the page (only whether one is
+set), and settings writes go through an allow-list.
+"""
+
+import json
+from typing import Callable
+
+from job_agent import __version__, paths, runlog, settings, tracker
+from job_agent.llm import llm_status
+
+from desktop_web.runner import AgentRunner, Event
+
+# Settings the page may change, with the values each accepts (None = free text).
+WRITABLE_SETTINGS: dict[str, tuple | None] = {
+    "LLM_PROVIDER": ("ollama", "anthropic"),
+    "LLM_MODEL": None,
+    "OLLAMA_NUM_CTX": None,
+    "JUDGE_EVIDENCE": ("true", "false"),
+    "TRACING": ("off", "langfuse", "langsmith"),
+    "UI_3D": ("animated", "still", "off"),   # D14
+    "SETUP_DONE": ("true", "false"),
+}
+SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
+
+
+def to_json(value):
+    """Anything -> what JSON can carry (Pydantic models, rows, dates...)."""
+    return json.loads(json.dumps(value, default=_default))
+
+
+def _default(o):
+    if hasattr(o, "model_dump"):
+        return o.model_dump(mode="json")
+    if hasattr(o, "keys"):  # sqlite3.Row
+        return dict(o)
+    return str(o)
+
+
+class Api:
+    """Everything the page may call. Underscore names are hidden from JS."""
+
+    def __init__(self, send: Callable[[Event], None], graph=None):
+        # `send` delivers an event to the page; tests pass list.append.
+        self._send = send
+        self._runner = AgentRunner(emit=self._emit, graph=graph)
+
+    def _emit(self, event: Event) -> None:
+        self._send(to_json(event))
+
+    # ---- app ----------------------------------------------------------------
+
+    def app_info(self) -> dict:
+        return {"version": __version__, "installed": paths.IS_INSTALLED,
+                "data_dir": str(paths.DATA_DIR), "settings": self.get_settings()}
+
+    def llm_status(self) -> dict:
+        ok, message = llm_status()  # may wait a few seconds on the network
+        return {"ok": ok, "message": message}
+
+    # ---- the agent run ------------------------------------------------------
+
+    def start_run(self, url: str, fresh: bool = False) -> dict:
+        return {"run_id": self._runner.start(url, fresh)}
+
+    def resume(self, answer: dict) -> None:
+        self._runner.resume(answer)
+
+    def paste_text(self, text: str) -> None:
+        self._runner.paste_text(text)
+
+    def run_state(self) -> dict:
+        return to_json({"busy": self._runner.busy, "run_id": self._runner.run_id,
+                        "paused": self._runner.last_pause})
+
+    def save_feedback(self, run_id: str | None, job_id: int | None, ratings: dict,
+                      comment: str = "") -> int:
+        """ratings: {"fit_score": "about right", "cover_note": "needed edits"}; returns how many saved."""
+        saved = 0
+        for aspect, rating in (ratings or {}).items():
+            if rating:
+                runlog.save_feedback(run_id, job_id, aspect, rating, comment)  # validates
+                saved += 1
+        return saved
+
+    def feedback_options(self) -> dict:
+        return dict(runlog.FEEDBACK_OPTIONS)
+
+    # ---- tracker ------------------------------------------------------------
+
+    def statuses(self) -> list:
+        return list(tracker.STATUSES)
+
+    def list_jobs(self) -> list:
+        return to_json(tracker.list_jobs())
+
+    def get_job(self, job_id: int) -> dict:
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        for raw in ("job_json", "fit_json", "company_json"):  # already parsed below
+            job.pop(raw, None)
+        job["cover_notes"] = tracker.get_cover_notes(job["id"])
+        return to_json(job)
+
+    def set_status(self, job_id: int, status: str) -> None:
+        tracker.update_status(int(job_id), status)  # rejects unknown statuses
+
+    # ---- settings -----------------------------------------------------------
+
+    def get_settings(self) -> dict:
+        values = settings.read_settings()
+        out = {k: v for k, v in values.items() if k not in SECRET_SETTINGS}
+        out["ANTHROPIC_API_KEY_SET"] = bool(values.get("ANTHROPIC_API_KEY"))
+        return out
+
+    def save_settings(self, updates: dict) -> dict:
+        clean = {}
+        for key, value in (updates or {}).items():
+            if key not in WRITABLE_SETTINGS:
+                raise ValueError(f"Setting '{key}' can't be changed from the app.")
+            allowed = WRITABLE_SETTINGS[key]
+            value = str(value).strip()
+            if allowed and value not in allowed:
+                raise ValueError(f"{key} must be one of {', '.join(allowed)}")
+            clean[key] = value
+        settings.save_settings(clean)
+        return self.get_settings()
+
+    def set_api_key(self, key: str) -> dict:
+        """Write-only: the page can set or clear the key, never read it back."""
+        settings.save_settings({"ANTHROPIC_API_KEY": (key or "").strip()})
+        return self.get_settings()
+
+
+def window_sender(window) -> Callable[[Event], None]:
+    """Deliver events to the page. Before the page has loaded window.joblens,
+    the `&&` drops the event instead of throwing; run_state() recovers it."""
+    def send(event: Event) -> None:
+        window.evaluate_js(f"window.joblens && window.joblens.onEvent({json.dumps(event)})")
+    return send

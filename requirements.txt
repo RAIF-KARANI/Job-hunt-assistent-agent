@@ -32,6 +32,9 @@ PySide6-Essentials>=6.7 # Qt widgets (Essentials = ~80 MB instead of ~230 MB ful
 matplotlib>=3.8         # charts in the desktop Dashboard tab
 langchain-anthropic>=0.3  # optional Claude provider (API key in Settings)
 
+# ---- Phase 12: version-2 desktop app (web UI in a native window) ----
+pywebview>=6.0          # Edge WebView2 window + JS <-> Python bridge (desktop_web/)
+
 # ---- Phase 8c: tracing (TRACING=langfuse in .env) ----
 langfuse>=3.0           # SDK + LangChain callback handler; server: infra/langfuse
 # langsmith             # already installed with langchain; TRACING=langsmith needs only a key
