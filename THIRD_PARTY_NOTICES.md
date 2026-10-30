@@ -2,22 +2,41 @@
 
 JobLens itself is licensed under the MIT License (see `LICENSE`).
 
-The downloadable JobLens app (`JobLens-Setup-*.exe` / the portable zip)
-bundles the open-source components below. Their licenses apply to those
-components. Versions are the ones used to build JobLens 0.3.0.
+The downloadable JobLens app (`JobLens-Setup-*.exe`) bundles the
+open-source components below. Their licenses apply to those components.
+Versions are the ones used for the version-2 build (web UI, since step 12h).
 
-## Qt for Python (PySide6) — LGPL-3.0
+Since version 2 the app no longer contains Qt / PySide6 (LGPL-3.0),
+Matplotlib or Pillow: the window is a web page shown by Microsoft Edge
+WebView2.
 
-JobLens' window uses **PySide6-Essentials 6.12.0** and **shiboken6 6.12.0**
-(The Qt Company Ltd.), used under the **GNU Lesser General Public License
-v3.0** (LGPL-3.0-only).
+## The window: pywebview + Microsoft Edge WebView2
 
-- Qt and PySide6 are shipped **unmodified**, as separate dynamic libraries
-  (the `Qt6*.dll`, `PySide6\*.pyd` and `shiboken6` files inside the app's
-  `_internal` folder). You may replace them with your own compatible build.
-- Source code: https://code.qt.io/cgit/pyside/pyside-setup.git and
-  https://download.qt.io/official_releases/QtForPython/
-- License text: https://www.gnu.org/licenses/lgpl-3.0.html
+| Component | Version | License |
+|---|---|---|
+| pywebview | 6.2.1 | BSD-3-Clause |
+| pythonnet, clr_loader | 3.2.1 / 0.3.1 | MIT |
+| bottle, proxy_tools | 0.13.4 / 0.1.0 | MIT |
+| Microsoft.Web.WebView2 SDK DLLs (inside pywebview) | as shipped by pywebview | Microsoft WebView2 SDK license (redistributable): https://www.nuget.org/packages/Microsoft.Web.WebView2 |
+
+**Microsoft Edge WebView2 Runtime** is not part of JobLens. It comes with
+Windows 11; on a PC without it, the installer runs Microsoft's WebView2
+bootstrapper (`MicrosoftEdgeWebview2Setup.exe`, signed by Microsoft,
+distributed under Microsoft's WebView2 distribution terms:
+https://developer.microsoft.com/microsoft-edge/webview2/), which downloads
+and installs the runtime from Microsoft.
+
+## The user interface (built into `_internal\desktop_web\web\`)
+
+| Component | Version | License |
+|---|---|---|
+| React, React DOM (incl. `scheduler`) | 19.3.1 | MIT, © Meta Platforms, Inc. and affiliates |
+| three.js | 0.186.1 | MIT, © 2010–2026 three.js authors |
+| Sora (font, via Fontsource) | 5.3.0 | SIL Open Font License 1.1 |
+| IBM Plex Sans, IBM Plex Mono (fonts, via Fontsource) | 5.3.0 | SIL Open Font License 1.1, © IBM Corp. |
+
+The fonts may be used, bundled and redistributed under the SIL Open Font
+License 1.1 (https://openfontlicense.org); they are not sold on their own.
 
 ## Python
 
@@ -36,8 +55,6 @@ License). https://docs.python.org/3/license.html
 | Pydantic | 2.14.1 | MIT |
 | pandas | 3.1.0 | BSD-3-Clause |
 | NumPy | 2.5.4 | BSD-3-Clause (and bundled 0BSD, MIT, Zlib, CC0-1.0 parts) |
-| Matplotlib | 3.11.2 | Matplotlib License (PSF-based) |
-| Pillow | 13.0.0 | MIT-CMU |
 | Requests | 2.34.2 | Apache-2.0 |
 | HTTPX | 0.28.1 | BSD-3-Clause |
 | Beautiful Soup (`beautifulsoup4`) | 4.15.0 | MIT |

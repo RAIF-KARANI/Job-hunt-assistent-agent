@@ -582,3 +582,90 @@ works on a clean profile and the recommendation rule is unit-tested.
   page's promise waits.
 - **Native dialogs from a web UI** (`create_file_dialog`).
 - **Path traversal**: accept a file name, not a path.
+
+---
+
+## 12h — Packaging ✅ (30 Oct 2026)
+
+### Goal
+Ship the web app:
+- the front-end build inside `build_installer.py`
+- the WebView2 check in the installer
+- the self-test ported
+
+Done when `build_installer.py` passes and a real install and uninstall work.
+
+### What was done
+- **`scripts/build_installer.py`:**
+  1. `npm ci` + `npm run build`
+  2. WebView2 bootstrapper: downloaded once, signature checked
+  3. PyInstaller
+  4. self-test + window test of the frozen app, on a temp AppData
+  5. Inno Setup
+
+  `--test-install` adds the safe install test (D22).
+- **`joblens.spec`:** starts from `desktop_web`, bundles the built UI,
+  leaves out PySide6, matplotlib and PIL.
+- **`desktop_web/selftest.py`** (`JobLens.exe --self-test report.txt`), ported from Qt:
+  - the built UI and the separate 3D file are bundled
+  - imports
+  - `print()` without a console
+  - the workflow builds
+  - the bridge calls each screen makes return valid JSON
+  - the model status
+  - one real web search and one real structured LLM call
+- **`desktop_web/app.py`:** `--self-test`; a WebView2 check with a Windows
+  message and the download link instead of a crash.
+- **`installer/joblens.iss`:** installs WebView2 if missing (same registry
+  check as the app); `/DTestBuild` for the separate test build.
+- **`THIRD_PARTY_NOTICES.md`:** web UI components and fonts added; Qt,
+  Matplotlib and Pillow removed (not in the build any more).
+- **Bug fixed before it shipped:** a windowed `.exe` has
+  `sys.stdout = None`. The run-log router wrapped it, so any `print()`
+  outside a run (a tracing warning, "run log not saved") would have crashed
+  the app. It now discards those. There's a new test for it. **163 tests.**
+
+### Checked
+`python scripts/build_installer.py --test-install`, end to end:
+- front end built; bootstrapper signed by Microsoft
+- frozen app: self-test PASS (real Ollama call: "Paris"; real web search:
+  5 results), window test OK
+- **installer 54 MB** (Qt version: 81 MB), app folder 126 MB (Qt: 230 MB)
+- silent install of the test build: registered, WebView2 found (nothing
+  to install), and the **installed copy** passed the self-test and the
+  window test
+- silent uninstall: no files, no registry entry left
+- the real JobLens 0.3.0 on this PC: same `JobLens.exe` checksum, same
+  registry entry, only its own Start-menu shortcut
+- the real installer (without `/DTestBuild`) builds too (not installed: see Notes)
+
+### Problems hit
+1. **`print()` in the windowed app would crash** (see above). The source
+   runs never showed it, because there is always a console there.
+2. **The uninstall check failed the first time, but the uninstall was
+   fine.** Inno's uninstaller deletes `unins000.exe` from a temp copy of
+   itself after it exits, which took more than 30 s. The check now waits
+   up to 90 s; afterwards nothing was left.
+3. **Twice I wrote Windows paths through a shell script and Python ate the
+   backslashes** (`..\build` became a backspace character). Fixed with the
+   file tools. Rule for this project: edit files with Windows paths
+   directly, never through a shell heredoc.
+4. Running the **source** self-test once added the new `tracing` column
+   (the 12f2 migration) to the developer `data/jobs.db`. Your 5 runs and 7
+   jobs are unchanged; the new app does the same on its first start.
+
+### Notes
+- **Your installed JobLens is still 0.3.0 (Qt).** The new installer would
+  upgrade it in place (same AppId). That's a release decision, made after
+  12i and Phase 13; the test build keeps tests away from it until then.
+- The window test of a fresh profile shows the Setup wizard, so it reports
+  0 sidebar links; it checks that the page and the bridge start.
+- PyInstaller warns about `pycparser.lextab`/`yacctab`: harmless (pycparser
+  builds those tables at runtime when needed).
+
+### Concepts learned
+- **Code signing as a supply-chain check**: verify an installer you
+  download and redistribute (`Get-AuthenticodeSignature`).
+- **Inno Setup preprocessor** (`#ifdef`) for two builds from one script.
+- **Testing installers without harming the machine**: a separate AppId,
+  a silent install into a temp folder, and before/after checks.

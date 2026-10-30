@@ -14,30 +14,48 @@
 ;   - ASKS whether to keep your data (%LOCALAPPDATA%\JobLens: tracker,
 ;     cover notes, resume copies, settings). Default: keep.
 ;   - never touches Ollama or downloaded models (installed separately)
+; Since 12h:
+;   - installs Microsoft Edge WebView2 Runtime (the engine the window uses)
+;     if the PC doesn't have it, with the bootstrapper build_installer.py
+;     downloaded and checked
+;   - /DTestBuild makes a separate "JobLens Test Build" (own AppId, folder,
+;     shortcut; its uninstaller never deletes data), so a build can be
+;     installed and uninstalled for testing next to a real JobLens
 
 #ifndef AppVersion
   #define AppVersion "0.0.0-dev"
+#endif
+#ifdef TestBuild
+  #define TheAppName "JobLens Test Build"
+  #define TheAppId "{{C4A7D2E1-8B3F-4E6A-9D5C-1F2E3A4B5C6D}"
+#else
+  #define TheAppName "JobLens"
+  #define TheAppId "{{6B0E5A3C-2F1D-4C8B-9E7A-4A1F2D3C5B6E}"
 #endif
 
 [Setup]
 ; AppId identifies JobLens to Windows across versions: never change it, or an
 ; upgrade would install side by side instead of replacing the old version.
-AppId={{6B0E5A3C-2F1D-4C8B-9E7A-4A1F2D3C5B6E}
-AppName=JobLens
+AppId={#TheAppId}
+AppName={#TheAppName}
 AppVersion={#AppVersion}
-AppVerName=JobLens {#AppVersion}
+AppVerName={#TheAppName} {#AppVersion}
 AppPublisher=Raif Karani
 AppPublisherURL=https://github.com/RAIF-KARANI/Job-hunt-assistent-agent
-DefaultDirName={localappdata}\Programs\JobLens
+DefaultDirName={localappdata}\Programs\{#TheAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\dist
+#ifdef TestBuild
+OutputBaseFilename=JobLens-TestBuild-Setup-{#AppVersion}
+#else
 OutputBaseFilename=JobLens-Setup-{#AppVersion}
+#endif
 SetupIconFile=..\assets\joblens.ico
 UninstallDisplayIcon={app}\JobLens.exe
-UninstallDisplayName=JobLens
+UninstallDisplayName={#TheAppName}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -50,15 +68,19 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 [Files]
 ; The whole PyInstaller folder: JobLens.exe + _internal\
 Source: "..\dist\JobLens\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Licenses: JobLens (MIT) + bundled components (Qt/PySide6 is LGPL-3.0)
+; Licenses: JobLens (MIT) + bundled components
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+; Microsoft's WebView2 bootstrapper (~2 MB): copied to a temp folder only if needed
+Source: "..\build\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsWebView2
 
 [Icons]
-Name: "{autoprograms}\JobLens"; Filename: "{app}\JobLens.exe"
-Name: "{autodesktop}\JobLens"; Filename: "{app}\JobLens.exe"; Tasks: desktopicon
+Name: "{autoprograms}\{#TheAppName}"; Filename: "{app}\JobLens.exe"
+Name: "{autodesktop}\{#TheAppName}"; Filename: "{app}\JobLens.exe"; Tasks: desktopicon
 
 [Run]
+; Before the app can start: the WebView2 Runtime, silently (per user, no admin prompt).
+Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Installing Microsoft Edge WebView2 Runtime..."; Flags: waituntilterminated; Check: NeedsWebView2
 Filename: "{app}\JobLens.exe"; Description: "Launch JobLens"; Flags: nowait postinstall skipifsilent
 
 [Code]
@@ -67,6 +89,26 @@ Filename: "{app}\JobLens.exe"; Description: "Launch JobLens"; Flags: nowait post
   half-way ("MoveFile failed; code 3"). Found by the 10d install test. }
 const
   MaxInstallDirLength = 140;
+  WebView2Key = 'Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
+
+{ Same check as desktop_web/app.py: the runtime's version under one of three keys. }
+function HasVersion(Root: Integer; Key: String): Boolean;
+var
+  Version: String;
+begin
+  Result := RegQueryStringValue(Root, Key, 'pv', Version) and (Version <> '') and (Version <> '0.0.0.0');
+end;
+
+function NeedsWebView2: Boolean;
+begin
+  Result := not (HasVersion(HKLM, 'SOFTWARE\WOW6432Node\' + WebView2Key) or
+                 HasVersion(HKLM, 'SOFTWARE\' + WebView2Key) or
+                 HasVersion(HKCU, 'Software\' + WebView2Key));
+  if Result then
+    Log('WebView2 Runtime not found: it will be installed.')
+  else
+    Log('WebView2 Runtime found: nothing to install.');
+end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
@@ -86,6 +128,10 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   DataDir: String;
 begin
+#ifdef TestBuild
+  { A test build never deletes data: it shares %LOCALAPPDATA%\JobLens with a real install. }
+  Exit;
+#endif
   if CurUninstallStep = usPostUninstall then
   begin
     DataDir := ExpandConstant('{localappdata}\JobLens');

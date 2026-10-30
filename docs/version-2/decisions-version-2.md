@@ -298,5 +298,37 @@ is reworded.
 - **Installing Ollama and downloading a model stream progress** as events, one
   at a time. Without winget, the download page opens in your browser.
 
+## D22 — Packaging the web app ✅ (30 Oct 2026, step 12h)
+- **One command still builds everything** (`python scripts/build_installer.py`):
+  1. front end (`npm ci` + build)
+  2. WebView2 bootstrapper
+  3. PyInstaller
+  4. self-test **and** window test of the frozen app
+  5. installer
+
+  Node is needed to build, never to run (D13).
+- **The installer adds WebView2 only when it's missing.** It runs
+  Microsoft's ~2 MB bootstrapper silently (per user, no admin prompt). The
+  build downloads the bootstrapper once and **refuses it unless it is validly
+  signed by Microsoft**; it's never committed (`build/` is ignored). The
+  installer, the app and the self-test use the same three registry keys
+  to look for it. If it's still missing at start (e.g. a portable copy),
+  the app shows a Windows message with the download link, not a crash.
+- **The build no longer contains Qt, matplotlib or Pillow** (the code
+  stays in the repo until 12i). Result: **54 MB installer** (Qt: 81 MB),
+  126 MB app folder (Qt: 230 MB).
+- **Third-party notices updated now, not in 12i:** the build already ships
+  React, three.js, the fonts (SIL OFL) and pywebview, and the Qt LGPL
+  section no longer applies.
+- **Testing an install never touches a real JobLens.** `--test-install`
+  builds a separate "JobLens Test Build" (own AppId, folder and shortcut;
+  its uninstaller never deletes data). It installs it silently in a temp
+  folder, runs the **installed** copy's self-test and window test,
+  uninstalls it, and checks that nothing is left and the real install is
+  unchanged. Needed because v0.3.0 is installed on the build PC, and the
+  real installer would upgrade it in place (same AppId).
+- **The version stays 0.3.0** until the release (D10: v1.0.0 after
+  Phase 13).
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

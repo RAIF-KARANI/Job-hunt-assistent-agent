@@ -58,6 +58,43 @@ def _smoke(window, out: Path, screenshot: Path | None) -> None:
     window.destroy()
 
 
+# Microsoft's id for the Evergreen WebView2 Runtime (the Edge engine the window uses).
+WEBVIEW2_CLIENT = r"Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+WEBVIEW2_DOWNLOAD = "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
+
+
+def webview2_version() -> str | None:
+    """The installed WebView2 Runtime version, or None. Windows 11 has it built
+    in; some Windows 10 PCs don't (the installer adds it, 12h)."""
+    import winreg
+
+    for hive, key in [(winreg.HKEY_LOCAL_MACHINE, rf"SOFTWARE\WOW6432Node\{WEBVIEW2_CLIENT}"),
+                      (winreg.HKEY_LOCAL_MACHINE, rf"SOFTWARE\{WEBVIEW2_CLIENT}"),
+                      (winreg.HKEY_CURRENT_USER, rf"Software\{WEBVIEW2_CLIENT}")]:
+        try:
+            with winreg.OpenKey(hive, key) as k:
+                version = winreg.QueryValueEx(k, "pv")[0]
+                if version and version != "0.0.0.0":
+                    return version
+        except OSError:
+            continue
+    return None
+
+
+def _no_webview2() -> int:
+    """Say what's missing in a normal Windows message box (there's no console)."""
+    import ctypes
+    import webbrowser
+
+    answer = ctypes.windll.user32.MessageBoxW(
+        None, "JobLens needs Microsoft Edge WebView2 Runtime, which isn't on this PC.\n\n"
+              "Click OK to open Microsoft's download page, install it, then start JobLens again.",
+        "JobLens", 0x1 | 0x30)  # OK/Cancel + warning icon
+    if answer == 1:
+        webbrowser.open(WEBVIEW2_DOWNLOAD)
+    return 1
+
+
 def _screenshot(path: Path) -> None:
     """Grab the JobLens window from the screen (developer check, Windows only)."""
     import ctypes
@@ -78,7 +115,14 @@ def main(argv=None) -> int:
     parser.add_argument("--dev", action="store_true", help="load the Vite dev server")
     parser.add_argument("--smoke", type=Path, metavar="OUT", help="open, check, close; write OUT json")
     parser.add_argument("--screenshot", type=Path, help="with --smoke: save a PNG of the window")
+    parser.add_argument("--self-test", type=Path, metavar="REPORT", help="check the app, no window")
     args = parser.parse_args(argv)
+
+    if args.self_test:
+        from desktop_web.selftest import self_test
+        return self_test(str(args.self_test))
+    if not webview2_version():
+        return _no_webview2()
 
     if args.dev:
         url = DEV_URL

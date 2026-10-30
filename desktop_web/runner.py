@@ -70,18 +70,22 @@ class _RoutedStdout:
     """
 
     def __init__(self, real):
+        # A windowed .exe (PyInstaller, console=False) has no console:
+        # sys.stdout is None there, and None.write() would crash every
+        # print() that isn't part of a run.
         self.real = real
 
     def write(self, text):
         route = _log_route.get()
         if route is None:
-            return self.real.write(text)
+            return self.real.write(text) if self.real is not None else len(text)
         if text.strip():
             route(text.strip("\n"))  # CLI prints like print("\n...") add blank lines
         return len(text)
 
     def flush(self):
-        self.real.flush()
+        if self.real is not None:
+            self.real.flush()
 
 
 def _install_stdout() -> None:

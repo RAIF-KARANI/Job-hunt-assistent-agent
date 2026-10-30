@@ -768,3 +768,19 @@ def test_system_check_recommends_a_3d_level(monkeypatch):
     assert data["ui3d"]["level"] == "still"
     assert next(a for a in data["advice"] if a["recommended"])["name"] == "qwen3:8b"
     assert api.system_check("anthropic", "claude-haiku-5-5")["ui3d"]["level"] == "animated"
+
+
+# ---- 12h: the packaged (windowed) app has no console ---------------------------
+
+def test_print_works_without_a_console():
+    """PyInstaller's windowed .exe sets sys.stdout to None."""
+    routed = runner_mod._RoutedStdout(None)
+    assert routed.write("a warning outside any run\n") == len("a warning outside any run\n")
+    routed.flush()
+    lines = []
+    token = runner_mod._log_route.set(lines.append)
+    try:
+        routed.write("[1/5] Reading the job posting...\n")  # inside a run: still a log event
+    finally:
+        runner_mod._log_route.reset(token)
+    assert lines == ["[1/5] Reading the job posting..."]
