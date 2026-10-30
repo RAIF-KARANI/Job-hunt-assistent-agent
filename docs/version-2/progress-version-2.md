@@ -1062,3 +1062,51 @@ Next: **v1.0.0**:
 
 Everyone on 0.3.x (you, your friend) installs v1.0.0 by hand once; later
 versions come by themselves.
+
+---
+
+## Fix: saved settings were ignored after a restart ✅ (31 Oct 2026)
+
+### What you saw
+Settings → Check connection, after closing and reopening the app, checked
+`qwen3:8b` and gave an error, although another model was chosen.
+
+### What was really wrong (reproduced)
+`settings.load_settings()` filled in the **defaults first** and read the
+`.env` file second, with `override=False`. Every default was then already
+in the environment, so **the file could never override it**. After every
+restart:
+- `LLM_PROVIDER`, `LLM_MODEL` → ollama / qwen3:8b (a friend on llama3.2, or
+  anyone on the Claude API, silently went back to local qwen3:8b)
+- `JUDGE_EVIDENCE` → on; `TRACING`, `UPDATE_CHECK`, `OLLAMA_NUM_CTX` → defaults
+
+Settings still *showed* your choice, because it reads the file directly. So
+the page and the agent disagreed, and nothing said so. It was in the code
+since Phase 9a, and unnoticed because your own settings mostly matched the
+defaults and a change does apply until the app is closed.
+
+### Fix
+- Read the file first, then fill only the gaps with defaults. A real
+  environment variable still beats both.
+- 5 regression tests that simulate a fresh start:
+  - the saved model and an API choice survive a restart
+  - defaults only fill gaps
+  - a terminal variable still wins
+  - the page and the agent agree on every setting
+
+  4 of them fail without the fix.
+- **`tests/conftest.py`:** the tests no longer depend on the developer's
+  own `.env`. With the fix, this repo's `.env` really applies, and its
+  `TRACING=langfuse` made every agent test wait on a Langfuse server that
+  wasn't running (142 s instead of 14 s, 4 timeouts). Tracing is pinned off
+  for tests. **216 tests**, 14 s.
+
+### Note
+Your settings now really apply. Two of them were being ignored until now:
+- **`TRACING=langfuse` in this repo's `.env`**: running from source will
+  now trace to Langfuse
+- **the installed app's tracing setting**, changed to Langfuse on 30 Oct
+  (it takes effect on its next start)
+
+If Langfuse (Docker) isn't running, each run waits a few seconds when it
+ends, trying to send its traces. Set Tracing to Off unless you use it.

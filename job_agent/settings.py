@@ -36,12 +36,19 @@ DEFAULT_MODELS = {"ollama": "qwen3:8b", "anthropic": "claude-haiku-5-5"}
 
 
 def load_settings() -> None:
-    """Defaults first, then the .env file. Real environment variables win
-    (override=False), so a value set in the terminal still beats the file."""
-    for key, value in DEFAULTS.items():
-        os.environ.setdefault(key, value)
+    """Who wins: a real environment variable (set in the terminal), then the
+    .env file, then the defaults.
+
+    The file must be read BEFORE the defaults are filled in. The other way
+    round, every default was already in os.environ when the file was read,
+    and override=False then kept the default: after a restart the agent
+    used qwen3:8b / Ollama / the judge on, whatever you had saved, while
+    Settings (which reads the file) showed your choice. Found 31 Oct 2026.
+    """
     if ENV_FILE.exists():
-        load_dotenv(ENV_FILE, override=False)
+        load_dotenv(ENV_FILE, override=False)  # real environment variables still win
+    for key, value in DEFAULTS.items():
+        os.environ.setdefault(key, value)  # only what neither of them set
 
 
 def read_settings() -> dict:
