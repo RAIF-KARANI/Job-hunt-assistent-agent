@@ -42,6 +42,7 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "JUDGE_EVIDENCE": ("true", "false"),
     "TRACING": ("off", "langfuse", "langsmith"),
     "UI_3D": ("animated", "still", "off"),   # D14
+    "UI_THEME": ("system", "dark", "light"),
     "SETUP_DONE": ("true", "false"),
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")

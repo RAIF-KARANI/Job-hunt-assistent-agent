@@ -309,6 +309,9 @@ def test_api_key_is_write_only():
 def test_settings_writes_use_an_allow_list():
     api, _ = make_api(review_graph())
     assert api.save_settings({"UI_3D": "still"})["UI_3D"] == "still"
+    assert api.save_settings({"UI_THEME": "light"})["UI_THEME"] == "light"
+    with pytest.raises(ValueError):
+        api.save_settings({"UI_THEME": "purple"})
     with pytest.raises(ValueError):
         api.save_settings({"UI_3D": "spinny"})
     with pytest.raises(ValueError):

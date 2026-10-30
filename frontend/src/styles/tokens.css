@@ -1,0 +1,110 @@
+/*
+ * JobLens design tokens (v2). Every color, size and font in the UI comes
+ * from here, so a theme is just a different set of values.
+ *
+ * Dark = the approved concept. Light = the same roles, re-tuned so text
+ * still passes WCAG AA (4.5:1 body, 3:1 large/UI).
+ * The theme is chosen by <html data-theme="dark|light">; "system" sets it
+ * from prefers-color-scheme (see useTheme.ts).
+ */
+
+:root {
+  /* type */
+  --font-display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+
+  /* space (4 px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* shape */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --touch: 44px; /* minimum target size */
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-med: 200ms;
+
+  --sidebar-w: 224px;
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0f1c;
+  --surface: #111829;
+  --surface-2: #172036;
+  --surface-sunken: #0d1322;
+  --sidebar: #0e1424;
+  --border: #1e2840;
+  --border-strong: #2a3756;
+
+  --text: #e6ecf5;
+  --text-muted: #a9b6cb;   /* 8.6:1 on surface */
+  --text-faint: #93a1b8;   /* 6.8:1 on surface */
+
+  --accent: #4cc3f0;       /* fills: buttons, rings */
+  --on-accent: #06121c;    /* text on --accent: 9.3:1 */
+  --accent-ink: #8fd6f5;   /* accent-colored text and links: 11:1 */
+  --accent-soft: rgba(76, 195, 240, 0.12);
+
+  --ok: #5fd39a;
+  --warn: #f2a93b;
+  --warn-ink: #f7cf92;
+  --warn-soft: rgba(242, 169, 59, 0.1);
+  --danger-ink: #f3a3a3;
+
+  --fit-high: #9be3ff;
+  --fit-mid: #3a8fd0;
+  --fit-low: #56647d;
+
+  --focus: #e6ecf5;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #eef2f8;
+  --surface-sunken: #e8edf5;
+  --sidebar: #eaeef5;
+  --border: #d7deea;
+  --border-strong: #bcc7d8;
+
+  --text: #0e1626;
+  --text-muted: #44526b;   /* 7.9:1 on white */
+  --text-faint: #56647a;   /* 6.0:1 on white */
+
+  --accent: #0b6fa4;
+  --on-accent: #ffffff;    /* 5.5:1 */
+  --accent-ink: #0a5f8d;   /* 6.9:1 on white */
+  --accent-soft: rgba(11, 111, 164, 0.1);
+
+  --ok: #1c7c4a;
+  --warn: #b26a00;
+  --warn-ink: #8a5200;
+  --warn-soft: rgba(178, 106, 0, 0.1);
+  --danger-ink: #b42318;
+
+  --fit-high: #0b6fa4;
+  --fit-mid: #4f9bd1;
+  --fit-low: #9aa6b8;
+
+  --focus: #0e1626;
+}

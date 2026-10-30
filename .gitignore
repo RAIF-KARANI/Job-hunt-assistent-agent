@@ -16,3 +16,7 @@ dist/
 
 # ---- Node (spikes / front end) ----
 node_modules/
+
+# ---- version-2 UI build output (npm run build in frontend/) ----
+desktop_web/web/
+*.tsbuildinfo
