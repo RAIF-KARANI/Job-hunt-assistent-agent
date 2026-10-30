@@ -12,6 +12,8 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/app.css";
+import "./styles/controls.css";
+import "./styles/analyze.css";
 import { App } from "./app/App";
 
 createRoot(document.getElementById("root")!).render(

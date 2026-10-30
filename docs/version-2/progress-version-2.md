@@ -9,6 +9,7 @@ teaches. Plan: [plan-version-2.md](plan-version-2.md) · Decisions:
 | 12a Spike | ✅ | pywebview + WebView2 + three.js works; 134 MB build; 3D capped/paused ([results](spike-12a-results-version-2.md)) |
 | 12b Bridge | ✅ | `desktop_web/` runner + API, 20 tests, real agent driven end to end |
 | 12c Scaffold + shell | ✅ | React + TS + Vite in `frontend/`, design tokens (dark + light, all AA), sidebar shell in the real window |
+| 12d Analyze | ✅ | steps timeline, live log, review / rewrite / reject, paste fallback, ratings; a real qwen3:8b run approved from the new UI |
 
 ---
 
@@ -169,3 +170,81 @@ bridge, with the design system and the frame every screen sits in.
 - **Dev/prod split:** mock data only in development, removed from the
   production build by dead-code elimination.
 - **Smoke tests:** the cheapest test that the whole stack is wired together.
+
+---
+
+## 12d — Analyze screen ✅ (30 Oct 2026)
+
+### Goal
+Paste a job link, watch the agent work step by step, then approve, rewrite
+or reject the cover note, all in the new window. Done when a full real run
+is approved from the new UI.
+
+### What was done
+- **Progress as events (D15).** `runner.py` reads the agent's printed
+  lines once and sends structured events. The page never parses log text.
+
+  | Event | When |
+  |---|---|
+  | `started` | a run begins (`run_id`, `url`) |
+  | `step` | `[n/5] ...` lines; step 5 from `[draft] writing draft #n` |
+  | `step_detail` | `-> ...`, `! ...` and `- scoring ...` lines; step 2 shows `best: cv · fit 86` |
+  | `reused` | the job was already tracked, so steps 1-4 are skipped |
+
+  Every event except `log`/`busy` carries `at` (time), for step durations.
+- **Replay after a reload (D16).** The runner keeps the run's events;
+  `run_state()` returns them and the page replays them through the same
+  `reduce()` that handles live events.
+- **`frontend/src/analyze/`:**
+  - `runStore.ts`: the run outside React (survives page switches); one pure
+    `reduce(view, event)` function
+  - `Steps.tsx`: the five steps with status, live timer and detail
+  - `LiveLog.tsx`: raw log; follows new lines unless you scrolled up
+  - `ReviewPanel.tsx`: warnings about unverified numbers, "Why fit 86"
+    (proven requirements with resume quotes, gaps), editable draft, word
+    count, rewrite notes, approve, reject with a second confirm
+  - `PastePanel.tsx`: the paste-the-text fallback (200+ characters)
+  - `ResultPanel.tsx`: saved / rejected, then "How did JobLens do?" with the
+    cover-note rating pre-filled (Phase 11c)
+- **Shared controls** (`styles/controls.css`): buttons, inputs, segmented
+  radios, notices, badges, used by the next screens too.
+- **Sidebar:** "Agent working" / "Waiting for you", plus a dot on the
+  Analyze item when you're on another page.
+- **Dev mock:** a scripted fake run, so `npm run dev` in a browser shows
+  every state (a link with "linkedin" shows the paste flow). Still absent
+  from the production build.
+- Tests: 3 new bridge tests (progress events, "the parsed lines still exist
+  in the agent", replay). **117 tests in total**; typecheck clean.
+
+### Checked in the real window
+A driver script clicked through the real pywebview window on a
+temporary profile (your data untouched):
+- **Stand-in agent** (same prints, seconds long): run → review → rewrite
+  (draft 2, warning gone) → switch to Tracker and back (review still
+  there) → edit → approve → rating saved; then the paste flow, **reloaded
+  mid-pause** (paste panel came back), paste → review → reject (confirm) →
+  "not usable" pre-filled; light theme; narrow window.
+- **Real agent, qwen3:8b, a Hugging Face posting saved as a text file:**
+  review after **163 s** (read 22 s, resumes 1m 14s, research 52 s with 6
+  verified sources), fit 81 with evidence quotes, 161-word draft. Approved
+  with an edit → cover note file saved, suggested rating "needed edits",
+  rating saved.
+
+### Problems hit
+1. **Step 2 showed a paragraph.** The agent prints the verdict as an
+   `->` line after `-> best:`, so it overwrote the best-resume detail.
+   Fixed: step 2 shows `best: <resume> · fit <score>`; the verdict stays in
+   the log (found only by the real run).
+2. **The step connector crossed the circles** on pending steps: it was
+   sized from the circle, not from the row. Now drawn on the row.
+3. **Status buttons faded out.** "Running · 2m 41s" was a disabled primary
+   button at 55 % opacity: the live timer was hard to read. Status states
+   now use a readable secondary style.
+
+### Concepts learned
+- **Event sourcing in small:** the view is `events.reduce(reduce, IDLE)`,
+  so live updates and replay can't disagree.
+- **State outside the component tree** (`useSyncExternalStore`) for things
+  that outlive a page.
+- **Contract tests across a boundary:** a test that the agent still prints
+  the lines the UI depends on.

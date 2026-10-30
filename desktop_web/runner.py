@@ -13,13 +13,27 @@ The same job as desktop/agent_worker.py (the Qt version), without Qt:
 Events are plain JSON-able dicts. `emit` is any function: the bridge sends
 them to the web page; tests collect them in a list.
 
+Progress (Phase 12d): the agent reports progress by print()ing lines like
+"[2/5] Comparing your resumes...". Besides passing every line on as a `log`
+event, the runner turns the ones that mean something into structured
+events, so the page never has to parse log text:
+
+    {"type": "started", "run_id", "url", "at"}
+    {"type": "step", "step": 2, "text": "Comparing your resumes with the job", "at"}
+    {"type": "step_detail", "step": 2, "text": "best: AI_Engineer.pdf", "warn": False}
+    {"type": "reused", "job_id": 3, "at"}         # analysis loaded from the tracker
+
+The runner keeps the current run's events, so a reloaded page can replay them.
+
 Only ONE run at a time: the agent uses the whole LLM, and a second run
 would just queue behind it. start()/resume() while busy raise RuntimeError.
 """
 
+import re
 import sqlite3
 import sys
 import threading
+import time
 import uuid
 from contextvars import ContextVar
 from typing import Callable
@@ -31,6 +45,14 @@ from job_agent.tracing import flush, record_decision, tracing_config
 
 Event = dict
 DECISIONS = ("approve", "edit", "reject")
+MAX_HISTORY = 5000   # events kept for a page reload (a real run has ~100)
+
+# The agent's progress lines (job_agent/graph.py _step, cover_note.py, fit.py).
+STEP_LINE = re.compile(r"^\[(\d)/5\]\s*(.*?)\.*$")              # [2/5] Comparing your resumes...
+DRAFT_LINE = re.compile(r"^\[draft\] writing draft #(\d+)")       # step 5 has no [5/5] line
+REUSED_LINE = re.compile(r"^Already tracked as job #(\d+)")
+SCORING_LINE = re.compile(r"^- scoring '(.+?)'")
+SCORE_LINE = re.compile(r"^(\d+)/100\s+(.+?)\s+\[")                # 86/100  cv_ai   [skills ...]
 
 
 # Where print() goes for the code running right now. A ContextVar, not a
@@ -89,6 +111,9 @@ class AgentRunner:
         self._thread: threading.Thread | None = None
         self.run_id: str | None = None
         self.last_pause: Event | None = None   # lets a reloaded page show the review again
+        self.history: list[Event] = []          # this run's events, for a reloaded page
+        self._step = 0
+        self._scores: dict[str, int] = {}       # resume -> fit, for "best: cv · fit 86"
         # For the suggested cover-note rating (Phase 11c), set as the run goes.
         self._ai_draft, self._revision, self._decision, self._final_text = "", 0, "", ""
 
@@ -96,6 +121,10 @@ class AgentRunner:
         """Deliver an event with log capture OFF. Otherwise anything that prints
         while delivering (a logger, pywebview) would become a log event, which
         is delivered, prints again... forever. (Found by the 12b real-agent run.)"""
+        if event["type"] not in ("log", "busy"):
+            event.setdefault("at", time.time())   # the page shows how long each step took
+        if len(self.history) < MAX_HISTORY:
+            self.history.append(event)
         token = _log_route.set(None)
         try:
             self._deliver(event)
@@ -112,9 +141,14 @@ class AgentRunner:
         url = (url or "").strip()
         if not url:
             raise ValueError("Paste a job posting link (or the job text) first.")
-        self.run_id = str(uuid.uuid4())
+        with self._lock:
+            if self.busy:
+                raise RuntimeError("The agent is still working on the current step.")
+            self.run_id = str(uuid.uuid4())
+            self.history, self._step, self._scores = [], 0, {}
         self.last_pause = None
         self._ai_draft, self._revision, self._decision, self._final_text = "", 0, "", ""
+        self.emit({"type": "started", "run_id": self.run_id, "url": url})
         self._launch({"url": url, "fresh": bool(fresh)})
         return self.run_id
 
@@ -168,6 +202,51 @@ class AgentRunner:
                                             name="joblens-agent", daemon=True)
             self._thread.start()
 
+    def _on_log(self, text: str) -> None:
+        self.emit({"type": "log", "text": text})
+        for line in text.splitlines():
+            event = self._progress(line.strip())
+            if event:
+                self.emit(event)
+
+    def _progress(self, line: str) -> Event | None:
+        """One printed line -> a structured progress event, or None."""
+        if m := STEP_LINE.match(line):
+            self._step = int(m.group(1))
+            return {"type": "step", "step": self._step, "text": m.group(2)}
+        if m := DRAFT_LINE.match(line):
+            self._step = 5
+            n = int(m.group(1))
+            return {"type": "step", "step": 5,
+                    "text": "Writing the cover note" if n == 1 else f"Rewriting the cover note (draft {n})"}
+        if m := REUSED_LINE.match(line):
+            return {"type": "reused", "job_id": int(m.group(1))}
+        if not self._step:
+            return None
+        if m := SCORING_LINE.match(line):
+            return {"type": "step_detail", "step": self._step, "text": f"Scoring {m.group(1)}", "warn": False}
+        if m := SCORE_LINE.match(line):
+            self._scores[m.group(2)] = int(m.group(1))
+            return None
+        if self._step == 2 and line.startswith("-> best: "):
+            name = line[len("-> best: "):]
+            fit = f" · fit {self._scores[name]}" if name in self._scores else ""
+            return {"type": "step_detail", "step": 2, "text": f"best: {name}{fit}", "warn": False}
+        if self._step == 2 and line.startswith("-> ") and "best: " in self._last_detail(2):
+            return None  # the verdict paragraph: in the log, too long for the timeline
+        if line.startswith("-> "):
+            return {"type": "step_detail", "step": self._step, "text": line[3:], "warn": False}
+        if line.startswith("! "):
+            return {"type": "step_detail", "step": self._step, "text": line[2:], "warn": True}
+        return None
+
+    def _last_detail(self, step: int) -> str:
+        """The last detail sent for a step (this run)."""
+        for e in reversed(self.history):
+            if e["type"] == "step_detail" and e["step"] == step:
+                return e["text"]
+        return ""
+
     def _config(self) -> dict:
         return {"configurable": {"thread_id": self.run_id},
                 **tracing_config(self.run_id, interface=self.interface)}
@@ -176,7 +255,7 @@ class AgentRunner:
         self.emit({"type": "busy", "busy": True})
         _install_stdout()
         # This thread was started fresh, so its context is ours alone.
-        _log_route.set(lambda text: self.emit({"type": "log", "text": text}))
+        _log_route.set(self._on_log)
         try:
             if self._graph is None:
                 self.emit({"type": "log", "text": "Loading the agent..."})

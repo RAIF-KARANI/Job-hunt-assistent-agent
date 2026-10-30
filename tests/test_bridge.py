@@ -111,7 +111,8 @@ def test_start_streams_logs_then_pauses_for_review():
     api, events = make_api(review_graph())
     run_id = api.start_run("https://jobs.example/1")["run_id"]
     step(api)
-    assert events[0] == {"type": "busy", "busy": True}
+    assert events[0]["type"] == "started" and events[0]["url"] == "https://jobs.example/1"
+    assert events[1] == {"type": "busy", "busy": True}
     assert {"type": "log", "text": "[5/5] Drafting the cover note"} in events
     paused = of_type(events, "paused")[-1]
     assert paused["kind"] == "review" and paused["run_id"] == run_id
@@ -257,6 +258,87 @@ def test_stdout_routing_follows_the_run_not_the_thread():
     assert seen == ["hello", "from a tool thread"]
     assert real == ["from the main thread"]
     assert sys.stdout is not out                  # nothing global was replaced here
+
+
+# ---- progress for the steps timeline (12d) -----------------------------------
+
+def progress_graph():
+    """Prints exactly what the real agent prints, using its own functions where it has them."""
+    from job_agent.graph import _step
+
+    def work(state):
+        _step(1, "Reading the job posting...")
+        print("  -> AI Engineer @ Acme (Remote)")
+        _step(2, "Comparing your resumes with the job...")
+        print("  - scoring 'cv_ai'...")
+        print("   86/100  cv_ai   [skills 34/40]")
+        print("  -> best: cv_ai")
+        print("  -> Strong match overall; the only gap is Kubernetes.")   # the verdict
+        _step(3, "Researching the company (agent picks its own searches)...")
+        print("  [agent] decides to call web_search({'query': 'Acme'})")
+        print("  ! research failed (timeout) - continuing without it")
+        _step(4, "Saving to the job tracker...")
+        print("  [draft] writing draft #2...")
+        return {}
+
+    g = StateGraph(S)
+    g.add_node("work", work)
+    g.add_edge(START, "work")
+    g.add_edge("work", END)
+    return g.compile(checkpointer=InMemorySaver())
+
+
+def test_progress_lines_become_step_events():
+    api, events = make_api(progress_graph())
+    api.start_run("https://jobs.example/1")
+    step(api)
+    progress = [{k: e[k] for k in e if k != "at"} for e in events
+                if e["type"] in ("step", "step_detail")]
+    assert progress == [
+        {"type": "step", "step": 1, "text": "Reading the job posting"},
+        {"type": "step_detail", "step": 1, "text": "AI Engineer @ Acme (Remote)", "warn": False},
+        {"type": "step", "step": 2, "text": "Comparing your resumes with the job"},
+        {"type": "step_detail", "step": 2, "text": "Scoring cv_ai", "warn": False},
+        {"type": "step_detail", "step": 2, "text": "best: cv_ai · fit 86", "warn": False},
+        {"type": "step", "step": 3, "text": "Researching the company (agent picks its own searches)"},
+        {"type": "step_detail", "step": 3, "text": "research failed (timeout) - continuing without it",
+         "warn": True},
+        {"type": "step", "step": 4, "text": "Saving to the job tracker"},
+        {"type": "step", "step": 5, "text": "Rewriting the cover note (draft 2)"},
+    ]
+    assert all(e["at"] > 0 for e in events if e["type"] == "step")
+
+
+def test_the_parsed_lines_still_exist_in_the_agent():
+    # The lines the runner looks for, where the agent prints them. If one is
+    # reworded, the steps timeline would go quiet: this test says so first.
+    import inspect
+
+    from job_agent import fit, graph
+
+    assert "Already tracked as job #" in inspect.getsource(graph.check_tracker)
+    assert "[draft] writing draft #" in inspect.getsource(cover_note.draft_node)
+    assert "- scoring '" in inspect.getsource(fit)
+    assert '"  -> ' in inspect.getsource(graph.save_to_tracker)
+    fit_lines = inspect.getsource(graph.analyze_fit)
+    assert "/100  {m.resume_name}   [" in fit_lines and '"  -> best: ' in fit_lines
+    reused = runner_mod.AgentRunner(emit=lambda e: None)._progress(
+        "Already tracked as job #12 - reusing saved analysis (use --fresh to redo it).")
+    assert reused == {"type": "reused", "job_id": 12}
+
+
+def test_a_reloaded_page_can_replay_the_run():
+    api, events = make_api(review_graph())
+    api.start_run("https://jobs.example/1")
+    step(api)
+    history = api.run_state()["events"]
+    assert history == events                      # everything the page was sent
+    assert history[0]["type"] == "started" and history[-1]["type"] == "paused"
+    api.resume({"decision": "reject"})
+    step(api)
+    api.start_run("https://jobs.example/2")       # a new run starts a new history
+    step(api)
+    assert api.run_state()["events"][0]["url"] == "https://jobs.example/2"
 
 
 # ---- tracker -----------------------------------------------------------------

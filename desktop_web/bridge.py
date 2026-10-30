@@ -19,7 +19,8 @@ Lessons from spike 12a:
 - evaluate_js doesn't wait for promises, so data flows JS -> Python as
   calls, and Python -> JS only as fire-and-forget events.
 - Events sent while the page is (re)loading are lost; `run_state()`
-  returns what the page needs to catch up (busy? paused for review?).
+  returns what the page needs to catch up (busy? paused for review? the
+  run's events so far).
 
 Security: the page is local, but it renders text from the web (job
 postings). So the API key is never sent to the page (only whether one is
@@ -94,8 +95,9 @@ class Api:
         self._runner.paste_text(text)
 
     def run_state(self) -> dict:
+        """What a (re)loaded page needs to catch up, including this run's events to replay."""
         return to_json({"busy": self._runner.busy, "run_id": self._runner.run_id,
-                        "paused": self._runner.last_pause})
+                        "paused": self._runner.last_pause, "events": list(self._runner.history)})
 
     def save_feedback(self, run_id: str | None, job_id: int | None, ratings: dict,
                       comment: str = "") -> int:

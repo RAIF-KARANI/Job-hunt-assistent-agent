@@ -161,5 +161,38 @@ Three levels, stored as `UI_3D` in `.env`:
   - if WebGL fails, switch to `off` automatically and say so once
 - No information is lost: every 3D view has the same data in 2D.
 
+## D15 — Progress comes from Python as structured events ✅ (30 Oct 2026, step 12d)
+**Why:** the steps timeline needs to know "step 2 started", "best resume
+found", "waiting for you". The agent only *prints* that. Parsing print
+text in two places (Qt did it in the tab) would break silently when a line
+is reworded.
+- The runner (`desktop_web/runner.py`) reads the agent's lines once and
+  sends `step` / `step_detail` / `reused` events. The page never parses log
+  text; it still shows the raw log too.
+- A test checks that the lines the runner looks for still exist in the
+  agent's code, so rewording one fails a test instead of the timeline.
+- The agent itself is unchanged.
+
+## D16 — A run survives page switches and reloads ✅ (30 Oct 2026, step 12d)
+- The run's state lives in a small store outside React. Going to the
+  Tracker mid-run and back shows the same steps, log and draft.
+- The runner keeps the current run's events; after a reload (F5) the page
+  gets them from `run_state()` and replays them through the same function
+  that handles live events. One code path, so the two can't disagree.
+- Not kept across an app restart (the paused run itself is: SqliteSaver).
+  Resuming a run after a restart is a possible later feature.
+
+## D17 — Small safety choices on the Analyze screen ✅ (30 Oct 2026, step 12d)
+- **The model is checked before a run starts** (about 2 s), so a stopped
+  Ollama shows a clear message right away, not a crash minutes in.
+- **Reject asks once more**, inline ("Reject this draft? Nothing is
+  saved."): a draft takes minutes to make.
+- **Rewrite warns** when you edited the text yourself, because the rewrite
+  starts from the agent's draft.
+- **Pasted job text must be at least 200 characters** (same rule as the
+  Qt app).
+- **The rating form appears after every reviewed run**, with the cover note
+  rating pre-filled from what you did (Phase 11c rule). Skipping is one click.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

@@ -60,28 +60,47 @@ export interface PastePayload {
   reason: string;
 }
 
+// `at` = Python's time.time() (seconds), on every event except log and busy.
 export type PausedEvent =
-  | { type: "paused"; kind: "review"; run_id: string; payload: ReviewPayload; summary: RunSummary }
-  | { type: "paused"; kind: "paste_posting"; run_id: string; payload: PastePayload; summary: RunSummary };
+  | { type: "paused"; kind: "review"; run_id: string; payload: ReviewPayload; summary: RunSummary; at: number }
+  | { type: "paused"; kind: "paste_posting"; run_id: string; payload: PastePayload; summary: RunSummary; at: number };
+
+export interface FinishedEvent {
+  type: "finished";
+  run_id: string;
+  saved_path: string | null;
+  job_id: number | null;
+  decision: "approve" | "edit" | "reject" | null;
+  suggested_rating: string | null;
+  at: number;
+}
+
+/** Steps 1-4 come from the agent's "[n/5]" lines, step 5 is the cover note. */
+export type StepNumber = 1 | 2 | 3 | 4 | 5;
 
 export type AgentEvent =
   | { type: "busy"; busy: boolean }
   | { type: "log"; text: string }
+  | { type: "started"; run_id: string; url: string; at: number }
+  | { type: "step"; step: StepNumber; text: string; at: number }
+  | { type: "step_detail"; step: StepNumber; text: string; warn: boolean; at: number }
+  | { type: "reused"; job_id: number; at: number }
   | PausedEvent
-  | {
-      type: "finished";
-      run_id: string;
-      saved_path: string | null;
-      job_id: number | null;
-      decision: "approve" | "reject" | null;
-      suggested_rating: string | null;
-    }
-  | { type: "failed"; error: string };
+  | FinishedEvent
+  | { type: "failed"; error: string; at: number };
 
 export interface RunState {
   busy: boolean;
   run_id: string | null;
   paused: PausedEvent | null;
+  /** This run's events so far, so a reloaded page can replay them. */
+  events: AgentEvent[];
+}
+
+export interface FeedbackOptions {
+  fit_score: string[];
+  cover_note: string[];
+  [aspect: string]: string[];
 }
 
 export type Answer =
@@ -98,7 +117,7 @@ export interface PyApi {
   paste_text(text: string): Promise<void>;
   run_state(): Promise<RunState>;
   save_feedback(runId: string | null, jobId: number | null, ratings: Record<string, string>, comment?: string): Promise<number>;
-  feedback_options(): Promise<Record<string, string[]>>;
+  feedback_options(): Promise<FeedbackOptions>;
   statuses(): Promise<string[]>;
   list_jobs(): Promise<JobRow[]>;
   get_job(jobId: number): Promise<Record<string, unknown>>;

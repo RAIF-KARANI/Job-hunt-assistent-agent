@@ -11,7 +11,7 @@ checks (D3).
 
 | # | Phase | Main concept | Status |
 |---|---|---|---|
-| 12 | New desktop UI (web front end + 3D + Evals) | desktop web views, JS↔Python bridge, WebGL, eval dashboards | ⏳ next |
+| 12 | New desktop UI (web front end + 3D + Evals) | desktop web views, JS↔Python bridge, WebGL, eval dashboards | 🚧 in progress |
 | 13 | Tray + auto-update | background apps, update checks, safe updating | ⏳ |
 | 14 | New features | to be discussed (Q1) | ⏳ |
 
@@ -19,7 +19,7 @@ Release: **v1.0.0** (D10).
 
 ---
 
-## Phase 12 — New desktop UI ⏳
+## Phase 12 — New desktop UI 🚧
 **Goal:** replace the Qt widgets UI with a modern web UI in a native window,
 with a three.js "job galaxy" on the Dashboard. The agent (`job_agent/`) stays as it is.
 **Concept:** https://claude.ai/artifact/9y3YMbFBn8QtfV1ie9DMS8
@@ -29,7 +29,7 @@ with a three.js "job galaxy" on the Dashboard. The agent (`job_agent/`) stays as
 | 12a ✅ | **Spike (1 day, throwaway):** [results](spike-12a-results-version-2.md): pywebview window + a three.js scene + one JS→Python call + one Python→JS event; package it with PyInstaller | numbers measured: installer size, startup time, GPU use with Ollama running; D7 confirmed or changed |
 | 12b ✅ | **Bridge** (`desktop_web/bridge.py`): `start_run`, `resume(decision)`, `paste_text`, `list_jobs`, `get_job`, `set_status`, settings read/write; agent events → JS (`log`/`paused`/`finished`/`failed`) | bridge unit tests pass with no window |
 | 12c ✅ | **Front-end scaffold** (React + TypeScript + Vite, D13) + **design tokens + app shell**: colors, type, spacing; sidebar; light/dark | `npm run build` output loads in the pywebview window |
-| 12d | **Analyze** screen: steps timeline, live log, draft editor, approve / rewrite / reject, paste-text fallback | full run approved from the new UI |
+| 12d ✅ | **Analyze** screen: steps timeline, live log, draft editor, approve / rewrite / reject, paste-text fallback | full run approved from the new UI |
 | 12e | **Tracker** screen: board (drag = status change) + list view + job details | status changes saved to `jobs.db` |
 | 12f | **Dashboard**: KPI tiles, 2D charts from the run log, job galaxy in 3 levels (D14: animated / still / 2D map), 30 FPS cap + pause during runs (D12), reduced motion, WebGL fallback | charts match the old Dashboard's numbers; every level shows the same data |
 | 12f2 | **Evals** screen (D9): KPIs, pass-rate trend, ratings, safety nets, time/tokens per step, models compared, recent runs; data from the run log via `monitoring.py`; Langfuse/LangSmith status + trace links when tracing is on | numbers match `runlog` queries in tests |

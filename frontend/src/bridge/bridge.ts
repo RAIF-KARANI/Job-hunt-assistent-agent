@@ -69,3 +69,10 @@ export function getApi(): Promise<PyApi> {
   });
   return apiPromise;
 }
+
+/** A readable message from a rejected call (pywebview rejects with plain objects, not Errors). */
+export function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
+  return String(e);
+}

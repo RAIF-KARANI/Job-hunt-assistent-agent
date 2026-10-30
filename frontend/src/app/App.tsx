@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Analyze } from "../analyze/Analyze";
+import { catchUp } from "../analyze/runStore";
 import { bridgeKind, getApi } from "../bridge/bridge";
 import type { AppInfo, Theme } from "../bridge/types";
 import { Placeholder } from "../pages/Placeholder";
@@ -14,6 +16,7 @@ export function App() {
   useTheme(theme);
 
   useEffect(() => {
+    catchUp(); // a run may already be going (page reload)
     getApi()
       .then((api) => api.app_info())
       .then((i) => {
@@ -48,7 +51,7 @@ export function App() {
       </a>
       <Sidebar page={page} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
       <main id="main" className="content" tabIndex={-1}>
-        <Placeholder page={page} />
+        {page === "analyze" ? <Analyze /> : <Placeholder page={page} />}
         {info && <footer className="version">JobLens {info.version}</footer>}
       </main>
     </div>
