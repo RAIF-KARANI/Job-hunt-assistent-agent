@@ -90,6 +90,12 @@
   --st-offer: #5fd39a;
   --st-rejected: #56647d;
 
+  /* job galaxy (12f) */
+  --galaxy-sky: #142445;
+  --galaxy-sky-edge: #0d1322;
+  --galaxy-star: #c9d4e5;
+  --galaxy-label: rgba(10, 15, 28, 0.78);
+
   --focus: #e6ecf5;
 }
 
@@ -136,6 +142,11 @@
   --st-interviewing: #b26a00;
   --st-offer: #1c7c4a;
   --st-rejected: #9aa6b8;
+
+  --galaxy-sky: #ffffff;
+  --galaxy-sky-edge: #e9eff8;
+  --galaxy-star: #8b9ab3;
+  --galaxy-label: rgba(255, 255, 255, 0.88);
 
   --focus: #0e1626;
 }

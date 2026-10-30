@@ -25,10 +25,14 @@ import requests
 from job_agent import tracing  # noqa: F401  (loads .env so LANGFUSE_* are set)
 from job_agent.tracker import list_jobs
 
-# The main workflow's nodes, in pipeline order (graph.py).
+# The main workflow's nodes, in pipeline order (graph.py). The last one is
+# `draft` (inside the cover-note subgraph), not `cover_note`: cover_note
+# pauses for your review, so its own timing is split in two and the part
+# after the resume is ~0 s. `draft` is the model writing (each rewrite
+# counts once). Changed in 12f (D19).
 PIPELINE_NODES = [
     "check_tracker", "read_posting", "analyze_fit",
-    "research_company", "save_to_tracker", "cover_note",
+    "research_company", "save_to_tracker", "draft",
 ]
 TOOL_NAMES = ["web_search", "news_search"]
 STATUS_ORDER = [

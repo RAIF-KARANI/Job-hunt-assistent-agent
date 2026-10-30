@@ -1,0 +1,535 @@
+/* Dashboard (12f): tiles, job galaxy, selected job, 2D cards. */
+
+.tile-note {
+  min-height: 1.4em;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.range-note {
+  margin: -12px 0 0;
+}
+
+/* ---- galaxy + selected job ---- */
+
+.galaxy-row,
+.chart-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.galaxy-card {
+  position: relative;
+  flex: 2 1 520px;
+  min-width: 0;
+  min-height: 300px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-sunken);
+}
+
+.galaxy-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding: 18px 22px 0;
+}
+
+.galaxy-hint {
+  margin-right: auto;
+}
+
+.galaxy-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: -1px;
+  background: var(--dot);
+}
+
+.node-high {
+  --dot: var(--fit-high);
+}
+
+.node-mid {
+  --dot: var(--fit-mid);
+}
+
+.node-low {
+  --dot: var(--fit-low);
+}
+
+.galaxy-notice {
+  margin: var(--space-3) 22px 0;
+}
+
+.galaxy-stage {
+  position: relative;
+  flex: 1 0 440px; /* grows with the card when the job panel beside it is taller */
+  margin-top: var(--space-3);
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 55%, var(--galaxy-sky) 0%, var(--galaxy-sky-edge) 70%);
+}
+
+.galaxy-caption {
+  margin: 0;
+  padding: 10px 22px 16px;
+}
+
+.galaxy-loading,
+.galaxy-empty {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.galaxy-empty p {
+  max-width: 360px;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* 3D: the canvas fills the stage; labels float above it. */
+.galaxy-3d {
+  position: absolute;
+  inset: 0;
+}
+
+.galaxy-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.galaxy-canvas:active {
+  cursor: grabbing;
+}
+
+.galaxy-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* drags reach the canvas; only the jobs are clickable */
+}
+
+.galaxy-zoom {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 70;
+  display: flex;
+  gap: 6px;
+}
+
+.galaxy-zoom .btn {
+  min-width: 40px;
+}
+
+/* 2D (level "off"): a square map, centered. */
+.orbit-map {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100%, 440px);
+  max-height: 100%;
+  aspect-ratio: 1;
+}
+
+.orbit-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.orbit-rings circle {
+  fill: none;
+  stroke-width: 0.25;
+  stroke-dasharray: 1 0.8;
+  opacity: 0.6;
+}
+
+.orbit-rings .ring-0 {
+  stroke: var(--fit-high);
+  stroke-dasharray: none;
+}
+
+.orbit-rings .ring-1 {
+  stroke: var(--fit-mid);
+}
+
+.orbit-rings .ring-2 {
+  stroke: var(--fit-low);
+}
+
+/* "You" at the center */
+.galaxy-core {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--on-accent);
+  pointer-events: none;
+  user-select: none;
+}
+
+.orbit-map .galaxy-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 35%, white), var(--accent) 60%);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.galaxy-core.floating {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  margin: -9px 0 0 -20px;
+  text-align: center;
+  visibility: hidden; /* until the first frame places it */
+}
+
+/* A job: a zero-size anchor at its point; hit circle and label sit around it. */
+.galaxy-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.galaxy-3d .galaxy-node {
+  visibility: hidden; /* until the first frame places it */
+}
+
+.galaxy-node:focus-visible {
+  outline: none;
+}
+
+.galaxy-node:hover,
+.galaxy-node:focus-visible,
+.galaxy-node.selected {
+  z-index: 65 !important; /* over the 3D depth order */
+}
+
+.galaxy-hit {
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.galaxy-node:focus-visible .galaxy-hit {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.galaxy-dot {
+  display: block;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--dot) 70%, transparent);
+}
+
+.galaxy-node.selected .galaxy-dot {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+.galaxy-label {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--galaxy-label);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+/* Farther jobs fade a little: a depth cue for the 3D view. */
+.galaxy-3d .galaxy-label {
+  opacity: calc(0.6 + var(--near, 1) * 0.4);
+}
+
+.galaxy-node:not(.labeled):not(:hover):not(:focus-visible) .galaxy-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.galaxy-node:hover .galaxy-label,
+.galaxy-node.selected .galaxy-label {
+  opacity: 1;
+  color: var(--text);
+}
+
+.galaxy-node.selected .galaxy-label {
+  font-weight: 600;
+}
+
+/* ---- selected job ---- */
+
+.selected-job {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.selected-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.selected-names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin-right: auto;
+}
+
+.selected-names h2 {
+  font-size: var(--text-xl);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+/* Long titles and requirement sentences: the full text is in the details sheet. */
+.selected-names h2,
+.chip {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.chip {
+  -webkit-line-clamp: 2;
+}
+
+.selected-names .badge {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+.chip-group h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.chip-group .hint {
+  margin: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.chip-ok {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent-ink);
+}
+
+.chip-gap {
+  background: var(--warn-soft);
+  border-color: var(--warn-line);
+  color: var(--warn-ink);
+}
+
+.card .selected-brief {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.selected-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---- 2D cards ---- */
+
+.chart-card {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.card .chart-card > .hint,
+.chart-card > .hint {
+  margin: -6px 0 0;
+}
+
+.link-sm {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--accent-ink);
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: minmax(0, 9em) minmax(0, 1fr) auto;
+  gap: 10px var(--space-3);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.bar-row {
+  display: contents;
+}
+
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--fit-track);
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--accent);
+}
+
+.bar-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.nets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.net {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.net-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.net-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.net-rate {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.chart-empty {
+  margin: auto 0;
+  padding: var(--space-6) 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.card .selected-brief {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.chart-card .section-head h2 {
+  margin-right: auto;
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Analyze } from "../analyze/Analyze";
 import { catchUp } from "../analyze/runStore";
 import { bridgeKind, getApi } from "../bridge/bridge";
+import { Dashboard } from "../dashboard/Dashboard";
 import type { AppInfo, Theme } from "../bridge/types";
 import { Placeholder } from "../pages/Placeholder";
 import { useRoute } from "./routes";
@@ -52,7 +53,16 @@ export function App() {
       </a>
       <Sidebar page={page} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
       <main id="main" className="content" tabIndex={-1}>
-        {page === "analyze" ? <Analyze /> : page === "tracker" ? <Tracker /> : <Placeholder page={page} />}
+        {page === "dashboard" ? (
+          // Wait for the settings: with 3D off, three.js must never even load.
+          info && <Dashboard level={info.settings.UI_3D ?? "animated"} />
+        ) : page === "analyze" ? (
+          <Analyze />
+        ) : page === "tracker" ? (
+          <Tracker />
+        ) : (
+          <Placeholder page={page} />
+        )}
         {info && <footer className="version">JobLens {info.version}</footer>}
       </main>
     </div>

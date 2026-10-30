@@ -52,6 +52,30 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       if (job) job.status = status;
     },
     open_link: async (url) => void window.open(url, "_blank", "noopener"),
+    dashboard: async (days) => {
+      const runs = days === 7 ? 4 : days === 30 ? 11 : 17;
+      return {
+        days,
+        kpis: { runs, llm_calls: runs * 9, tokens_in: runs * 15400, tokens_out: runs * 3900, median_full_run: 182, approved: Math.round(runs * 0.6), decided: runs - 1, approval_rate: 0.6 },
+        decisions: { approve: Math.round(runs * 0.6), edit: 0, reject: runs - 1 - Math.round(runs * 0.6) },
+        steps: [
+          { node: "check_tracker", avg_seconds: 0.1, max_seconds: 0.2, count: runs },
+          { node: "read_posting", avg_seconds: 23, max_seconds: 41, count: runs },
+          { node: "analyze_fit", avg_seconds: 82, max_seconds: 130, count: runs },
+          { node: "research_company", avg_seconds: 48, max_seconds: 77, count: runs },
+          { node: "save_to_tracker", avg_seconds: 0.4, max_seconds: 1, count: runs },
+          { node: "draft", avg_seconds: 28, max_seconds: 60, count: runs },
+        ],
+        quality: [
+          { check: "Fake resume quotes caught", per_run: 0.3, total: 3, runs },
+          { check: "Claims rejected by the judge", per_run: 1.6, total: 18, runs },
+          { check: "Invented source URLs removed", per_run: 0.2, total: 2, runs },
+          { check: "Unverified numbers flagged", per_run: 0.5, total: 5, runs },
+          { check: "Web searches that failed", per_run: 0.1, total: 1, runs: 9 },
+        ],
+        pass_rate: 0.58,
+      };
+    },
   };
 }
 

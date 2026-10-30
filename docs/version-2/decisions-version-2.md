@@ -212,5 +212,36 @@ is reworded.
 - **"Draft a cover note"** fills in the Analyze form but doesn't start the
   run: you see the model check and press Analyze yourself.
 
+## D19 — Dashboard: plain three.js, loaded only when 3D is on ✅ (30 Oct 2026, step 12f)
+- **Plain three.js, not react-three-fiber** (changes D13 for this one
+  scene). The galaxy is one component, and its value is the frame loop:
+  30 FPS cap, draw-only-on-change for "still", stop during runs. Owning the
+  loop directly is simpler than steering r3f's, and one less dependency.
+- **three.js loads only when needed.** It's a separate file (~570 kB) the
+  page loads only when the 3D level is animated or still. With 3D off the
+  page never loads it and never creates a WebGL canvas (checked).
+- **"Low-power" GPU** is requested for the scene: on laptops with two
+  GPUs, the big one stays free for the local model.
+- **The jobs are real buttons** over the scene, at every level: Tab
+  reaches them (best fit first), screen readers read company, role, fit and
+  status. 3D only draws the dots.
+- **No mouse-wheel zoom:** the wheel scrolls the page. Zoom has buttons
+  (+, −, Reset).
+- **WebGL failure → flat map for this session**, with a notice. The saved
+  setting is not changed (a driver hiccup shouldn't turn 3D off for good).
+- **Distance = fit, 100 → 20:** fits from 100 down to 20 use the whole
+  radius (anything lower sits on the edge). On a 0-100 scale your four 75+
+  jobs were crowded into the middle fifth.
+- **Run numbers have a time range** (7 days / 30 days / All); the jobs
+  are always everything in the tracker. Numbers come from the same
+  `monitoring.py` functions as the Qt Dashboard (tested equal).
+- **"Draft cover note" time = the `draft` step**, not `cover_note`. The
+  `cover_note` step pauses for your review, so its own timing is split in
+  two and showed ~0 s. Fixed in `monitoring.py`, so the old Dashboard and
+  the Langfuse dashboard are fixed too.
+- **Where the Qt Dashboard's 6 charts went:** fit per job → galaxy;
+  status → "Where your applications are"; time per step and safety nets →
+  Dashboard cards; LLM time vs tokens and your ratings → Evals (12f2, D9).
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

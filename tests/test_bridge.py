@@ -378,7 +378,7 @@ def test_status_changes_are_validated():
 
 
 @pytest.mark.parametrize("url", ["file:///C:/Windows/System32/calc.exe", "javascript:alert(1)",
-                                 "C:\jobs\posting.txt", "ms-settings:", "https://", ""])
+                                 r"C:\jobs\posting.txt", "ms-settings:", "https://", ""])
 def test_only_web_links_are_opened(url, monkeypatch):
     opened = []
     monkeypatch.setattr("webbrowser.open", opened.append)
@@ -427,3 +427,75 @@ def test_app_info_is_json():
     api, _ = make_api(review_graph())
     info = json.loads(json.dumps(api.app_info()))
     assert info["version"] and "settings" in info
+
+
+# ---- 12f: dashboard numbers ---------------------------------------------------
+
+def seed_run_log():
+    """Two runs this week and one 60 days ago, written the way RunRecorder writes them."""
+    from datetime import datetime, timedelta, timezone
+
+    from job_agent import runlog
+
+    def ago(days):
+        return (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+
+    runlog.init_db()
+    with tracker._db() as conn:
+        for run_id, days, decision, seconds, tools, failed in [
+            ("r1", 1, "approve", 180.0, 4, 1), ("r2", 2, "reject", 200.0, 2, 0),
+            ("old", 60, "approve", 400.0, 0, 0)]:
+            conn.execute("""INSERT INTO runs (run_id, started_at, updated_at, status, decision,
+                            agent_seconds, llm_calls, input_tokens, output_tokens, tool_calls,
+                            tool_failures) VALUES (?, ?, ?, 'done', ?, ?, 6, 1000, 100, ?, ?)""",
+                         (run_id, ago(days), ago(days), decision, seconds, tools, failed))
+            conn.execute("INSERT INTO run_steps (run_id, step, seconds) VALUES (?, 'analyze_fit', ?)",
+                         (run_id, seconds / 2))
+            # The cover note: `cover_note` pauses for review (~0 s after the resume);
+            # `draft` is the model writing.
+            conn.executemany("INSERT INTO run_steps (run_id, step, seconds) VALUES (?, ?, ?)",
+                             [(run_id, "cover_note", 0.02), (run_id, "draft", 16.0)])
+            conn.execute("INSERT INTO run_llm_calls (run_id, step, model, input_tokens, output_tokens,"
+                         " seconds) VALUES (?, 'analyze_fit', 'qwen3:8b', 1000, 100, 30)", (run_id,))
+            for check, value in [("judge_rejections", 2), ("evidence_pass_rate", 0.5)]:
+                conn.execute("INSERT INTO run_quality (run_id, check_name, value) VALUES (?, ?, ?)",
+                             (run_id, check, value))
+
+
+def test_dashboard_numbers_match_the_monitoring_module():
+    from job_agent import monitoring as m
+
+    seed_run_log()
+    data = Api(send=lambda e: None).dashboard(30)
+    json.dumps(data)  # what pywebview sends: plain JSON, no numpy types
+
+    expected = m.build_kpis(m.local_runs(30), m.local_llm_calls(30), m.local_decisions(30))
+    assert data["kpis"] == expected
+    assert data["kpis"]["runs"] == 2 and data["kpis"]["median_full_run"] == 190.0
+    assert data["decisions"] == {"approve": 1, "edit": 0, "reject": 1}
+    assert data["steps"] == [{"node": "analyze_fit", "avg_seconds": 95.0, "max_seconds": 100.0, "count": 2},
+                             {"node": "draft", "avg_seconds": 16.0, "max_seconds": 16.0, "count": 2}]
+    quality = {q["check"]: q for q in data["quality"]}
+    assert quality["Claims rejected by the judge"]["total"] == 4
+    assert quality["Web searches that failed"]["total"] == 1
+    assert data["pass_rate"] == 0.5
+
+
+def test_dashboard_time_range():
+    seed_run_log()
+    api = Api(send=lambda e: None)
+    assert api.dashboard(7)["kpis"]["runs"] == 2
+    assert api.dashboard(None)["kpis"]["runs"] == 3          # all time includes the old run
+    assert api.dashboard(None)["days"] is None
+
+
+def test_dashboard_with_an_empty_run_log():
+    data = Api(send=lambda e: None).dashboard(30)
+    assert data["kpis"]["runs"] == 0 and data["kpis"]["median_full_run"] is None
+    assert data["steps"] == [] and data["quality"] == [] and data["pass_rate"] is None
+
+
+@pytest.mark.parametrize("days", [0, -5, True])
+def test_dashboard_rejects_a_bad_range(days):
+    with pytest.raises(ValueError):
+        Api(send=lambda e: None).dashboard(days)

@@ -11,6 +11,9 @@ export default defineConfig({
     outDir: "../desktop_web/web",
     emptyOutDir: true,
     target: "es2022", // WebView2 is current Chromium
+    // three.js is one ~570 kB chunk, loaded only when 3D is on and read from
+    // disk, never over a network: the default 500 kB warning doesn't apply.
+    chunkSizeWarningLimit: 650,
   },
   server: { port: 5173, strictPort: true },
 });

@@ -159,6 +159,27 @@ export type Answer =
   | { decision: "edit"; feedback: string }
   | { decision: "reject" };
 
+/** Api.dashboard(): run-log numbers from job_agent/monitoring.py. */
+export interface DashboardData {
+  days: number | null; // null = all time
+  kpis: {
+    runs: number;
+    llm_calls: number;
+    tokens_in: number;
+    tokens_out: number;
+    median_full_run: number | null; // seconds of agent work, runs with >= 5 LLM calls
+    approved: number;
+    decided: number;
+    approval_rate: number | null;
+  };
+  decisions: { approve: number; edit: number; reject: number };
+  /** Pipeline steps in order (monitoring.PIPELINE_NODES). */
+  steps: { node: string; avg_seconds: number; max_seconds: number; count: number }[];
+  /** Safety nets (monitoring.QUALITY_LABELS): catches per run that ran the check. */
+  quality: { check: string; per_run: number; total: number; runs: number }[];
+  pass_rate: number | null; // share of fit claims the evidence check kept
+}
+
 /** window.pywebview.api: every public method of bridge.Api (all async from JS). */
 export interface PyApi {
   app_info(): Promise<AppInfo>;
@@ -174,6 +195,7 @@ export interface PyApi {
   get_job(jobId: number): Promise<JobDetail>;
   set_status(jobId: number, status: JobStatus): Promise<void>;
   open_link(url: string): Promise<void>;
+  dashboard(days: number | null): Promise<DashboardData>;
   get_settings(): Promise<Settings>;
   save_settings(updates: Partial<Record<string, string>>): Promise<Settings>;
   set_api_key(key: string): Promise<Settings>;

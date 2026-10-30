@@ -64,6 +64,11 @@ def _default(o):
     return str(o)
 
 
+def _records(df) -> list[dict]:
+    """A DataFrame -> JSON rows (numpy numbers become plain ones, NaN -> null)."""
+    return json.loads(df.to_json(orient="records"))
+
+
 class Api:
     """Everything the page may call. Underscore names are hidden from JS."""
 
@@ -143,6 +148,28 @@ class Api:
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValueError("Only web links (http or https) can be opened.")
         webbrowser.open(url)
+
+    # ---- dashboard ----------------------------------------------------------
+
+    def dashboard(self, days: int | None = 30) -> dict:
+        """Run-log numbers for the Dashboard, from the same monitoring.py
+        functions the Qt Dashboard used, so both show the same numbers.
+        `days` = None means all time. Jobs come from list_jobs()."""
+        if days is not None and (isinstance(days, bool) or int(days) < 1):
+            raise ValueError("days must be a positive number, or None for all time")
+        days = None if days is None else int(days)
+        from job_agent import monitoring as m  # pandas: loaded when the Dashboard opens
+
+        runs, calls, decisions = m.local_runs(days), m.local_llm_calls(days), m.local_decisions(days)
+        quality, pass_rate = m.local_quality(days)
+        return {
+            "days": days,
+            "kpis": to_json(m.build_kpis(runs, calls, decisions)),
+            "decisions": dict(zip(decisions["decision"], map(int, decisions["count"]))),
+            "steps": _records(m.local_node_latency(days)),
+            "quality": _records(quality),
+            "pass_rate": pass_rate,
+        }
 
     # ---- settings -----------------------------------------------------------
 

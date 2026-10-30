@@ -312,8 +312,10 @@ A driver script on a temporary profile with a **copy** of your `jobs.db`
 
 ### Notes
 - `pytest` printed "1 warning" twice today and never again in 27 repeat
-  runs. It looks like a timing warning from the background-thread tests;
-  watching it.
+  runs. **Found in 12f:** a `SyntaxWarning` for `"C:\jobs\posting.txt"` in
+  this step's own test (`\j` isn't a valid escape). Python only warns when
+  it recompiles the file, which is why it came and went. Fixed with a raw
+  string.
 
 ### Concepts learned
 - **Optimistic updates** with rollback.
@@ -321,3 +323,89 @@ A driver script on a temporary profile with a **copy** of your `jobs.db`
   is never allowed.
 - **Native `<dialog>`** with `showModal()`: focus trap, Esc and backdrop.
 - **Trust boundaries again:** a desktop web view must decide where links go.
+
+---
+
+## 12f — Dashboard ✅ (30 Oct 2026)
+
+### Goal
+Key numbers, the job galaxy at the three 3D levels (D14), and 2D cards from
+the run log. Done when the numbers match the old Dashboard and every level
+shows the same data.
+
+### What was done
+- **Bridge:** `dashboard(days)` returns the run-log numbers (KPIs,
+  decisions, time per step, safety nets, evidence pass rate) for 7 days, 30
+  days or all time, from the same `monitoring.py` functions as the Qt
+  Dashboard.
+- **`frontend/src/dashboard/`:**
+  - `Dashboard.tsx`:
+    - 4 tiles: jobs tracked, median full run, evidence verified, cover notes approved
+    - the time range (remembered on this PC) and a "New analysis" button
+    - reloads when a run finishes
+  - `galaxy/layout.ts`: one placement for all levels (distance = fit, angle
+    from the job id, so a job doesn't move when others are added)
+  - `galaxy/scene.ts`: the three.js scene (D19):
+    - stars, the fit rings, "You" in the middle, one glowing dot per job, a selection ring
+    - at most 30 FPS
+    - "still" draws only when something changes
+    - colors follow the theme
+    - frees the GPU when you leave the page
+  - `galaxy/Galaxy3D.tsx`: loaded on demand; the job labels are buttons
+    that follow the dots
+  - `galaxy/OrbitMap.tsx`: the flat map for level "off" (SVG)
+  - `galaxy/Galaxy.tsx`: picks the level:
+    - reduce motion (Windows setting): animated acts as still
+    - an agent run pauses the spin
+    - WebGL failure: the flat map
+  - `SelectedJob.tsx`: the picked job: fit, proven skills, gaps, what the
+    company does; "Open details" (the Tracker's sheet) and "Draft a cover note"
+  - `Charts.tsx`: time per step, safety nets (links to Evals), where your
+    applications are; every bar has its value written beside it
+- **`monitoring.py`:** time per step uses `draft` instead of `cover_note` (D19).
+- three.js 0.186.1 (exact version). The page bundle is unchanged in size;
+  three.js is its own 568 kB file.
+- Tests: the bridge numbers are equal to `monitoring.py`'s, the time
+  range, an empty run log, bad ranges refused (0, −5, `True`), and
+  `draft` (not `cover_note`) in time per step. **129 tests**, no warnings.
+
+### Checked in the real window
+A driver script on a temporary profile with a **copy** of your `jobs.db`
+(the real file's checksum was the same before and after):
+- 7 jobs in the galaxy for 7 in the DB; tiles = Python's numbers (5 runs,
+  median 2m 54s, 62% evidence verified, 3 approved of 4)
+- **animated: 30.0 FPS; 0 FPS while the agent runs**, 30 again after
+- still: 0 frames when idle, redraws on zoom
+- off: **no canvas, three.js never loaded**, the same 7 jobs on the flat map
+- WebGL made to fail → notice + flat map with all 7 jobs
+- 20 switches between Dashboard and Tracker → still exactly one canvas,
+  no fallback (GPU contexts are released)
+- picked Intel (fit 33) → panel and `aria-pressed` updated; "Open
+  details" opened the sheet
+- the time ranges; Tab starts at the best fit (ByteDance, 90)
+- dark and light theme, narrow window
+
+### Problems hit
+1. **"Cover note: <1 s"** with real data. The real drafting time is
+   recorded under `draft` (16 s on average). Fixed in `monitoring.py` (D19).
+2. **21 FPS instead of 30.** The 30 FPS limit waited for the next screen
+   refresh after every frame. My first fix let some frames through
+   immediately (36 FPS right after a run). Now it uses a fixed 33.3 ms
+   schedule: exactly 30.0, never more.
+3. **Good jobs crowded in the middle** and their labels overlapped: the
+   camera was too far back and the scale used 0–100. The camera is now
+   closer and higher, and fit 100 → 20 fills the radius.
+4. **Real requirements are sentences**, so six chips made the panel very
+   tall. Now 4 chips, 2 lines each, with the full text on hover and in the
+   details sheet.
+5. Solved the "1 warning" from 12e (see the 12e notes).
+
+### Concepts learned
+- **Render on demand** vs a frame loop; a frame-rate cap with a fixed
+  schedule.
+- **Projecting 3D points to the screen** (`Vector3.project`) to put HTML
+  labels on a WebGL scene.
+- **Code splitting** with `React.lazy`: a heavy library loads only when
+  a feature needs it.
+- **GPU resources are manual:** dispose geometries, materials and textures,
+  and release the WebGL context.

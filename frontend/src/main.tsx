@@ -15,6 +15,7 @@ import "./styles/app.css";
 import "./styles/controls.css";
 import "./styles/analyze.css";
 import "./styles/tracker.css";
+import "./styles/dashboard.css";
 import { App } from "./app/App";
 import { routeLinksToBrowser } from "./bridge/bridge";
 
