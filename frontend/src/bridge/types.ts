@@ -180,6 +180,60 @@ export interface DashboardData {
   pass_rate: number | null; // share of fit claims the evidence check kept
 }
 
+/** Api.evals(): monitoring.build_evals() — how well the agent did (D9). */
+export interface EvalsData {
+  model: string | null; // the filter; null = all models
+  models: {
+    model: string;
+    provider: string; // "ollama" | "anthropic"
+    runs: number;
+    pass_rate: number | null;
+    approved: number;
+    decided: number;
+    median_seconds: number | null;
+    tokens_per_run: number | null;
+  }[];
+  kpis: {
+    runs: number;
+    pass_rate: number | null;
+    pass_rate_delta: number | null; // latest `window` runs vs the `window` before
+    pass_rate_window: number | null;
+    approved: number;
+    decided: number;
+    median_seconds: number | null;
+    full_runs: number;
+    tokens_in_per_run: number | null;
+    tokens_out_per_run: number | null;
+    tool_calls: number;
+    tool_failures: number;
+  };
+  trend: { run_id: string; started_at: string; rate: number }[]; // oldest first
+  ratings: { label: string; aspect: string; rating: string; count: number }[];
+  checks: { check: string; label: string; meaning: string; total: number; runs: number; per_run: number | null }[];
+  steps: { node: string; avg_seconds: number; count: number; out_tokens: number }[];
+  correlation: { output: number | null; input: number | null; calls: number };
+  recent: {
+    run_id: string;
+    started_at: string;
+    model: string;
+    result: "approved" | "rejected" | "not finished" | "error" | "done";
+    agent_seconds: number;
+    llm_calls: number;
+    tokens: number;
+    pass_rate: number | null;
+    tracing: string; // what was on during that run: off / langfuse / langsmith
+    job: { id: number; company: string; title: string } | null;
+  }[];
+}
+
+export interface TracingStatus {
+  mode: "off" | "langfuse" | "langsmith";
+  langfuse: "off" | "running" | "not reachable";
+  langfuse_sessions: string | null; // + run_id = that run's trace
+  langsmith: "off" | "on" | "no key";
+  langsmith_url: string;
+}
+
 /** window.pywebview.api: every public method of bridge.Api (all async from JS). */
 export interface PyApi {
   app_info(): Promise<AppInfo>;
@@ -196,6 +250,8 @@ export interface PyApi {
   set_status(jobId: number, status: JobStatus): Promise<void>;
   open_link(url: string): Promise<void>;
   dashboard(days: number | null): Promise<DashboardData>;
+  evals(model: string | null): Promise<EvalsData>;
+  tracing_status(): Promise<TracingStatus>;
   get_settings(): Promise<Settings>;
   save_settings(updates: Partial<Record<string, string>>): Promise<Settings>;
   set_api_key(key: string): Promise<Settings>;

@@ -2,7 +2,7 @@
 // build and look at screens without Python. Not included in production
 // builds (bridge.ts only loads it when import.meta.env.DEV).
 
-import type { AgentEvent, Answer, JobDetail, JobRow, PyApi, Settings } from "./types";
+import type { AgentEvent, Answer, EvalsData, JobDetail, JobRow, PyApi, Settings } from "./types";
 
 export function mockApi(emit: (event: AgentEvent) => void): PyApi {
   let settings: Settings = {
@@ -76,6 +76,71 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
         pass_rate: 0.58,
       };
     },
+    evals: async (model) => mockEvals(model),
+    tracing_status: async () => ({
+      mode: "langfuse",
+      langfuse: "running",
+      langfuse_sessions: "http://localhost:3000/project/demo/sessions/",
+      langsmith: "off",
+      langsmith_url: "https://smith.langchain.com/",
+    }),
+  };
+}
+
+function mockEvals(model: string | null): EvalsData {
+  const rates = [0.5, 0.58, 0.46, 0.62, 0.55, 0.71, 0.58, 0.64, 0.69, 0.6, 0.72, 0.58];
+  const local = model !== "claude-haiku-5-5";
+  return {
+    model,
+    models: [
+      { model: "qwen3:8b", provider: "ollama", runs: 10, pass_rate: 0.6, approved: 6, decided: 9, median_seconds: 182, tokens_per_run: 19400 },
+      { model: "claude-haiku-5-5", provider: "anthropic", runs: 2, pass_rate: 0.74, approved: 2, decided: 2, median_seconds: 48, tokens_per_run: 17800 },
+    ],
+    kpis: {
+      runs: local ? 10 : 2,
+      pass_rate: local ? 0.6 : 0.74,
+      pass_rate_delta: local ? 0.06 : null,
+      pass_rate_window: local ? 5 : null,
+      approved: local ? 6 : 2,
+      decided: local ? 9 : 2,
+      median_seconds: local ? 182 : 48,
+      full_runs: local ? 9 : 2,
+      tokens_in_per_run: 14600,
+      tokens_out_per_run: 4800,
+      tool_calls: 26,
+      tool_failures: 1,
+    },
+    trend: (local ? rates : [0.7, 0.78]).map((rate, i) => ({ run_id: `r${i}`, started_at: `2026-10-${String(10 + i).padStart(2, "0")} 10:00:00`, rate })),
+    ratings: [
+      { label: "Fit score: too low", aspect: "fit_score", rating: "too low", count: 1 },
+      { label: "Fit score: about right", aspect: "fit_score", rating: "about right", count: 6 },
+      { label: "Fit score: too high", aspect: "fit_score", rating: "too high", count: 2 },
+      { label: "Cover note: usable as is", aspect: "cover_note", rating: "usable as is", count: 3 },
+      { label: "Cover note: needed edits", aspect: "cover_note", rating: "needed edits", count: 2 },
+      { label: "Cover note: not usable", aspect: "cover_note", rating: "not usable", count: 1 },
+    ],
+    checks: [
+      { check: "claims_checked", label: "Claims checked", meaning: "skill claims the fit analysis made", total: 124, runs: 10, per_run: 12.4 },
+      { check: "fake_quotes_caught", label: "Fake quotes caught", meaning: "quote not found in your resume", total: 3, runs: 10, per_run: 0.3 },
+      { check: "judge_rejections", label: "Judge rejections", meaning: "quote is real but doesn't prove the skill", total: 18, runs: 10, per_run: 1.8 },
+      { check: "invented_urls_removed", label: "Invented URLs removed", meaning: "source not in the search results", total: 2, runs: 10, per_run: 0.2 },
+      { check: "invented_dates_removed", label: "Invented dates removed", meaning: "news date not in the search results", total: 1, runs: 10, per_run: 0.1 },
+      { check: "number_warnings", label: "Number warnings", meaning: "number in the cover note found nowhere", total: 4, runs: 10, per_run: 0.4 },
+      { check: "draft_rewrites", label: "Draft rewrites", meaning: "times you asked for a new draft", total: 5, runs: 10, per_run: 0.5 },
+    ],
+    steps: [
+      { node: "read_posting", avg_seconds: 23, count: 10, out_tokens: 600 },
+      { node: "analyze_fit", avg_seconds: 82, count: 10, out_tokens: 2100 },
+      { node: "research_company", avg_seconds: 48, count: 10, out_tokens: 1200 },
+      { node: "save_to_tracker", avg_seconds: 0.4, count: 10, out_tokens: 0 },
+      { node: "draft", avg_seconds: 28, count: 12, out_tokens: 900 },
+    ],
+    correlation: { output: 0.9, input: 0.16, calls: 90 },
+    recent: [
+      { run_id: "r11", started_at: "2026-10-21 10:00:00", model: "qwen3:8b", result: "approved", agent_seconds: 182, llm_calls: 9, tokens: 19400, pass_rate: 0.58, tracing: "langfuse", job: { id: 1, company: "Northwind Labs", title: "AI Engineer" } },
+      { run_id: "r10", started_at: "2026-10-20 10:00:00", model: "qwen3:8b", result: "not finished", agent_seconds: 160, llm_calls: 9, tokens: 18200, pass_rate: 0.72, tracing: "off", job: { id: 3, company: "Peregrine AI", title: "Applied Scientist" } },
+      { run_id: "r9", started_at: "2026-10-19 10:00:00", model: "claude-haiku-5-5", result: "rejected", agent_seconds: 48, llm_calls: 8, tokens: 17800, pass_rate: 0.74, tracing: "off", job: { id: 6, company: "Atlas Freight", title: "Full-stack Engineer" } },
+    ],
   };
 }
 

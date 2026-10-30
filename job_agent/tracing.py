@@ -40,7 +40,8 @@ def tracing_config(session_id: str, interface: str) -> dict:
     # writes to the local SQLite database, so every user gets the Dashboard's
     # run, quality and feedback charts without Langfuse or Docker.
     from job_agent.runlog import RunRecorder
-    local = RunRecorder(session_id, interface, os.getenv("LLM_PROVIDER", "ollama"), model)
+    local = RunRecorder(session_id, interface, os.getenv("LLM_PROVIDER", "ollama"), model,
+                        tracing=TRACING)
 
     if TRACING == "langfuse":
         from langfuse.langchain import CallbackHandler

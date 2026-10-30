@@ -339,3 +339,163 @@ def build_status_funnel(jobs: pd.DataFrame) -> pd.DataFrame:
     counts = jobs["status"].value_counts() if not jobs.empty else pd.Series(dtype=int)
     return pd.DataFrame({"status": STATUS_ORDER,
                          "jobs": [int(counts.get(s, 0)) for s in STATUS_ORDER]})
+
+
+# ---------------------------------------------------------------------------
+# Phase 12f2: the Evals screen - how well the agent did, per run and per
+# model, from the local run log. build_evals() is pure (DataFrames in, plain
+# dicts out) so it's unit-tested with hand-made tables.
+# ---------------------------------------------------------------------------
+
+EVAL_CHECKS = {  # run_quality check -> (label, what it means)
+    "claims_checked": ("Claims checked", "skill claims the fit analysis made"),
+    "fake_quotes_caught": ("Fake quotes caught", "quote not found in your resume"),
+    "judge_rejections": ("Judge rejections", "quote is real but doesn't prove the skill"),
+    "invented_urls_removed": ("Invented URLs removed", "source not in the search results"),
+    "invented_dates_removed": ("Invented dates removed", "news date not in the search results"),
+    "number_warnings": ("Number warnings", "number in the cover note found nowhere"),
+    "draft_rewrites": ("Draft rewrites", "times you asked for a new draft"),
+}
+# LLM calls made inside a step count towards it: the research agent's own
+# node is called "agent".
+CALL_STEP = {"agent": "research_company"}
+FULL_RUN_CALLS = 5  # same rule as build_kpis(): runs that did the whole analysis
+
+
+def _num(value):
+    """numpy/NaN -> plain float or None (JSON-safe)."""
+    if value is None or pd.isna(value):
+        return None
+    return float(value)
+
+
+def _median_full(runs: pd.DataFrame):
+    full = runs[runs["llm_calls"] >= FULL_RUN_CALLS]
+    return _num(full["agent_seconds"].median()) if len(full) else None
+
+
+def _per_run_quality(quality: pd.DataFrame) -> pd.DataFrame:
+    """run_quality rows, with draft_revisions (1 = first draft) turned into rewrites."""
+    q = quality.copy()
+    drafts = q["check_name"] == "draft_revisions"
+    q.loc[drafts, "value"] = (q.loc[drafts, "value"] - 1).clip(lower=0)
+    q.loc[drafts, "check_name"] = "draft_rewrites"
+    return q
+
+
+def _result(run) -> str:
+    if run["status"] == "error":
+        return "error"
+    if run["status"] == "paused":
+        return "not finished"
+    return {"approve": "approved", "reject": "rejected"}.get(run["decision"], "done")
+
+
+def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
+                calls: pd.DataFrame, feedback: pd.DataFrame, jobs: pd.DataFrame,
+                model: str | None = None, recent: int = 15, trend: int = 20) -> dict:
+    """Everything the Evals screen shows. `model` filters all of it except
+    the model comparison (which always shows every model)."""
+    runs = runs.sort_values("started_at").reset_index(drop=True)
+    rates_all = quality[quality["check_name"] == "evidence_pass_rate"].set_index("run_id")["value"]
+
+    models = []
+    for name, group in runs.groupby("model", sort=False):
+        full = group[group["llm_calls"] >= FULL_RUN_CALLS]
+        rates = rates_all.reindex(group["run_id"]).dropna()
+        models.append({
+            "model": name, "provider": group["provider"].iloc[-1], "runs": len(group),
+            "pass_rate": _num(rates.mean()) if len(rates) else None,
+            "approved": int((group["decision"] == "approve").sum()),
+            "decided": int(group["decision"].isin(["approve", "reject"]).sum()),
+            "median_seconds": _median_full(group),
+            "tokens_per_run": _num((full["input_tokens"] + full["output_tokens"]).mean()) if len(full) else None,
+        })
+    models.sort(key=lambda m: -m["runs"])
+
+    if model:
+        runs = runs[runs["model"] == model].reset_index(drop=True)
+        keep = set(runs["run_id"])
+        quality, steps, calls, feedback = (df[df["run_id"].isin(keep)]
+                                           for df in (quality, steps, calls, feedback))
+
+    # ---- headline numbers ----
+    rates = rates_all.reindex(runs["run_id"]).dropna()  # in run order
+    window = min(10, len(rates) // 2)  # latest runs vs the same number before them
+    delta = (_num(rates.iloc[-window:].mean() - rates.iloc[-2 * window:-window].mean())
+             if window >= 2 else None)
+    full = runs[runs["llm_calls"] >= FULL_RUN_CALLS]
+    kpis = {
+        "runs": len(runs),
+        "pass_rate": _num(rates.mean()) if len(rates) else None,
+        "pass_rate_delta": delta, "pass_rate_window": window if delta is not None else None,
+        "approved": int((runs["decision"] == "approve").sum()),
+        "decided": int(runs["decision"].isin(["approve", "reject"]).sum()),
+        "median_seconds": _median_full(runs),
+        "full_runs": len(full),
+        "tokens_in_per_run": _num(full["input_tokens"].mean()) if len(full) else None,
+        "tokens_out_per_run": _num(full["output_tokens"].mean()) if len(full) else None,
+        "tool_calls": int(runs["tool_calls"].sum()),
+        "tool_failures": int(runs["tool_failures"].sum()),
+    }
+
+    # ---- evidence pass rate, run by run ----
+    started = runs.set_index("run_id")["started_at"]
+    trend_rows = [{"run_id": rid, "started_at": started[rid], "rate": float(v)}
+                  for rid, v in rates.iloc[-trend:].items()]
+
+    # ---- safety nets ----
+    q = _per_run_quality(quality)
+    checks = []
+    for name, (label, meaning) in EVAL_CHECKS.items():
+        values = q[q["check_name"] == name]["value"]
+        checks.append({"check": name, "label": label, "meaning": meaning,
+                       "total": float(values.sum()), "runs": len(values),
+                       "per_run": _num(values.mean()) if len(values) else None})
+
+    # ---- where the time goes ----
+    out_tokens = calls.groupby(calls["step"].map(lambda s: CALL_STEP.get(s, s)))["output_tokens"].sum()
+    time_rows = []
+    for node in PIPELINE_NODES:
+        seconds = steps[steps["step"] == node]["seconds"]
+        if len(seconds):
+            time_rows.append({"node": node, "avg_seconds": float(seconds.mean()), "count": len(seconds),
+                              "out_tokens": float(out_tokens.get(node, 0)) / len(seconds)})
+    timed = calls[calls["output_tokens"] > 0]
+    corr = {"output": None, "input": None, "calls": len(timed)}
+    if len(timed) >= 3:
+        corr["output"] = _num(timed["output_tokens"].corr(timed["seconds"]))
+        corr["input"] = _num(timed["input_tokens"].corr(timed["seconds"]))
+
+    # ---- recent runs ----
+    names = jobs.set_index("id")[["company", "title"]]
+    recent_rows = []
+    for _, r in runs.iloc[::-1].head(recent).iterrows():
+        job_id = int(r["job_id"]) if pd.notna(r["job_id"]) else None
+        recent_rows.append({
+            "run_id": r["run_id"], "started_at": r["started_at"], "model": r["model"],
+            "result": _result(r), "agent_seconds": float(r["agent_seconds"] or 0),
+            "llm_calls": int(r["llm_calls"] or 0),
+            "tokens": int((r["input_tokens"] or 0) + (r["output_tokens"] or 0)),
+            "pass_rate": _num(rates_all.get(r["run_id"])),
+            # Runs from before 12f2 have no value: NULL -> NaN in pandas, and NaN is truthy.
+            "tracing": r["tracing"] if isinstance(r.get("tracing"), str) else "off",
+            "job": ({"id": job_id, **names.loc[job_id].to_dict()}
+                    if job_id is not None and job_id in names.index else None),
+        })
+
+    return {"model": model, "models": models, "kpis": kpis, "trend": trend_rows,
+            "ratings": build_feedback(feedback).to_dict("records"),
+            "checks": checks, "steps": time_rows, "correlation": corr, "recent": recent_rows}
+
+
+def local_evals(model: str | None = None) -> dict:
+    return build_evals(
+        _local("SELECT * FROM runs"),
+        _local("SELECT run_id, check_name, value FROM run_quality"),
+        _local("SELECT run_id, step, seconds FROM run_steps"),
+        _local("SELECT run_id, step, model, input_tokens, output_tokens, seconds FROM run_llm_calls"),
+        _local("SELECT run_id, aspect, rating FROM run_feedback"),
+        _local("SELECT id, company, title FROM jobs"),
+        model,
+    )

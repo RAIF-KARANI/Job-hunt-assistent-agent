@@ -119,7 +119,14 @@ def test_old_database_gets_new_columns():
                      "updated_at TEXT NOT NULL)")
     runlog.init_db()
     columns = {r["name"] for r in rows("PRAGMA table_info(runs)")}
-    assert "decision" in columns
+    assert {"decision", "tracing"} <= columns
+
+
+def test_the_tracer_in_use_is_recorded():
+    graph = build_graph()
+    recorder = runlog.RunRecorder("run-t", "desktop", "ollama", "qwen3:8b", tracing="langfuse")
+    graph.invoke({}, {"configurable": {"thread_id": "run-t"}, "callbacks": [recorder]})
+    assert rows("SELECT tracing FROM runs")[0]["tracing"] == "langfuse"
 
 
 # ---- 11b: quality checks from state (pure) --------------------------------------

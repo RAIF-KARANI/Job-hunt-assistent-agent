@@ -5,7 +5,7 @@
 import type { DashboardData, JobRow } from "../bridge/types";
 import { STATUSES } from "../tracker/status";
 
-const STEP_LABELS: Record<string, string> = {
+export const STEP_LABELS: Record<string, string> = {
   check_tracker: "Check tracker",
   read_posting: "Read posting",
   analyze_fit: "Compare resumes",

@@ -1,9 +1,8 @@
-// Stand-in screens: the shell is real, the remaining pages arrive in 12f2-12g.
+// Stand-in screen: the shell is real; Settings arrives in 12g.
 
 import type { PageId } from "../app/routes";
 
 const COPY: Partial<Record<PageId, { title: string; lead: string; step: string }>> = {
-  evals: { title: "Agent evals", lead: "How well the agent did, measured on your PC.", step: "12f2" },
   settings: { title: "Settings", lead: "Model, API key, resumes and appearance.", step: "12g" },
 };
 

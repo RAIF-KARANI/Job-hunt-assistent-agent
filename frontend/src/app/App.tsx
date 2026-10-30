@@ -3,6 +3,7 @@ import { Analyze } from "../analyze/Analyze";
 import { catchUp } from "../analyze/runStore";
 import { bridgeKind, getApi } from "../bridge/bridge";
 import { Dashboard } from "../dashboard/Dashboard";
+import { Evals } from "../evals/Evals";
 import type { AppInfo, Theme } from "../bridge/types";
 import { Placeholder } from "../pages/Placeholder";
 import { useRoute } from "./routes";
@@ -60,6 +61,8 @@ export function App() {
           <Analyze />
         ) : page === "tracker" ? (
           <Tracker />
+        ) : page === "evals" ? (
+          <Evals />
         ) : (
           <Placeholder page={page} />
         )}

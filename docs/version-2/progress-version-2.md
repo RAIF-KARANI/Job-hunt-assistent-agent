@@ -409,3 +409,85 @@ A driver script on a temporary profile with a **copy** of your `jobs.db`
   a feature needs it.
 - **GPU resources are manual:** dispose geometries, materials and textures,
   and release the WebGL context.
+
+---
+
+## 12f2 — Evals screen ✅ (30 Oct 2026)
+
+### Goal
+How well the agent did (D9), from the run log, with Langfuse/LangSmith
+status and trace links. Done when the numbers match run-log queries in
+tests.
+
+### What was done
+- **`monitoring.py`:** `build_evals()` (pure) + `local_evals(model)`:
+  - the key numbers
+  - the pass rate run by run
+  - your ratings
+  - the 7 safety-net checks
+  - time and output tokens per step
+  - correlations
+  - every model compared
+  - recent runs with job names
+
+  The research agent's own LLM calls (logged as `agent`) count toward "Research company".
+- **Run log:** new `runs.tracing` column (which tracer was on for that
+  run); old databases get it automatically.
+- **Bridge:** `evals(model)` and `tracing_status()` (D20).
+- **`frontend/src/evals/`:**
+  - `Evals.tsx`:
+    - model filter
+    - tracer status chips
+    - 5 tiles: evidence pass rate with its trend, notes approved, agent time, tokens, tool failures
+    - tables: safety nets, where the time goes, models compared, recent runs (with trace links)
+  - `PassRateChart.tsx`: line chart drawn at the real width (text stays
+    12 px), hover tooltip, a hidden table for screen readers
+  - `Ratings.tsx`: one stacked bar per question; the legend names every part
+- **Tokens:** three rating colors, checked with the dataviz palette
+  validator in both themes (D20).
+- Tests:
+  - every number equals a direct SQL query on a seeded run log (two models)
+  - the model filter; recent runs (order, results, trace)
+  - an empty run log; the trend math
+  - tracing status: off, Langfuse running or unreachable, LangSmith without a key
+  - the recorder stores the tracer; old databases get the column
+
+  **138 tests**, no warnings.
+
+### Checked in the real window
+On a **copy** of your `jobs.db`, plus one made-up API run (traced in
+Langfuse) added to the copy; the real file's checksum was unchanged:
+- tiles = Python's numbers (69% evidence, 4 of 5 approved, 2m 26s,
+  18.4k tokens, 1 of 9 searches failed)
+- model list: qwen3:8b (local), claude-haiku-5-5 (API); choosing the API
+  model changed every number to that run's, and "Models compared" still
+  listed both with the chosen one highlighted
+- trend points, check rows, step rows and recent rows all match Python
+- hovering the last point → "90% of claims held up" with the date
+- the Langfuse link opened `…/project/demo-project/sessions/api-demo` in
+  the browser; the window stayed on Evals
+- light theme; narrow window with no sideways scrolling
+
+### Problems hit
+1. **Blank page with real data.** Runs from before this step have no
+   `tracing` value; pandas makes that `NaN`, and `NaN or "off"` is still
+   `NaN` (NaN counts as true). Python's JSON writes `NaN`, which JavaScript
+   can't parse, so the answer never arrived. Fixed. The tests now reject
+   NaN like the page does (`allow_nan=False`); I confirmed the old code
+   fails them.
+2. **No bars in "Where the time goes"**: an inline span has no width in a
+   table cell.
+3. **Sideways scrolling in a narrow window**: the chart's svg kept its old
+   pixel width, so the card couldn't shrink. Fixed with
+   `contain: inline-size` (not `overflow: hidden`, which would have cut
+   off the tooltip).
+4. A card alone in the page column took its flex size as a height (empty
+   space under "Models compared").
+5. The concept's blue and violet rating colors failed the palette check.
+
+### Concepts learned
+- **NaN is truthy** in Python and is not valid JSON: check
+  `allow_nan=False` at the boundary.
+- **Correlation** as a quick explanation of where time goes.
+- **CSS containment** (`contain: inline-size`) to break a
+  content-sizes-container loop.

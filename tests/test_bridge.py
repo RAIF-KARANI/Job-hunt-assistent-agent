@@ -467,7 +467,7 @@ def test_dashboard_numbers_match_the_monitoring_module():
 
     seed_run_log()
     data = Api(send=lambda e: None).dashboard(30)
-    json.dumps(data)  # what pywebview sends: plain JSON, no numpy types
+    json.dumps(data, allow_nan=False)  # what the page can parse: no numpy types, no NaN
 
     expected = m.build_kpis(m.local_runs(30), m.local_llm_calls(30), m.local_decisions(30))
     assert data["kpis"] == expected
@@ -499,3 +499,142 @@ def test_dashboard_with_an_empty_run_log():
 def test_dashboard_rejects_a_bad_range(days):
     with pytest.raises(ValueError):
         Api(send=lambda e: None).dashboard(days)
+
+
+# ---- 12f2: evals ---------------------------------------------------------------
+
+def seed_two_models():
+    """Three local runs and one API run, the way RunRecorder writes them."""
+    from job_agent import runlog
+
+    runlog.init_db()
+    job_a = _save_job()  # Acme
+    with tracker._db() as conn:
+        runs = [  # run, start, model, provider, status, decision, seconds, calls, in, out, tools, failed, tracing
+            ("q1", "2026-10-01 10:00:00", "qwen3:8b", "ollama", "done", "approve", 180, 9, 15000, 4000, 3, 1, None),
+            ("q2", "2026-10-02 10:00:00", "qwen3:8b", "ollama", "done", "reject", 200, 9, 14000, 3000, 2, 0, "langfuse"),
+            ("q3", "2026-10-03 10:00:00", "qwen3:8b", "ollama", "paused", None, 30, 1, 3000, 300, 0, 0, None),
+            ("c1", "2026-10-04 10:00:00", "claude-haiku-5-5", "anthropic", "done", "approve", 50, 8, 16000, 3500, 2, 0, None),
+        ]
+        conn.executemany(
+            """INSERT INTO runs (run_id, started_at, updated_at, model, provider, status, decision,
+               agent_seconds, llm_calls, input_tokens, output_tokens, tool_calls, tool_failures, tracing,
+               job_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            [(r[0], r[1], r[1], *r[2:], job_a) for r in runs])
+        quality = {"q1": {"evidence_pass_rate": 0.5, "claims_checked": 10, "fake_quotes_caught": 2,
+                          "judge_rejections": 3, "draft_revisions": 3},
+                   "q2": {"evidence_pass_rate": 0.7, "claims_checked": 10, "fake_quotes_caught": 0,
+                          "judge_rejections": 3, "draft_revisions": 1},
+                   "c1": {"evidence_pass_rate": 0.9, "claims_checked": 10, "judge_rejections": 1,
+                          "draft_revisions": 1}}
+        conn.executemany("INSERT INTO run_quality VALUES (?, ?, ?)",
+                         [(run, k, v) for run, checks in quality.items() for k, v in checks.items()])
+        conn.executemany("INSERT INTO run_steps (run_id, step, seconds) VALUES (?, ?, ?)",
+                         [("q1", "research_company", 50), ("q2", "research_company", 70)])
+        conn.executemany(  # the research agent's own calls are logged under "agent"
+            "INSERT INTO run_llm_calls (run_id, step, model, input_tokens, output_tokens, seconds)"
+            " VALUES (?, ?, 'qwen3:8b', ?, ?, ?)",
+            [("q1", "research_company", 1000, 400, 10), ("q1", "agent", 500, 200, 6),
+             ("q2", "research_company", 1000, 600, 14), ("q2", "agent", 800, 0, 1)])
+        conn.executemany("INSERT INTO run_feedback (run_id, aspect, rating) VALUES (?, ?, ?)",
+                         [("q1", "fit_score", "about right"), ("q1", "cover_note", "needed edits"),
+                          ("c1", "fit_score", "too high")])
+
+
+def sql(query, *args):
+    with tracker._db() as conn:
+        return conn.execute(query, args).fetchone()[0]
+
+
+def test_evals_numbers_match_the_run_log():
+    seed_two_models()
+    data = Api(send=lambda e: None).evals(None)
+    json.dumps(data, allow_nan=False)  # NaN would reach the page as invalid JSON
+    k = data["kpis"]
+    assert k["runs"] == sql("SELECT COUNT(*) FROM runs") == 4
+    assert k["pass_rate"] == pytest.approx(sql("SELECT AVG(value) FROM run_quality WHERE check_name = 'evidence_pass_rate'"))
+    assert (k["approved"], k["decided"]) == (2, 3)
+    assert k["median_seconds"] == 180  # full runs only (>= 5 LLM calls): 50, 180, 200
+    assert (k["tool_calls"], k["tool_failures"]) == (7, 1)
+    checks = {c["check"]: c for c in data["checks"]}
+    assert checks["judge_rejections"]["total"] == sql("SELECT SUM(value) FROM run_quality WHERE check_name = 'judge_rejections'")
+    assert checks["draft_rewrites"]["total"] == 2  # revision 3 = two rewrites; revision 1 = none
+    assert checks["invented_urls_removed"]["runs"] == 0 and checks["invented_urls_removed"]["per_run"] is None
+    research = next(s for s in data["steps"] if s["node"] == "research_company")
+    assert research == {"node": "research_company", "avg_seconds": 60, "count": 2, "out_tokens": 600}  # agent's tokens count
+    ratings = {r["label"]: r["count"] for r in data["ratings"]}
+    assert ratings["Fit score: too high"] == 1 and ratings["Cover note: needed edits"] == 1
+
+
+def test_evals_for_one_model():
+    seed_two_models()
+    data = Api(send=lambda e: None).evals("claude-haiku-5-5")
+    assert data["kpis"]["runs"] == 1 and data["kpis"]["pass_rate"] == pytest.approx(0.9)
+    assert [r["rating"] for r in data["ratings"] if r["count"]] == ["too high"]
+    models = {m["model"]: m for m in data["models"]}  # the comparison always shows every model
+    assert models["qwen3:8b"]["runs"] == 3 and models["qwen3:8b"]["provider"] == "ollama"
+    assert models["qwen3:8b"]["pass_rate"] == pytest.approx(0.6)
+    assert models["claude-haiku-5-5"]["tokens_per_run"] == 19500
+
+
+def test_recent_runs_newest_first_with_results_and_trace():
+    seed_two_models()
+    recent = Api(send=lambda e: None).evals(None)["recent"]
+    assert [r["run_id"] for r in recent] == ["c1", "q3", "q2", "q1"]
+    assert [r["result"] for r in recent] == ["approved", "not finished", "rejected", "approved"]
+    assert recent[2]["tracing"] == "langfuse" and recent[3]["tracing"] == "off"
+    assert recent[0]["job"]["company"] == "Acme" and recent[0]["pass_rate"] == pytest.approx(0.9)
+
+
+def test_evals_with_an_empty_run_log():
+    data = Api(send=lambda e: None).evals(None)
+    assert data["kpis"]["runs"] == 0 and data["kpis"]["pass_rate"] is None
+    assert data["models"] == [] and data["trend"] == [] and data["recent"] == []
+
+
+def test_pass_rate_trend_compares_the_latest_runs_with_the_ones_before():
+    from job_agent import monitoring as m
+    import pandas as pd
+
+    n = 8
+    runs = pd.DataFrame({"run_id": [f"r{i}" for i in range(n)], "started_at": [f"2026-10-0{i + 1}" for i in range(n)],
+                         "model": "m", "provider": "ollama", "status": "done", "decision": "approve",
+                         "agent_seconds": 100.0, "llm_calls": 9, "input_tokens": 1, "output_tokens": 1,
+                         "tool_calls": 0, "tool_failures": 0, "job_id": None, "tracing": None})
+    quality = pd.DataFrame({"run_id": runs["run_id"], "check_name": "evidence_pass_rate",
+                            "value": [0.4, 0.4, 0.4, 0.4, 0.6, 0.6, 0.6, 0.8]})
+    empty = pd.DataFrame(columns=["run_id", "step", "seconds", "model", "input_tokens", "output_tokens",
+                                  "aspect", "rating"])
+    jobs = pd.DataFrame(columns=["id", "company", "title"])
+    data = m.build_evals(runs, quality, empty, empty, empty, jobs)
+    assert data["kpis"]["pass_rate_window"] == 4
+    assert data["kpis"]["pass_rate_delta"] == pytest.approx(0.25)  # 0.65 now vs 0.40 before
+    assert [round(t["rate"], 1) for t in data["trend"]] == [0.4, 0.4, 0.4, 0.4, 0.6, 0.6, 0.6, 0.8]
+
+
+def test_tracing_status_off_by_default(monkeypatch):
+    monkeypatch.delenv("LANGFUSE_PUBLIC_KEY", raising=False)
+    status = Api(send=lambda e: None).tracing_status()
+    assert (status["mode"], status["langfuse"], status["langsmith"]) == ("off", "off", "off")
+
+
+def test_tracing_status_langfuse(monkeypatch):
+    from desktop_web import bridge
+
+    api = Api(send=lambda e: None)
+    api.save_settings({"TRACING": "langfuse"})
+    monkeypatch.setenv("LANGFUSE_HOST", "http://localhost:3000/")
+    monkeypatch.setattr(bridge, "_langfuse_project", lambda host: "proj-1")
+    status = api.tracing_status()
+    assert status["langfuse"] == "running"
+    assert status["langfuse_sessions"] == "http://localhost:3000/project/proj-1/sessions/"
+    monkeypatch.setattr(bridge, "_langfuse_project", lambda host: None)  # Docker not started
+    assert api.tracing_status()["langfuse"] == "not reachable"
+
+
+def test_tracing_status_langsmith_without_a_key(monkeypatch):
+    monkeypatch.delenv("LANGSMITH_API_KEY", raising=False)
+    monkeypatch.delenv("LANGFUSE_PUBLIC_KEY", raising=False)
+    api = Api(send=lambda e: None)
+    api.save_settings({"TRACING": "langsmith"})
+    assert api.tracing_status()["langsmith"] == "no key"

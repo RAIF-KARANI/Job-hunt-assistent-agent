@@ -28,6 +28,7 @@ set), and settings writes go through an allow-list.
 """
 
 import json
+import os
 import webbrowser
 from typing import Callable
 from urllib.parse import urlparse
@@ -62,6 +63,23 @@ def _default(o):
     if hasattr(o, "keys"):  # sqlite3.Row
         return dict(o)
     return str(o)
+
+
+LANGSMITH_URL = "https://smith.langchain.com/"
+
+
+def _langfuse_project(host: str) -> str | None:
+    """The Langfuse project id (needed for session links), or None if
+    Langfuse isn't running or the keys are wrong."""
+    import requests
+
+    try:
+        r = requests.get(f"{host}/api/public/projects", timeout=3,
+                         auth=(os.getenv("LANGFUSE_PUBLIC_KEY", ""), os.getenv("LANGFUSE_SECRET_KEY", "")))
+        r.raise_for_status()
+        return (r.json().get("data") or [{}])[0].get("id")
+    except (requests.RequestException, ValueError, AttributeError):
+        return None
 
 
 def _records(df) -> list[dict]:
@@ -170,6 +188,34 @@ class Api:
             "quality": _records(quality),
             "pass_rate": pass_rate,
         }
+
+    # ---- evals --------------------------------------------------------------
+
+    def evals(self, model: str | None = None) -> dict:
+        """How well the agent did (Evals screen, D9), from the run log.
+        `model` = one model's runs only; None = all."""
+        from job_agent import monitoring as m
+
+        return to_json(m.local_evals(model or None))
+
+    def tracing_status(self) -> dict:
+        """Langfuse / LangSmith state, for trace links. Separate from evals()
+        because asking Langfuse can take a few seconds when it's down."""
+        mode = settings.read_settings().get("TRACING", "off")
+        status = {"mode": mode, "langfuse": "off", "langfuse_sessions": None,
+                  "langsmith": "off", "langsmith_url": LANGSMITH_URL}
+        if mode == "langsmith":
+            status["langsmith"] = "on" if os.getenv("LANGSMITH_API_KEY") else "no key"
+        # Old runs may have Langfuse traces even when tracing is now off.
+        if mode == "langfuse" or os.getenv("LANGFUSE_PUBLIC_KEY"):
+            host = os.getenv("LANGFUSE_HOST", "http://localhost:3000").rstrip("/")
+            project = _langfuse_project(host)
+            if project:
+                status["langfuse"] = "running" if mode == "langfuse" else "off"
+                status["langfuse_sessions"] = f"{host}/project/{project}/sessions/"
+            elif mode == "langfuse":
+                status["langfuse"] = "not reachable"
+        return status
 
     # ---- settings -----------------------------------------------------------
 

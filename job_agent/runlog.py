@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS runs (
     output_tokens  INTEGER DEFAULT 0,
     tool_calls     INTEGER DEFAULT 0,
     tool_failures  INTEGER DEFAULT 0,
-    error          TEXT
+    error          TEXT,
+    tracing        TEXT                        -- off / langfuse / langsmith (12f2)
 );
 CREATE TABLE IF NOT EXISTS run_steps (
     run_id TEXT NOT NULL, step TEXT NOT NULL, seconds REAL, started_at TEXT
@@ -84,7 +85,7 @@ FEEDBACK_OPTIONS = {
 # Columns added after a table was first released: (table, column, type).
 # CREATE TABLE IF NOT EXISTS never changes an existing table, so databases
 # made by an older JobLens version need these added - a tiny "migration".
-MIGRATIONS = [("runs", "decision", "TEXT")]
+MIGRATIONS = [("runs", "decision", "TEXT"), ("runs", "tracing", "TEXT")]
 
 
 def init_db() -> None:
@@ -151,9 +152,11 @@ class RunRecorder(BaseCallbackHandler):
     parallel), so the buffers are protected by a lock.
     """
 
-    def __init__(self, run_id: str, interface: str, provider: str, model: str):
+    def __init__(self, run_id: str, interface: str, provider: str, model: str,
+                 tracing: str = "off"):
         self.run_id, self.interface = run_id, interface
         self.provider, self.model = provider, model
+        self.tracing = tracing  # so the Evals screen links only runs that have a trace
         self._lock = threading.Lock()
         self._starts: dict[UUID, tuple[float, str, str | None]] = {}  # run -> (t0, kind, step)
         self.steps: list[tuple[str, float, str]] = []
@@ -230,8 +233,8 @@ class RunRecorder(BaseCallbackHandler):
                 conn.execute(
                     """INSERT INTO runs (run_id, started_at, updated_at, interface, provider, model,
                                          job_id, status, decision, segments, agent_seconds, llm_calls,
-                                         input_tokens, output_tokens, tool_calls, tool_failures, error)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+                                         input_tokens, output_tokens, tool_calls, tool_failures, error, tracing)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
                        ON CONFLICT(run_id) DO UPDATE SET
                            updated_at = excluded.updated_at,
                            job_id = COALESCE(excluded.job_id, runs.job_id),
@@ -244,13 +247,15 @@ class RunRecorder(BaseCallbackHandler):
                            output_tokens = runs.output_tokens + excluded.output_tokens,
                            tool_calls = runs.tool_calls + excluded.tool_calls,
                            tool_failures = runs.tool_failures + excluded.tool_failures,
-                           error = excluded.error""",
+                           error = excluded.error,
+                           tracing = COALESCE(runs.tracing, excluded.tracing)""",
                     # started_at: only used for the first segment (the INSERT); a
                     # resume keeps the original start (not in the UPDATE list).
                     (self.run_id, getattr(self, "segment_started_at", _now()), _now(),
                      self.interface, self.provider, self.model,
                      values.get("job_id"), status, decision, seconds, len(calls),
-                     sum(c[2] for c in calls), sum(c[3] for c in calls), tools, failures, error))
+                     sum(c[2] for c in calls), sum(c[3] for c in calls), tools, failures, error,
+                     self.tracing))
                 conn.executemany("INSERT INTO run_steps VALUES (?, ?, ?, ?)",
                                  [(self.run_id, s, sec, t) for s, sec, t in steps])
                 conn.executemany("INSERT INTO run_llm_calls VALUES (?, ?, ?, ?, ?, ?, ?)",

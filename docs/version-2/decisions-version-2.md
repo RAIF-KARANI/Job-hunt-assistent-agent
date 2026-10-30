@@ -243,5 +243,29 @@ is reworded.
   status → "Where your applications are"; time per step and safety nets →
   Dashboard cards; LLM time vs tokens and your ratings → Evals (12f2, D9).
 
+## D20 — Evals: the run log is the source; tracers are shown, not switched to ✅ (30 Oct 2026, step 12f2)
+- **No "data source" switch.** The concept had Run log / Langfuse /
+  LangSmith buttons. Following D9, every number comes from the run log
+  (works for everyone, offline). The three become **status chips**
+  (always on / running / not reachable / no key).
+- **Trace links only for runs that have a trace.** The run log now
+  records which tracer was on for each run (new `runs.tracing` column;
+  older databases get it automatically, like `decision` in 11). Langfuse
+  links go straight to the run's session (the project id is read from
+  Langfuse's API); LangSmith links open LangSmith (its run pages need IDs
+  JobLens doesn't have), with the session id on hover.
+- **The Langfuse check is a separate call** (`tracing_status()`), so the
+  numbers never wait up to 3 s for a Langfuse that isn't running.
+- **No cost column.** Prices change and aren't in the run log, so a cost
+  figure would be invented. "Tokens / run" lets you compare instead.
+- **The model filter changes everything except "Models compared"**, which
+  always shows every model (that's its job).
+- **Rating colors were checked**, not picked by eye: the dataviz palette
+  validator (color-blind and normal-vision separation, both themes). The
+  concept's blue and violet were too close to tell apart, so the colors are
+  blue / green / orange.
+- **The trend note** compares the latest runs with the same number of runs
+  before them (up to 10 each); with fewer than 4 runs it isn't shown.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)
