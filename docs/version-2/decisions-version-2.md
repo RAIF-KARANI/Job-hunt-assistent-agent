@@ -395,6 +395,13 @@ Amends D10. A friend needs the new app now, before Phase 13 is finished.
   (13b–13d). v0.3.1 can't update itself, so its users install v1.0.0 by
   hand once; from then on updates come by themselves.
 - `main` stays at v0.3.0 until v1.0.0; the v0.3.1 tag points at `version-2`.
+- **v0.3.2** (31 Oct, your call): the settings-after-restart fix (your
+  friend's 0.3.1 went back to qwen3:8b on every start) plus 13b–13d. It is
+  the **first version that updates itself**: 0.3.x users install it by
+  hand once; from it on, Settings → Updates installs new releases.
+- **v1.0.0** = version 2 **with the Phase 14 features** (you: "keep 1.0.0
+  for both ui update and features"). This corrects the note above and the
+  Phase 13 summary, which put v1.0.0 straight after Phase 13.
 
 ## D26 — The update check ✅ (30 Oct 2026, step 13b)
 - **Source:** GitHub's public `releases/latest` for this repo, no account.
