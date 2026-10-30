@@ -4,7 +4,9 @@ Tests for the model recommendations (Phase 10a) with made-up PCs.
 recommend_models() is pure, so we can test hardware we don't have.
 """
 
-from job_agent.system_check import SystemInfo, recommend_models
+import pytest
+
+from job_agent.system_check import SystemInfo, recommend_3d, recommend_models
 
 
 def pc(ram, vram=None, exact=True, disk=200, gpu="NVIDIA RTX"):
@@ -66,3 +68,20 @@ def test_not_enough_disk():
     advice, _ = recommend_models(pc(ram=32, vram=12, disk=5))
     v = verdicts(advice)
     assert v["qwen3:14b"] == "no disk space" and v["qwen3:8b"] == "no disk space"
+
+
+# ---- 12g: which 3D level suits the PC (D14) ------------------------------------
+
+@pytest.mark.parametrize("machine, provider, model, level", [
+    (pc(16, 8), "anthropic", "claude-haiku-5-5", "animated"),   # GPU free: the AI is in the cloud
+    (pc(16), "ollama", "qwen3:8b", "off"),                       # no graphics card at all
+    (pc(16, 2, exact=False, gpu="Intel Iris Xe"), "ollama", "qwen3:8b", "still"),  # memory unknown
+    (pc(16, 8), "ollama", "qwen3:8b", "still"),                 # this laptop: ~1.1 GB left over
+    (pc(32, 12), "ollama", "qwen3:8b", "animated"),             # ~5 GB left over
+    (pc(16, 8), "ollama", "qwen3:14b", "off"),                  # the model doesn't fit: GPU is busy
+    (pc(16, 8), "ollama", "qwen3:4b", "animated"),              # small model, ~3.7 GB left
+    (pc(16, 8), "ollama", "some-custom:7b", "still"),           # unknown model: sized like the default
+])
+def test_3d_level_for_the_pc(machine, provider, model, level):
+    got, reason = recommend_3d(machine, provider, model)
+    assert got == level and reason

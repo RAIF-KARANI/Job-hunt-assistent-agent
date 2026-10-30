@@ -491,3 +491,94 @@ Langfuse) added to the copy; the real file's checksum was unchanged:
 - **Correlation** as a quick explanation of where time goes.
 - **CSS containment** (`contain: inline-size`) to break a
   content-sizes-container loop.
+
+---
+
+## 12g — Settings and Setup wizard ✅ (30 Oct 2026)
+
+### Goal
+Port Settings and the first-run wizard, and add the "Look and feel" step
+plus Settings → Appearance (3D level, D14). Done when the first-run flow
+works on a clean profile and the recommendation rule is unit-tested.
+
+### What was done
+- **`system_check.recommend_3d()`**: the D14 rule, pure (D21).
+- **Bridge:**
+  - resumes: `list_resumes`, `add_resumes` (native file dialog, copies),
+    `remove_resume` (file name only), `open_data_folder`
+  - setup: `system_check`, `ollama_status` (starts Ollama if it's stopped),
+    `install_ollama` and `pull_model` (stream `setup_progress` events, one
+    at a time), `test_api_key` (saves nothing)
+  - `app_info().setup_needed`
+- **Run log store:** unknown event types are ignored. They used to make it
+  return nothing, which would have broken Analyze on the first download event.
+- **`frontend/src/settings/`:**
+  - `Settings.tsx`:
+    - AI model (provider, model with the installed ones suggested, API key, check)
+    - resumes
+    - appearance (theme, 3D level with the recommendation)
+    - options (evidence double-check, tracing)
+  - shared with the wizard:
+    - `ResumeList`
+    - `LevelPicker` (also checks WebGL)
+    - `LocalModelSetup` (PC check, model choice, Ollama install, download progress)
+    - `useSetupProgress`
+- **`frontend/src/setup/SetupWizard.tsx`:** 6 steps:
+  - a step list
+  - focus moves to each step's title
+  - Next stays locked until the step is complete, with a line saying why
+- The Placeholder screen is gone: every page is real now.
+- Tests:
+  - the 3D level for 8 kinds of PC
+  - resumes: copy / list / remove; Cancel adds nothing; 7 bad names refused
+  - when setup is needed
+  - download progress, a failed download, one download at a time
+  - no winget → the download page
+  - the key test (wrong, right, nothing saved)
+  - the PC check's 3D advice
+
+  **162 tests**.
+
+### Checked in the real window
+- **Wizard, on an empty profile** (the real PC check and Ollama; the
+  download, the Claude call and the file dialog were stand-ins):
+  - opened by itself
+  - the API path: a wrong key gave "401 … invalid x-api-key", a right key passed
+  - back to local: "16 GB RAM · RTX 4060 (8 GB). Recommended: qwen3:8b";
+    models already on this PC were marked so; "Ollama is installed and
+    running. Nothing to install."
+  - picked qwen3:4b → download progress (30 %, "0.78 GB of 2.60 GB") →
+    "qwen3:4b downloaded." and Next unlocked
+  - resumes: Next locked until one was added
+  - Look and feel: "still" pre-selected, with the reason
+  - Finish → Analyze; the profile's `.env` got exactly `LLM_PROVIDER`,
+    `LLM_MODEL`, `UI_3D=still`, `SETUP_DONE=true`
+- **Settings, on copies of your database and resumes:**
+  - no wizard for an existing user
+  - your 2 resumes listed; add (copied, original kept) and remove (with the confirm)
+  - local check: "Ollama is running and 'qwen3:8b' is installed"
+  - Claude with a wrong key: "✕ 401 … invalid x-api-key", and the key
+    never appears in the page
+  - 3D "off" → the Dashboard showed the flat map at once; "animated" → 3D again
+  - evidence check and tracing saved
+  - light theme; narrow window
+- Your real `jobs.db`, `.env` and resumes were unchanged.
+
+### Problems hit
+1. **A wrong Claude key passed "Check connection"**: the quick check only
+   looks for a key. Settings now makes a real 5-token call (D21).
+2. **"isn't downloaded yet" flashed after a finished download**, and
+   "5.2 GB download" showed for installed models before Ollama answered.
+   The page now refreshes before leaving the busy state, and shows sizes
+   only once it knows.
+3. **The run store had no `default` case**, so any new event type would
+   have broken the Analyze screen.
+4. A backslash in a docstring example (`..\x.pdf`) was an invalid escape:
+   the same bug as in 12e.
+
+### Concepts learned
+- **Long-running bridge calls with progress events**: pywebview runs each
+  call on its own thread, so a blocking call can stream events while the
+  page's promise waits.
+- **Native dialogs from a web UI** (`create_file_dialog`).
+- **Path traversal**: accept a file name, not a path.

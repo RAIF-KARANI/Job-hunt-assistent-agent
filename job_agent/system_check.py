@@ -179,3 +179,37 @@ def recommend_models(info: SystemInfo) -> tuple[list[ModelAdvice], str]:
     speed = "runs fast on your graphics card" if pick.verdict == "fast" else "will run, but slowly"
     summary = f"{info.ram_gb:.0f} GB RAM · {gpu}. Recommended: {pick.name} - {speed}."
     return advice, summary
+
+
+# ---------------------------------------------------------------------------
+# Phase 12g: which 3D level suits this PC (decision D14) - pure, unit-tested
+# ---------------------------------------------------------------------------
+
+SPARE_GPU_FOR_ANIMATION_GB = 2.0
+
+
+def recommend_3d(info: SystemInfo, provider: str, model: str | None) -> tuple[str, str]:
+    """(level, reason): "animated" | "still" | "off".
+
+    The 3D galaxy and a local model share the graphics card, so the less
+    graphics memory the model leaves, the calmer the galaxy should be. The
+    page turns it off anyway if WebGL doesn't work.
+    """
+    if provider == "anthropic":
+        return "animated", "The AI runs in the cloud, so the graphics card is free for 3D."
+    if not info.gpu_name:
+        return "off", "No graphics card found: the flat map keeps the PC fast."
+    if not (info.vram_gb and info.vram_exact):
+        # Windows can't tell how much graphics memory there is (often a
+        # built-in GPU sharing system RAM): don't animate on a guess.
+        return "still", "Couldn't measure your graphics memory, so 3D moves only when you drag it."
+    sizes = {name: size for name, size, _ in MODELS}
+    need = memory_needed_gb(sizes.get(model or DEFAULT_MODEL, sizes[DEFAULT_MODEL]))
+    spare = info.vram_gb - GPU_RESERVE_GB - need
+    if spare < 0:
+        return "off", (f"{model} doesn't fully fit in your {info.vram_gb:.0f} GB graphics memory: "
+                       "the AI needs all of it.")
+    if spare < SPARE_GPU_FOR_ANIMATION_GB:
+        return "still", (f"{model} leaves only ~{spare:.1f} GB graphics memory free: "
+                         "3D moves only when you drag it.")
+    return "animated", f"{model} leaves ~{spare:.0f} GB graphics memory free: enough for the 3D galaxy."

@@ -1,0 +1,496 @@
+/* Settings and the Setup wizard (12g). */
+
+.settings {
+  max-width: 880px;
+}
+
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-form .hint,
+.settings-card .hint {
+  margin: 0;
+}
+
+.field > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.field.narrow {
+  max-width: 420px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-status {
+  display: inline-flex;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.check-status.ok {
+  color: var(--ok);
+}
+
+.check-status.bad {
+  color: var(--danger-ink);
+}
+
+.saved {
+  font-size: var(--text-sm);
+  color: var(--ok);
+}
+
+.plain-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.plain-fieldset legend {
+  margin-bottom: var(--space-3);
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.settings-card .check {
+  align-items: flex-start;
+  min-height: 0;
+  color: var(--text);
+}
+
+.settings-card .check input {
+  margin-top: 2px;
+  flex: none;
+}
+
+/* ---- resumes ---- */
+
+.resumes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.resume-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  color: var(--text-muted);
+}
+
+.resume + .resume {
+  border-top: 1px solid var(--border);
+}
+
+.resume-name {
+  margin-right: auto;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.resume-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.resume-empty {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+
+/* ---- 3D level ---- */
+
+.level-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.level-options,
+.choice-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-3);
+}
+
+.level,
+.choice,
+.model-choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.level:hover,
+.choice:hover,
+.model-choice:not(.disabled):hover {
+  border-color: var(--text-faint);
+}
+
+.level.selected,
+.choice.selected,
+.model-choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* The real radio stays (keyboard, screen readers) but the card shows the state. */
+.level input,
+.choice input,
+.model-choice input {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.level:has(input:focus-visible),
+.choice:has(input:focus-visible),
+.model-choice:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.level-title,
+.choice-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: 28px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.level-text,
+.choice-text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ---- local model setup ---- */
+
+.local-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pc-summary {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.model-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.model-choice {
+  padding: var(--space-3) var(--space-4);
+}
+
+.model-choice.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.model-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: 28px;
+}
+
+.model-head .mono {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.model-size {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.model-text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.verdict {
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.verdict-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.verdict-warn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.verdict-danger {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.setup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.setup-row-text {
+  flex: 1 1 240px;
+  font-size: var(--text-sm);
+}
+
+.dot-status {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.dot-status.ok {
+  background: var(--ok);
+}
+
+.dot-status.warn {
+  background: var(--warn);
+}
+
+.setup-log {
+  max-height: 140px;
+  margin: 0;
+  padding: var(--space-3);
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: var(--surface-log);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--fit-track);
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  transition: width var(--dur-med) var(--ease-out);
+}
+
+.progress-fill.indeterminate {
+  width: 30%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill.indeterminate {
+    width: 100%;
+    opacity: 0.5;
+    animation: none;
+  }
+}
+
+/* ---- wizard ---- */
+
+.wizard-backdrop {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh var(--space-4) var(--space-8);
+  background: radial-gradient(ellipse at 50% 0%, var(--galaxy-sky) 0%, var(--bg) 60%);
+}
+
+.wizard {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.wizard h1 {
+  font-size: var(--text-2xl);
+  letter-spacing: -0.02em;
+}
+
+.wizard h1:focus {
+  outline: none; /* focus is moved here for screen readers; it isn't a control */
+}
+
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.wizard-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wizard-steps li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+
+.wizard-steps li.done {
+  color: var(--text-muted);
+}
+
+.wizard-steps li.done::before {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.wizard-steps li.current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.wizard-steps li.current::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.wizard-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.wizard-body > p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.wizard-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.wizard-count {
+  margin-right: auto;
+}
+
+.wizard-why {
+  margin: -8px 0 0;
+  text-align: right;
+}
+
+.settings-card .section-head h2 {
+  margin-right: auto;
+}
+
+.settings-card .check .hint {
+  display: block;
+  margin-top: 2px;
+}

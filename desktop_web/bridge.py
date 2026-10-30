@@ -29,9 +29,15 @@ set), and settings writes go through an allow-list.
 
 import json
 import os
+import shutil
+import subprocess
+import threading
 import webbrowser
+from pathlib import Path
 from typing import Callable
 from urllib.parse import urlparse
+
+import webview
 
 from job_agent import __version__, paths, runlog, settings, tracker
 from job_agent.llm import llm_status
@@ -68,6 +74,21 @@ def _default(o):
 LANGSMITH_URL = "https://smith.langchain.com/"
 
 
+def setup_needed() -> bool:
+    """First launch: the wizard was never finished and there are no resumes
+    (same rule as the Qt app, so an existing user never sees it again)."""
+    return os.getenv("SETUP_DONE", "").lower() != "true" and not any(paths.DATA_DIR.glob("*.pdf"))
+
+
+def _resume_path(name: str) -> Path:
+    """A resume in the app's data folder, by file name only: a name with a
+    folder in it (`../x.pdf`) or another extension is refused."""
+    name = (name or "").strip()
+    if not name or Path(name).name != name or not name.lower().endswith(".pdf"):
+        raise ValueError("Not a resume file name.")
+    return paths.DATA_DIR / name
+
+
 def _langfuse_project(host: str) -> str | None:
     """The Langfuse project id (needed for session links), or None if
     Langfuse isn't running or the keys are wrong."""
@@ -94,6 +115,8 @@ class Api:
         # `send` delivers an event to the page; tests pass list.append.
         self._send = send
         self._runner = AgentRunner(emit=self._emit, graph=graph)
+        self._window = None  # set by app.py, for native file dialogs
+        self._setup_lock = threading.Lock()  # one install / download at a time
 
     def _emit(self, event: Event) -> None:
         self._send(to_json(event))
@@ -102,7 +125,8 @@ class Api:
 
     def app_info(self) -> dict:
         return {"version": __version__, "installed": paths.IS_INSTALLED,
-                "data_dir": str(paths.DATA_DIR), "settings": self.get_settings()}
+                "data_dir": str(paths.DATA_DIR), "settings": self.get_settings(),
+                "setup_needed": setup_needed()}
 
     def llm_status(self) -> dict:
         ok, message = llm_status()  # may wait a few seconds on the network
@@ -216,6 +240,138 @@ class Api:
             elif mode == "langfuse":
                 status["langfuse"] = "not reachable"
         return status
+
+    # ---- resumes (12g) ------------------------------------------------------
+
+    def list_resumes(self) -> list:
+        paths.ensure_dirs()
+        return [{"name": p.name, "kb": round(p.stat().st_size / 1024)}
+                for p in sorted(paths.DATA_DIR.glob("*.pdf"), key=lambda p: p.name.lower())]
+
+    def add_resumes(self) -> list:
+        """Ask for PDFs with Windows' own file dialog and COPY them in (the
+        originals are never moved or changed). Returns the names added."""
+        chosen = self._choose_files() or []
+        paths.ensure_dirs()
+        added = []
+        for f in chosen:
+            src = Path(f)
+            if src.suffix.lower() != ".pdf" or not src.is_file():
+                continue  # the dialog filters to PDFs; this guards a typed-in name
+            shutil.copy2(src, paths.DATA_DIR / src.name)
+            added.append(src.name)
+        return added
+
+    def remove_resume(self, name: str) -> None:
+        """Delete the app's copy of a resume (the page asks first)."""
+        target = _resume_path(name)
+        if not target.exists():
+            raise ValueError(f"No resume called '{name}'.")
+        target.unlink()
+
+    def open_data_folder(self) -> None:
+        paths.ensure_dirs()
+        os.startfile(paths.DATA_DIR)  # Explorer; Windows only, like the app
+
+    def _choose_files(self):
+        if not self._window:
+            raise RuntimeError("No window to show a file dialog in.")
+        return self._window.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=True,
+                                               file_types=("PDF files (*.pdf)",))
+
+    def _attach(self, window) -> None:
+        """The window, for native dialogs (not callable from JS: underscore)."""
+        self._window = window
+
+    # ---- setup: PC check, Ollama, API key (12g) -------------------------------
+
+    def system_check(self, provider: str | None = None, model: str | None = None) -> dict:
+        """Hardware, model advice and the 3D level that suits this PC (D14).
+        Takes a few seconds (nvidia-smi / PowerShell)."""
+        from job_agent import system_check as sc
+
+        info = sc.detect_system()
+        advice, summary = sc.recommend_models(info)
+        current = settings.read_settings()
+        provider = provider or current["LLM_PROVIDER"]
+        if model is None:
+            picked = next((a.name for a in advice if a.recommended), None)
+            model = current["LLM_MODEL"] if provider == current["LLM_PROVIDER"] else picked
+        level, reason = sc.recommend_3d(info, provider, model)
+        return to_json({"info": info.__dict__, "advice": [a.__dict__ for a in advice],
+                        "summary": summary, "ui3d": {"level": level, "reason": reason}})
+
+    def ollama_status(self) -> dict:
+        """Installed? Running? Which models? Starts Ollama if it's installed but stopped."""
+        from job_agent import ollama_setup as o
+
+        if o.is_installed() and not o.is_running():
+            o.start()
+        return {"installed": o.is_installed(), "running": o.is_running(),
+                "models": o.installed_models(), "winget": o.winget_available()}
+
+    def install_ollama(self) -> dict:
+        """Install Ollama with winget (per user, no admin prompt), streaming its
+        output as `setup_progress` events. Without winget: open the download page."""
+        from job_agent import ollama_setup as o
+
+        if not o.winget_available():
+            webbrowser.open(o.DOWNLOAD_PAGE)
+            return {"ok": False, "manual": True}
+        with self._setup_lock:
+            self._progress("install", "Installing Ollama with winget (a few minutes)...")
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            proc = subprocess.Popen(o.install_command(), stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, text=True, errors="replace",
+                                    creationflags=flags)
+            for line in proc.stdout:
+                if line.strip():
+                    self._progress("install", line.strip())
+            code = proc.wait()
+            o.start()
+            ok = o.is_installed() and o.is_running()
+            self._progress("install", "Ollama is installed and running." if ok
+                           else f"winget finished (exit code {code}) but Ollama isn't running.",
+                           done=True, ok=ok)
+            return {"ok": ok, "manual": False}
+
+    def pull_model(self, model: str) -> dict:
+        """Download a model (minutes), streaming `setup_progress` events with
+        a fraction for the progress bar. One download at a time."""
+        from job_agent import ollama_setup as o
+
+        model = (model or "").strip()
+        if not model:
+            raise ValueError("Choose a model first.")
+        if not self._setup_lock.acquire(blocking=False):
+            raise RuntimeError("Another download or install is still running.")
+        try:
+            o.pull(model, lambda message, fraction: self._progress("pull", message, fraction))
+        except Exception as e:
+            self._progress("pull", f"Download failed: {e}", done=True, ok=False)
+            raise
+        finally:
+            self._setup_lock.release()
+        self._progress("pull", f"{model} is ready.", 1.0, done=True, ok=True)
+        return {"ok": True, "model": model}
+
+    def test_api_key(self, key: str | None, model: str) -> dict:
+        """A 5-token test call. `key` None = the saved key. Nothing is saved here."""
+        key = (key or "").strip() or os.getenv("ANTHROPIC_API_KEY", "")
+        if not key:
+            return {"ok": False, "message": "Paste an API key first."}
+        try:
+            from langchain_anthropic import ChatAnthropic
+
+            ChatAnthropic(model=model, api_key=key, max_tokens=5, timeout=20).invoke("Reply OK")
+            return {"ok": True, "message": "The key works."}
+        except Exception as e:  # wrong key, no credit, no network...
+            return {"ok": False, "message": str(e)[:240]}
+
+    def _progress(self, what: str, message: str, fraction: float | None = None,
+                  done: bool = False, ok: bool | None = None) -> None:
+        self._emit({"type": "setup_progress", "what": what, "message": message,
+                    "fraction": fraction, "done": done, "ok": ok})
 
     # ---- settings -----------------------------------------------------------
 

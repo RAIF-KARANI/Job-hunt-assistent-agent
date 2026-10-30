@@ -7,6 +7,7 @@ note and interrupt({"kind": "paste_posting", ...}) for an unreadable page.
 """
 
 import json
+import os
 import sys
 import threading
 from typing import TypedDict
@@ -638,3 +639,132 @@ def test_tracing_status_langsmith_without_a_key(monkeypatch):
     api = Api(send=lambda e: None)
     api.save_settings({"TRACING": "langsmith"})
     assert api.tracing_status()["langsmith"] == "no key"
+
+
+# ---- 12g: resumes, setup ----------------------------------------------------------
+
+@pytest.fixture()
+def data_dir(tmp_path, monkeypatch):
+    from job_agent import paths
+
+    folder = tmp_path / "data"
+    monkeypatch.setattr(paths, "DATA_DIR", folder)
+    return folder
+
+
+def test_resumes_are_copied_listed_and_removed(data_dir, tmp_path):
+    originals = tmp_path / "Downloads"
+    originals.mkdir()
+    (originals / "CV AI.pdf").write_bytes(b"%PDF-1.4 x" * 200)
+    (originals / "notes.txt").write_text("not a resume")
+    api = Api(send=lambda e: None)
+    api._choose_files = lambda: [str(originals / "CV AI.pdf"), str(originals / "notes.txt")]
+    assert api.add_resumes() == ["CV AI.pdf"]                   # the .txt is skipped
+    assert (originals / "CV AI.pdf").exists()                   # copied, never moved
+    assert api.list_resumes() == [{"name": "CV AI.pdf", "kb": 2}]
+    api.remove_resume("CV AI.pdf")
+    assert api.list_resumes() == [] and (originals / "CV AI.pdf").exists()
+
+
+def test_cancelled_file_dialog_adds_nothing(data_dir):
+    api = Api(send=lambda e: None)
+    api._choose_files = lambda: None  # pywebview returns None on Cancel
+    assert api.add_resumes() == []
+
+
+@pytest.mark.parametrize("name", ["..\\jobs.db.pdf", "../x.pdf", "sub/cv.pdf", "C:cv.pdf", "cv.txt", "", "missing.pdf"])
+def test_remove_resume_only_takes_a_resume_in_the_data_folder(data_dir, name):
+    data_dir.mkdir()
+    with pytest.raises(ValueError):
+        Api(send=lambda e: None).remove_resume(name)
+
+
+def test_setup_is_needed_only_on_a_fresh_install(data_dir, monkeypatch):
+    api = Api(send=lambda e: None)
+    monkeypatch.setenv("SETUP_DONE", "")
+    assert api.app_info()["setup_needed"] is True
+    data_dir.mkdir()
+    (data_dir / "cv.pdf").write_bytes(b"%PDF")
+    assert api.app_info()["setup_needed"] is False              # an existing user: never again
+    (data_dir / "cv.pdf").unlink()
+    api.save_settings({"SETUP_DONE": "true"})
+    assert api.app_info()["setup_needed"] is False
+
+
+def test_model_download_streams_progress(monkeypatch):
+    from job_agent import ollama_setup
+
+    def fake_pull(model, on_progress):
+        on_progress("pulling abc: 1.00 GB of 4.00 GB", 0.25)
+        on_progress("verifying sha256 digest", None)
+    monkeypatch.setattr(ollama_setup, "pull", fake_pull)
+    events = []
+    assert Api(send=events.append).pull_model("qwen3:8b") == {"ok": True, "model": "qwen3:8b"}
+    assert [(e["fraction"], e["done"]) for e in events] == [(0.25, False), (None, False), (1.0, True)]
+    assert all(e["type"] == "setup_progress" and e["what"] == "pull" for e in events)
+    assert events[-1]["ok"] is True
+
+
+def test_a_failed_download_says_so(monkeypatch):
+    from job_agent import ollama_setup
+
+    def broken(model, on_progress):
+        raise RuntimeError("pull model manifest: file does not exist")
+    monkeypatch.setattr(ollama_setup, "pull", broken)
+    events = []
+    with pytest.raises(RuntimeError):
+        Api(send=events.append).pull_model("qwen3:99b")
+    assert events[-1]["done"] is True and events[-1]["ok"] is False
+    assert "file does not exist" in events[-1]["message"]
+
+
+def test_only_one_download_at_a_time():
+    api = Api(send=lambda e: None)
+    api._setup_lock.acquire()  # a download is running
+    with pytest.raises(RuntimeError, match="still running"):
+        api.pull_model("qwen3:8b")
+
+
+def test_without_winget_the_download_page_opens(monkeypatch):
+    from desktop_web import bridge
+    from job_agent import ollama_setup
+
+    opened = []
+    monkeypatch.setattr(ollama_setup, "winget_available", lambda: False)
+    monkeypatch.setattr(bridge.webbrowser, "open", opened.append)
+    assert Api(send=lambda e: None).install_ollama() == {"ok": False, "manual": True}
+    assert opened == [ollama_setup.DOWNLOAD_PAGE]
+
+
+def test_api_key_check(monkeypatch):
+    import langchain_anthropic
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    api = Api(send=lambda e: None)
+    assert api.test_api_key("", "claude-haiku-5-5")["ok"] is False  # nothing to test
+
+    class Fake:
+        def __init__(self, api_key, **kwargs):
+            self.key = api_key
+
+        def invoke(self, prompt):
+            if self.key != "sk-ant-good":
+                raise ValueError("authentication_error: invalid x-api-key")
+    monkeypatch.setattr(langchain_anthropic, "ChatAnthropic", Fake)
+    assert api.test_api_key("sk-ant-good", "claude-haiku-5-5") == {"ok": True, "message": "The key works."}
+    bad = api.test_api_key("sk-ant-bad", "claude-haiku-5-5")
+    assert bad["ok"] is False and "invalid x-api-key" in bad["message"]
+    assert not os.environ.get("ANTHROPIC_API_KEY")  # testing never saves the key
+
+
+def test_system_check_recommends_a_3d_level(monkeypatch):
+    from job_agent import system_check as sc
+
+    monkeypatch.setattr(sc, "detect_system", lambda: sc.SystemInfo(
+        ram_gb=16, gpu_name="NVIDIA RTX 4060", vram_gb=8, vram_exact=True, disk_free_gb=200, cpu_threads=16))
+    api = Api(send=lambda e: None)
+    data = api.system_check("ollama", "qwen3:8b")
+    json.dumps(data, allow_nan=False)
+    assert data["ui3d"]["level"] == "still"
+    assert next(a for a in data["advice"] if a["recommended"])["name"] == "qwen3:8b"
+    assert api.system_check("anthropic", "claude-haiku-5-5")["ui3d"]["level"] == "animated"

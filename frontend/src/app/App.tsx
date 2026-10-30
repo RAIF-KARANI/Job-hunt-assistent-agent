@@ -4,9 +4,10 @@ import { catchUp } from "../analyze/runStore";
 import { bridgeKind, getApi } from "../bridge/bridge";
 import { Dashboard } from "../dashboard/Dashboard";
 import { Evals } from "../evals/Evals";
-import type { AppInfo, Theme } from "../bridge/types";
-import { Placeholder } from "../pages/Placeholder";
-import { useRoute } from "./routes";
+import { Settings } from "../settings/Settings";
+import { SetupWizard } from "../setup/SetupWizard";
+import type { AppInfo, Settings as SettingsData, Theme } from "../bridge/types";
+import { useRoute, type PageId } from "./routes";
 import { Sidebar } from "./Sidebar";
 import { Tracker } from "../tracker/Tracker";
 import { useTheme } from "./useTheme";
@@ -16,6 +17,7 @@ export function App() {
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>("system");
+  const [skipped, setSkipped] = useState(false); // "Skip for now": this session only
   useTheme(theme);
 
   useEffect(() => {
@@ -38,6 +40,9 @@ export function App() {
       .catch(() => undefined);
   };
 
+  /** Settings changed (Settings page, wizard): every screen sees it at once. */
+  const onSettings = (settings: SettingsData) => setInfo((i) => (i ? { ...i, settings, setup_needed: false } : i));
+
   if (error) {
     return (
       <main className="fatal" role="alert">
@@ -47,24 +52,44 @@ export function App() {
     );
   }
 
+  const wizard = info && (page === "setup" || (info.setup_needed && !skipped));
+  if (wizard) {
+    const leave = () => {
+      setSkipped(true);
+      window.location.hash = page === "setup" ? "#/settings" : "#/dashboard";
+    };
+    return (
+      <SetupWizard
+        onSkip={leave}
+        onFinish={(settings) => {
+          onSettings(settings);
+          setSkipped(true);
+          window.location.hash = "#/analyze";
+        }}
+      />
+    );
+  }
+
+  const shown: PageId = page === "setup" ? "settings" : page; // #/setup before the settings have loaded
+
   return (
     <div className="shell">
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Sidebar page={page} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
+      <Sidebar page={shown} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
       <main id="main" className="content" tabIndex={-1}>
-        {page === "dashboard" ? (
+        {shown === "dashboard" ? (
           // Wait for the settings: with 3D off, three.js must never even load.
           info && <Dashboard level={info.settings.UI_3D ?? "animated"} />
-        ) : page === "analyze" ? (
+        ) : shown === "analyze" ? (
           <Analyze />
-        ) : page === "tracker" ? (
+        ) : shown === "tracker" ? (
           <Tracker />
-        ) : page === "evals" ? (
+        ) : shown === "evals" ? (
           <Evals />
         ) : (
-          <Placeholder page={page} />
+          info && <Settings settings={info.settings} theme={theme} onTheme={changeTheme} onSettings={onSettings} />
         )}
         {info && <footer className="version">JobLens {info.version}</footer>}
       </main>

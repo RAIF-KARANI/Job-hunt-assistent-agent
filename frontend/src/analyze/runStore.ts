@@ -175,6 +175,9 @@ export function reduce(view: RunView, event: AgentEvent): RunView {
 
     case "failed":
       return { ...view, phase: "failed", error: event.error, review: null, paste: null, steps: closeRunning(view.steps, ms(event.at), "failed") };
+
+    default:
+      return view; // not about the agent run (e.g. a model download in Settings)
   }
 }
 

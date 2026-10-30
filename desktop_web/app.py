@@ -97,6 +97,7 @@ def main(argv=None) -> int:
                                    min_size=(720, 560), background_color=_background(),
                                    on_top=bool(args.smoke))
     holder["send"] = window_sender(window)
+    api._attach(window)  # native dialogs (resume PDFs) need the window
 
     if args.smoke:
         webview.start(_smoke, (window, args.smoke, args.screenshot), gui="edgechromium")

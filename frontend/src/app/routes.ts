@@ -12,14 +12,16 @@ export const PAGES = [
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
 export type PageId = (typeof PAGES)[number]["id"];
+/** A page, or the setup wizard (#/setup: full screen, not in the sidebar). */
+export type Route = PageId | "setup";
 
-function fromHash(): PageId {
+function fromHash(): Route {
   const id = window.location.hash.replace(/^#\/?/, "");
-  return PAGES.some((p) => p.id === id) ? (id as PageId) : "dashboard";
+  return id === "setup" || PAGES.some((p) => p.id === id) ? (id as Route) : "dashboard";
 }
 
-export function useRoute(): PageId {
-  const [page, setPage] = useState<PageId>(fromHash);
+export function useRoute(): Route {
+  const [page, setPage] = useState<Route>(fromHash);
   useEffect(() => {
     const onChange = () => setPage(fromHash());
     window.addEventListener("hashchange", onChange);

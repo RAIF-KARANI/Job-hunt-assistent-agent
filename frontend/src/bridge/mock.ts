@@ -22,9 +22,12 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     { id: 6, title: "Full-stack Engineer", company: "Atlas Freight", fit_score: 39, best_resume: "Software_Engineer.pdf", status: "rejected", created_at: "2026-10-15 16:45", updated_at: "2026-10-15 16:45" },
   ];
   const run = fakeRun(emit);
+  const resumes = ["AI_Engineer.pdf", "Software_Engineer.pdf"];
+  const pulled = new Set(["qwen3:4b"]);
 
   return {
-    app_info: async () => ({ version: "dev", installed: false, data_dir: "(browser preview)", settings }),
+    // ?setup in the address shows the first-run wizard
+    app_info: async () => ({ version: "dev", installed: false, data_dir: "(browser preview)", settings, setup_needed: location.search.includes("setup") }),
     llm_status: async () => ({ ok: true, message: "Preview: pretend 'qwen3:8b' is ready." }),
     run_state: async () => ({ busy: false, run_id: null, paused: null, events: [] }),
     list_jobs: async () => jobs,
@@ -77,6 +80,41 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       };
     },
     evals: async (model) => mockEvals(model),
+    list_resumes: async () => resumes.map((name) => ({ name, kb: 84 })),
+    add_resumes: async () => {
+      resumes.push(`Resume ${resumes.length + 1}.pdf`);
+      return [resumes[resumes.length - 1]];
+    },
+    remove_resume: async (name) => void resumes.splice(resumes.indexOf(name), 1),
+    open_data_folder: async () => undefined,
+    system_check: async (provider) => {
+      await new Promise((r) => setTimeout(r, 900));
+      return {
+        info: { ram_gb: 16, gpu_name: "NVIDIA GeForce RTX 4060 Laptop GPU", vram_gb: 8, vram_exact: true, disk_free_gb: 210, cpu_threads: 16 },
+        advice: [
+          { name: "qwen3:14b", download_gb: 9.3, description: "Highest quality of the local options", verdict: "slower", reason: "needs ~11 GB; split between GPU and RAM", recommended: false },
+          { name: "qwen3:8b", download_gb: 5.2, description: "Best balance - JobLens was built and tested with it", verdict: "fast", reason: "fits in your 8 GB graphics memory", recommended: true },
+          { name: "qwen3:4b", download_gb: 2.6, description: "Lighter, for 8 GB PCs; noticeably less accurate", verdict: "fast", reason: "fits in your 8 GB graphics memory", recommended: false },
+          { name: "llama3.2", download_gb: 2.0, description: "Smallest (3B); weakest at the structured answers JobLens needs", verdict: "fast", reason: "fits in your 8 GB graphics memory", recommended: false },
+        ],
+        summary: "16 GB RAM · NVIDIA GeForce RTX 4060 Laptop GPU (8 GB). Recommended: qwen3:8b - runs fast on your graphics card.",
+        ui3d: provider === "anthropic"
+          ? { level: "animated", reason: "The AI runs in the cloud, so the graphics card is free for 3D." }
+          : { level: "still", reason: "qwen3:8b leaves only ~1.1 GB graphics memory free: 3D moves only when you drag it." },
+      };
+    },
+    ollama_status: async () => ({ installed: true, running: true, models: [...pulled], winget: true }),
+    install_ollama: async () => ({ ok: true, manual: false }),
+    pull_model: async (model) => {
+      for (let i = 1; i <= 10; i++) {
+        await new Promise((r) => setTimeout(r, 300));
+        emit({ type: "setup_progress", what: "pull", message: `pulling: ${(i * 0.52).toFixed(2)} GB of 5.20 GB`, fraction: i / 10, done: false, ok: null });
+      }
+      pulled.add(model);
+      emit({ type: "setup_progress", what: "pull", message: `${model} is ready.`, fraction: 1, done: true, ok: true });
+      return { ok: true, model };
+    },
+    test_api_key: async (key) => (key?.startsWith("sk-ant-") ? { ok: true, message: "The key works." } : { ok: false, message: "authentication_error: invalid x-api-key" }),
     tracing_status: async () => ({
       mode: "langfuse",
       langfuse: "running",

@@ -267,5 +267,36 @@ is reworded.
 - **The trend note** compares the latest runs with the same number of runs
   before them (up to 10 each); with fewer than 4 runs it isn't shown.
 
+## D21 — Settings and the Setup wizard ✅ (30 Oct 2026, step 12g)
+- **Same flow as the Qt wizard, plus "Look and feel"** (D14):
+  welcome → where the AI runs → this PC | Claude API → resumes → look and
+  feel → done. Nothing is saved until Finish (resumes added and models
+  downloaded stay, of course). "Skip for now" shows it again next launch.
+- **When it opens:** on first launch only (setup never finished and no
+  resumes, the Qt rule, so you won't see it). Any time from Settings →
+  "Run setup wizard".
+- **The 3D recommendation** (`system_check.recommend_3d`, pure and tested):
+  - Claude API: animated
+  - no graphics card: off
+  - graphics memory unknown: still
+  - otherwise by how much graphics memory the chosen model leaves free: below 0 off, below 2 GB still, else animated
+
+  The page overrules it with "off" if WebGL doesn't work. **This laptop
+  (RTX 4060, 8 GB) with qwen3:8b gets "still"**: about 1.1 GB is left over.
+- **Settings saves in two ways:** the AI model card has a Save button
+  (typing a model name shouldn't save every letter); appearance and options
+  save the moment you change them. A new 3D level reaches the Dashboard
+  immediately, with no restart.
+- **"Check connection" for Claude makes a real 5-token call.** The quick check
+  only sees that a key exists, so a wrong key looked fine (found in testing).
+  The API key is never sent back to the page; it only says "a key is saved".
+- **Tracing says "applies after restarting JobLens"**: it's read once at
+  start. The evidence double-check applies at once.
+- **Native file dialog for resumes**, and PDFs are copied (never moved).
+  Removing asks first and deletes only the app's copy; a name with a folder
+  in it (`../x.pdf`) is refused.
+- **Installing Ollama and downloading a model stream progress** as events, one
+  at a time. Without winget, the download page opens in your browser.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

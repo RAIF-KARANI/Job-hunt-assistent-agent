@@ -20,6 +20,8 @@ export interface AppInfo {
   installed: boolean;
   data_dir: string;
   settings: Settings;
+  /** First launch: the wizard was never finished and there are no resumes. */
+  setup_needed: boolean;
 }
 
 export interface LlmStatus {
@@ -138,7 +140,39 @@ export type AgentEvent =
   | { type: "reused"; job_id: number; at: number }
   | PausedEvent
   | FinishedEvent
-  | { type: "failed"; error: string; at: number };
+  | { type: "failed"; error: string; at: number }
+  | SetupProgress;
+
+/** Installing Ollama or downloading a model (12g). Not part of an agent run. */
+export interface SetupProgress {
+  type: "setup_progress";
+  what: "install" | "pull";
+  message: string;
+  fraction: number | null; // 0..1 for the progress bar; null = no size yet
+  done: boolean;
+  ok: boolean | null;
+}
+
+export interface Resume {
+  name: string;
+  kb: number;
+}
+
+export type Verdict = "fast" | "slower" | "too big" | "no disk space";
+
+export interface SystemCheck {
+  info: { ram_gb: number; gpu_name: string | null; vram_gb: number | null; vram_exact: boolean; disk_free_gb: number; cpu_threads: number };
+  advice: { name: string; download_gb: number; description: string; verdict: Verdict; reason: string; recommended: boolean }[];
+  summary: string;
+  ui3d: { level: Ui3D; reason: string };
+}
+
+export interface OllamaStatus {
+  installed: boolean;
+  running: boolean;
+  models: string[];
+  winget: boolean;
+}
 
 export interface RunState {
   busy: boolean;
@@ -252,6 +286,15 @@ export interface PyApi {
   dashboard(days: number | null): Promise<DashboardData>;
   evals(model: string | null): Promise<EvalsData>;
   tracing_status(): Promise<TracingStatus>;
+  list_resumes(): Promise<Resume[]>;
+  add_resumes(): Promise<string[]>;
+  remove_resume(name: string): Promise<void>;
+  open_data_folder(): Promise<void>;
+  system_check(provider?: string | null, model?: string | null): Promise<SystemCheck>;
+  ollama_status(): Promise<OllamaStatus>;
+  install_ollama(): Promise<{ ok: boolean; manual: boolean }>;
+  pull_model(model: string): Promise<{ ok: boolean; model: string }>;
+  test_api_key(key: string | null, model: string): Promise<LlmStatus>;
   get_settings(): Promise<Settings>;
   save_settings(updates: Partial<Record<string, string>>): Promise<Settings>;
   set_api_key(key: string): Promise<Settings>;
