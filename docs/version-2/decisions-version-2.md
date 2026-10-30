@@ -387,5 +387,14 @@ step 2 took 3–8 min, and the only way out was closing the app).
 - The build's window test (`--smoke`) skips the tray and the single-instance
   check, so it never touches a JobLens you have open.
 
+## D25 — v0.3.1: an in-between release for friends ✅ (30 Oct 2026, your call)
+Amends D10. A friend needs the new app now, before Phase 13 is finished.
+- **v0.3.1** = the new UI (Phase 12), the 12j fixes and the tray (13a),
+  built from `version-2` and published on GitHub Releases.
+- **v1.0.0 stays the full version-2 release**, after the update check
+  (13b–13d). v0.3.1 can't update itself, so its users install v1.0.0 by
+  hand once; from then on updates come by themselves.
+- `main` stays at v0.3.0 until v1.0.0; the v0.3.1 tag points at `version-2`.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)
