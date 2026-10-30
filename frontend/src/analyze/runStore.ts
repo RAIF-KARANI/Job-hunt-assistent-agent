@@ -209,6 +209,13 @@ export function dismiss(): void {
   if (!view.busy) set({ ...IDLE });
 }
 
+/** Fill in the Analyze form (from the Tracker's "Draft a cover note"). Ignored while a run needs you. */
+export function prefill(url: string): boolean {
+  if (view.busy || view.phase === "review" || view.phase === "paste") return false;
+  set({ ...IDLE, url });
+  return true;
+}
+
 /** Local-only change: "sending your answer" before Python's busy event arrives, or undo it if the call failed. */
 export function markBusy(busy: boolean): void {
   set({ ...view, busy });

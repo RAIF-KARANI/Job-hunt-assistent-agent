@@ -76,3 +76,16 @@ export function errorMessage(e: unknown): string {
   if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
   return String(e);
 }
+
+/** Web links open in your browser: a plain <a href="https://..."> would navigate
+ * the app window itself away from JobLens. Installed once, for the whole page. */
+export function routeLinksToBrowser(): void {
+  document.addEventListener("click", (e) => {
+    const link = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+    if (!link || !/^https?:/i.test(link.href) || link.origin === window.location.origin) return;
+    e.preventDefault();
+    getApi()
+      .then((api) => api.open_link(link.href))
+      .catch(() => undefined);
+  });
+}

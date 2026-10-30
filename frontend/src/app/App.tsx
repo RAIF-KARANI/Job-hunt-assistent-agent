@@ -6,6 +6,7 @@ import type { AppInfo, Theme } from "../bridge/types";
 import { Placeholder } from "../pages/Placeholder";
 import { useRoute } from "./routes";
 import { Sidebar } from "./Sidebar";
+import { Tracker } from "../tracker/Tracker";
 import { useTheme } from "./useTheme";
 
 export function App() {
@@ -51,7 +52,7 @@ export function App() {
       </a>
       <Sidebar page={page} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
       <main id="main" className="content" tabIndex={-1}>
-        {page === "analyze" ? <Analyze /> : <Placeholder page={page} />}
+        {page === "analyze" ? <Analyze /> : page === "tracker" ? <Tracker /> : <Placeholder page={page} />}
         {info && <footer className="version">JobLens {info.version}</footer>}
       </main>
     </div>

@@ -77,6 +77,18 @@
   --fit-high: #9be3ff;
   --fit-mid: #3a8fd0;
   --fit-low: #56647d;
+  --fit-high-ink: #06121c;  /* text on the fit chips: 13.3:1, 5.4:1, 6.0:1 */
+  --fit-mid-ink: #06121c;
+  --fit-low-ink: #ffffff;
+  --fit-track: #1a2440;
+
+  /* tracker statuses */
+  --st-researched: #93a1b8;
+  --st-cover: #4cc3f0;
+  --st-applied: #8b7cf6;
+  --st-interviewing: #f2a93b;
+  --st-offer: #5fd39a;
+  --st-rejected: #56647d;
 
   --focus: #e6ecf5;
 }
@@ -113,6 +125,17 @@
   --fit-high: #0b6fa4;
   --fit-mid: #4f9bd1;
   --fit-low: #9aa6b8;
+  --fit-high-ink: #ffffff;  /* 5.5:1, 6.0:1, 7.3:1 */
+  --fit-mid-ink: #0e1626;
+  --fit-low-ink: #0e1626;
+  --fit-track: #e3e8f0;
+
+  --st-researched: #6b7890;
+  --st-cover: #0b6fa4;
+  --st-applied: #6d5bd0;
+  --st-interviewing: #b26a00;
+  --st-offer: #1c7c4a;
+  --st-rejected: #9aa6b8;
 
   --focus: #0e1626;
 }

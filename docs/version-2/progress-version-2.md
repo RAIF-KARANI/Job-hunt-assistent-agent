@@ -10,6 +10,7 @@ teaches. Plan: [plan-version-2.md](plan-version-2.md) · Decisions:
 | 12b Bridge | ✅ | `desktop_web/` runner + API, 20 tests, real agent driven end to end |
 | 12c Scaffold + shell | ✅ | React + TS + Vite in `frontend/`, design tokens (dark + light, all AA), sidebar shell in the real window |
 | 12d Analyze | ✅ | steps timeline, live log, review / rewrite / reject, paste fallback, ratings; a real qwen3:8b run approved from the new UI |
+| 12e Tracker | ✅ | board with drag + undo, sortable list, details sheet (evidence, research, copy note); status changes saved to `jobs.db` |
 
 ---
 
@@ -248,3 +249,75 @@ temporary profile (your data untouched):
   that outlive a page.
 - **Contract tests across a boundary:** a test that the agent still prints
   the lines the UI depends on.
+
+---
+
+## 12e — Tracker screen ✅ (30 Oct 2026)
+
+### Goal
+Every analyzed job as a board (drag = status change) and as a list, with
+the details. Done when status changes are saved to `jobs.db`.
+
+### What was done
+- **`frontend/src/tracker/`:**
+  - `Board.tsx`: six columns (D18), cards with company, role, fit chip, fit
+    bar and a "when" line; HTML drag and drop; empty columns stay narrow
+  - `JobList.tsx`: table sorted by fit; click a header to sort by
+    company, role, fit, status or date; the status dropdown in each row
+  - `JobSheet.tsx`: details in a side sheet (native `<dialog>`: focus stays
+    inside, Esc closes): status, open posting, "draft a cover note", fit
+    with breakdown and verdict, proven requirements with resume quotes,
+    gaps, the latest approved cover note with **Copy**, the company
+    research with its checked sources
+  - `useJobs.ts`: loads the jobs, reloads when a run finishes; status
+    changes are **optimistic** (the card moves at once and moves back if
+    saving fails)
+  - search across company, role, resume and status; Board/List choice
+    remembered on this PC
+  - **Undo** for 8 s after any status change
+- **Bridge:** `open_link(url)` opens http(s) links in your browser and
+  refuses anything else; the page routes **every** web link through it.
+- **Tracker:** `list_jobs()` also returns `created_at`.
+- **Tokens:** fit chip colors with text colors checked by calculation
+  (5.4:1 to 13.3:1), and one color per status in both themes.
+- Tests: `open_link` refuses `file:`, `javascript:`, a Windows path,
+  `ms-settings:` and an empty host (6 cases) and opens a real link; the job
+  list carries `created_at`. **123 tests in total**; typecheck clean.
+
+### Checked in the real window
+A driver script on a temporary profile with a **copy** of your `jobs.db`
+(the real file's checksum was the same before and after):
+- 7 cards for 7 jobs
+- dragged Intel from Researched to Applied → saved as `applied` in the DB;
+  Undo → back to `researched`
+- details of the best job (ByteDance, 90): Copy put exactly the saved note
+  on the clipboard (your clipboard was restored after); "Open posting"
+  went to the browser while the window stayed on JobLens
+- status changed in the sheet → DB updated and the card moved column
+- search "Byte" → "1 of 7 jobs"; list sorted by fit, then by company;
+  status changed in a row → DB updated; Undo worked
+- "Draft another cover note" → Analyze, with the posting's link filled in
+- light theme, narrow window
+
+### Problems hit
+1. **Six equal columns didn't fit** at 1440 px ("Rejected" was cut off).
+   Empty columns are now narrow, and columns with jobs never shrink below
+   220 px (the board scrolls sideways in a narrow window instead).
+2. **"Analyzed today" after a drag and undo.** The card used the last
+   status change. Now it uses when the job was added.
+3. **The copy check failed, but the copy was right.** The test read the
+   clipboard through PowerShell in the old Windows encoding, which turned
+   the note's curly apostrophe (’) into another character. The test (and
+   restoring your clipboard) now uses UTF-8.
+
+### Notes
+- `pytest` printed "1 warning" twice today and never again in 27 repeat
+  runs. It looks like a timing warning from the background-thread tests;
+  watching it.
+
+### Concepts learned
+- **Optimistic updates** with rollback.
+- **HTML drag and drop:** `dragover` must call `preventDefault()` or a drop
+  is never allowed.
+- **Native `<dialog>`** with `showModal()`: focus trap, Esc and backdrop.
+- **Trust boundaries again:** a desktop web view must decide where links go.

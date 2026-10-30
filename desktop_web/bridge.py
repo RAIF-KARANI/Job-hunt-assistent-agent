@@ -28,7 +28,9 @@ set), and settings writes go through an allow-list.
 """
 
 import json
+import webbrowser
 from typing import Callable
+from urllib.parse import urlparse
 
 from job_agent import __version__, paths, runlog, settings, tracker
 from job_agent.llm import llm_status
@@ -131,6 +133,16 @@ class Api:
 
     def set_status(self, job_id: int, status: str) -> None:
         tracker.update_status(int(job_id), status)  # rejects unknown statuses
+
+    def open_link(self, url: str) -> None:
+        """Open a web link in your browser, never inside the app window.
+        Only http(s): the page shows links from the web, and a file:// or
+        other scheme could start a program."""
+        url = (url or "").strip()
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError("Only web links (http or https) can be opened.")
+        webbrowser.open(url)
 
     # ---- settings -----------------------------------------------------------
 

@@ -33,8 +33,59 @@ export interface JobRow {
   company: string;
   fit_score: number;
   best_resume: string;
-  status: string;
+  status: JobStatus;
+  created_at: string; // UTC "YYYY-MM-DD HH:MM:SS": when the agent analyzed it
+  updated_at: string; // last status change
+}
+
+export type JobStatus = "researched" | "cover_note_ready" | "applied" | "interviewing" | "offer" | "rejected";
+
+export interface SkillMatch {
+  requirement: string;
+  resume_evidence: string;
+}
+
+export interface JobDetail {
+  id: number;
+  url: string;
+  title: string;
+  company: string;
+  location: string | null;
+  seniority: string | null;
+  salary: string | null;
+  fit_score: number;
+  best_resume: string;
+  status: JobStatus;
+  created_at: string; // UTC "YYYY-MM-DD HH:MM:SS"
   updated_at: string;
+  job: {
+    title: string;
+    company: string;
+    location: string;
+    employment_type: string;
+    seniority: string;
+    salary: string;
+    summary: string;
+    required_skills: string[];
+    nice_to_have_skills: string[];
+    responsibilities: string[];
+  };
+  best_match: {
+    resume_name: string;
+    fit_score: number;
+    score_breakdown: string;
+    analysis: { matching_skills: SkillMatch[]; missing_skills: string[]; talking_points: string[]; verdict: string };
+  };
+  company_brief: {
+    what_they_do: string;
+    products: string[];
+    size_and_stage: string;
+    recent_news: string[];
+    culture_and_values: string[];
+    cover_note_hooks: string[];
+    sources: string[];
+  } | null;
+  cover_notes: { id: number; text: string; approved_at: string }[];
 }
 
 export interface RunSummary {
@@ -118,10 +169,11 @@ export interface PyApi {
   run_state(): Promise<RunState>;
   save_feedback(runId: string | null, jobId: number | null, ratings: Record<string, string>, comment?: string): Promise<number>;
   feedback_options(): Promise<FeedbackOptions>;
-  statuses(): Promise<string[]>;
+  statuses(): Promise<JobStatus[]>;
   list_jobs(): Promise<JobRow[]>;
-  get_job(jobId: number): Promise<Record<string, unknown>>;
-  set_status(jobId: number, status: string): Promise<void>;
+  get_job(jobId: number): Promise<JobDetail>;
+  set_status(jobId: number, status: JobStatus): Promise<void>;
+  open_link(url: string): Promise<void>;
   get_settings(): Promise<Settings>;
   save_settings(updates: Partial<Record<string, string>>): Promise<Settings>;
   set_api_key(key: string): Promise<Settings>;

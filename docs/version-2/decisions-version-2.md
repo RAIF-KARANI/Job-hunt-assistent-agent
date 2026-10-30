@@ -194,5 +194,23 @@ is reworded.
 - **The rating form appears after every reviewed run**, with the cover note
   rating pre-filled from what you did (Phase 11c rule). Skipping is one click.
 
+## D18 — Tracker: one column per status, links open outside ✅ (30 Oct 2026, step 12e)
+- **Six columns, not the concept's five.** The concept merged "offer" and
+  "rejected" into "Closed"; dropping a card there would have to guess which
+  one. Empty columns are narrow, so all six fit at a normal window width.
+- **Every status change can be undone** for 8 seconds (a small "Undo"
+  notice). Dragging is quick, so a wrong drop is easy.
+- **Keyboard path:** a card opens its details, where the status is a normal
+  dropdown; the List view has the same dropdown in each row. Dragging is
+  never the only way.
+- **Web links always open in your browser** (new bridge call `open_link`,
+  http/https only). A plain link would have navigated the app window away
+  from JobLens. Other schemes (`file:`, `javascript:`...) are refused,
+  because the page shows links that came from the web.
+- **"Analyzed 2 days ago"** uses when the job was added (`created_at`, now
+  in `list_jobs()`); "Applied 3 days ago" uses the last status change.
+- **"Draft a cover note"** fills in the Analyze form but doesn't start the
+  run: you see the model check and press Analyze yourself.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

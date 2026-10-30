@@ -2,7 +2,7 @@
 // build and look at screens without Python. Not included in production
 // builds (bridge.ts only loads it when import.meta.env.DEV).
 
-import type { AgentEvent, Answer, JobRow, PyApi, Settings } from "./types";
+import type { AgentEvent, Answer, JobDetail, JobRow, PyApi, Settings } from "./types";
 
 export function mockApi(emit: (event: AgentEvent) => void): PyApi {
   let settings: Settings = {
@@ -14,12 +14,13 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     ANTHROPIC_API_KEY_SET: false,
   };
   const jobs: JobRow[] = [
-    { id: 1, title: "AI Engineer", company: "Northwind Labs", fit_score: 86, best_resume: "AI_Engineer.pdf", status: "interviewing", updated_at: "2026-10-29 10:42" },
-    { id: 2, title: "Backend Engineer (Python)", company: "Lumen Robotics", fit_score: 78, best_resume: "Software_Engineer.pdf", status: "applied", updated_at: "2026-10-28 09:15" },
+    { id: 1, title: "AI Engineer", company: "Northwind Labs", fit_score: 86, best_resume: "AI_Engineer.pdf", status: "interviewing", created_at: "2026-10-29 10:42", updated_at: "2026-10-29 10:42" },
+    { id: 2, title: "Backend Engineer (Python)", company: "Lumen Robotics", fit_score: 78, best_resume: "Software_Engineer.pdf", status: "applied", created_at: "2026-10-21 09:15", updated_at: "2026-10-21 09:15" },
+    { id: 3, title: "Applied Scientist", company: "Peregrine AI", fit_score: 81, best_resume: "AI_Engineer.pdf", status: "researched", created_at: "2026-10-28 14:02", updated_at: "2026-10-28 14:02" },
+    { id: 4, title: "Platform Engineer (Rust)", company: "Tessellate", fit_score: 52, best_resume: "Software_Engineer.pdf", status: "researched", created_at: "2026-10-26 08:30", updated_at: "2026-10-26 08:30" },
+    { id: 5, title: "LLM Engineer", company: "Halcyon Data", fit_score: 72, best_resume: "AI_Engineer.pdf", status: "cover_note_ready", created_at: "2026-10-30 07:10", updated_at: "2026-10-30 07:10" },
+    { id: 6, title: "Full-stack Engineer", company: "Atlas Freight", fit_score: 39, best_resume: "Software_Engineer.pdf", status: "rejected", created_at: "2026-10-15 16:45", updated_at: "2026-10-15 16:45" },
   ];
-  const notInMock = async (): Promise<never> => {
-    throw new Error("Not available in the browser preview");
-  };
   const run = fakeRun(emit);
 
   return {
@@ -45,8 +46,12 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     resume: async (answer) => run.resume(answer),
     paste_text: async () => run.pasted(),
     save_feedback: async (_run, _job, ratings) => Object.values(ratings).filter(Boolean).length,
-    get_job: notInMock,
-    set_status: notInMock,
+    get_job: async (id) => mockJob(jobs.find((j) => j.id === id) ?? jobs[0]),
+    set_status: async (id, status) => {
+      const job = jobs.find((j) => j.id === id);
+      if (job) job.status = status;
+    },
+    open_link: async (url) => void window.open(url, "_blank", "noopener"),
   };
 }
 
@@ -172,4 +177,47 @@ function fakeRun(emit: (event: AgentEvent) => void) {
       [0, () => draft()],
     ];
   }
+}
+
+function mockJob(row: JobRow): JobDetail {
+  return {
+    ...row,
+    url: `https://jobs.example/${row.id}`,
+    location: "Remote",
+    seniority: "Mid",
+    salary: "Not specified",
+    job: {
+      title: row.title,
+      company: row.company,
+      location: "Remote",
+      employment_type: "Full-time",
+      seniority: "Mid",
+      salary: "Not specified",
+      summary: "Build agent features and the evaluations that keep them honest.",
+      required_skills: ["Python", "LLM applications", "Testing"],
+      nice_to_have_skills: ["Kubernetes"],
+      responsibilities: ["Ship agent features"],
+    },
+    best_match: {
+      resume_name: row.best_resume,
+      fit_score: row.fit_score,
+      score_breakdown: "6 proven / (6 proven + 1 required gaps) = 86",
+      analysis: {
+        matching_skills: [{ requirement: "Python", resume_evidence: "Python, FastAPI, pytest" }],
+        missing_skills: ["Kubernetes"],
+        talking_points: [],
+        verdict: "Strong match; the main gap is Kubernetes.",
+      },
+    },
+    company_brief: {
+      what_they_do: `${row.company} builds software for teams that work with data.`,
+      products: ["Platform"],
+      size_and_stage: "About 200 people, Series B",
+      recent_news: ["Launched an agent platform (Sep 2026)"],
+      culture_and_values: ["Remote-first"],
+      cover_note_hooks: [],
+      sources: ["https://example.com/about"],
+    },
+    cover_notes: row.status === "researched" ? [] : [{ id: 1, text: "Dear team,\n\nI would love to talk about the role.\n\n[Your name]", approved_at: row.updated_at }],
+  };
 }

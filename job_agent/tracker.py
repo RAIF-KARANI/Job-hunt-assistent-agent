@@ -150,7 +150,7 @@ def list_jobs() -> list[sqlite3.Row]:
     init_db()
     with _db() as conn:
         return conn.execute(
-            """SELECT id, title, company, fit_score, best_resume, status, updated_at
+            """SELECT id, title, company, fit_score, best_resume, status, created_at, updated_at
                FROM jobs ORDER BY fit_score DESC, updated_at DESC"""
         ).fetchall()
 

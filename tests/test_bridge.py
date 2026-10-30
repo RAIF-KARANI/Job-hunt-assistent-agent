@@ -357,6 +357,7 @@ def test_tracker_calls_return_plain_json():
     job_id = _save_job()
     jobs = api.list_jobs()
     assert jobs[0]["id"] == job_id and jobs[0]["company"] == "Acme"
+    assert jobs[0]["created_at"]                  # "Analyzed 2 days ago" on the board
     job = api.get_job(job_id)
     json.dumps(job)                                # would raise on Pydantic objects
     assert job["job"]["title"] == "AI Engineer"
@@ -374,6 +375,18 @@ def test_status_changes_are_validated():
     with pytest.raises(ValueError):
         api.set_status(job_id, "ghosted")
     assert "applied" in api.statuses()
+
+
+@pytest.mark.parametrize("url", ["file:///C:/Windows/System32/calc.exe", "javascript:alert(1)",
+                                 "C:\jobs\posting.txt", "ms-settings:", "https://", ""])
+def test_only_web_links_are_opened(url, monkeypatch):
+    opened = []
+    monkeypatch.setattr("webbrowser.open", opened.append)
+    api, _ = make_api(review_graph())
+    with pytest.raises(ValueError):
+        api.open_link(url)
+    api.open_link(" https://jobs.example/1 ")
+    assert opened == ["https://jobs.example/1"]
 
 
 # ---- settings and feedback ---------------------------------------------------
