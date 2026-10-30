@@ -6,9 +6,23 @@ The downloadable JobLens app (`JobLens-Setup-*.exe`) bundles the
 open-source components below. Their licenses apply to those components.
 Versions are the ones used for the version-2 build (web UI, since step 12h).
 
-Since version 2 the app no longer contains Qt / PySide6 (LGPL-3.0),
-Matplotlib or Pillow: the window is a web page shown by Microsoft Edge
-WebView2.
+Since version 2 the app no longer contains Qt / PySide6 or Matplotlib: the
+window is a web page shown by Microsoft Edge WebView2.
+
+## The tray icon: pystray — LGPL-3.0
+
+The tray icon uses **pystray 0.19.5** (Moses Palmér), used under the **GNU
+Lesser General Public License v3.0** (LGPL-3.0). The full license texts
+(`COPYING` = GPL-3.0, `COPYING.LGPL` = LGPL-3.0) ship with the app in
+`_internal\pystray-0.19.5.dist-info\`.
+
+- pystray is shipped **unmodified**, as plain Python source files in the
+  app's `_internal\pystray\` folder (not inside the compressed archive), so
+  you may replace them with your own compatible version.
+- Source code: https://github.com/moses-palmer/pystray
+- License text: https://www.gnu.org/licenses/lgpl-3.0.html
+
+pystray needs **Pillow** (MIT-CMU license) and **six** (MIT), both bundled.
 
 ## The window: pywebview + Microsoft Edge WebView2
 

@@ -32,7 +32,8 @@ datas = [("desktop_web/web", "desktop_web/web"),   # the built React UI (12h)
 # the package's *.dist-info folder, which PyInstaller doesn't copy unless asked.
 for package in ["langchain", "langchain-core", "langgraph", "langgraph-checkpoint",
                 "langgraph-checkpoint-sqlite", "langsmith", "langchain-ollama", "ollama",
-                "langchain-anthropic", "anthropic", "ddgs", "pydantic", "langfuse", "pywebview"]:
+                "langchain-anthropic", "anthropic", "ddgs", "pydantic", "langfuse", "pywebview",
+                "pystray"]:  # pystray's metadata carries its LGPL license texts (13a)
     try:
         datas += copy_metadata(package)
     except Exception as e:  # not installed -> skip, but say so in the build log
@@ -44,12 +45,16 @@ a = Analysis(
     datas=datas,
     # Imported inside functions (only when that provider / screen is used), so be explicit.
     hiddenimports=["langchain_ollama", "langchain_anthropic", "desktop_web.selftest",
-                   "job_agent.monitoring", "job_agent.system_check", "job_agent.ollama_setup"],
+                   "job_agent.monitoring", "job_agent.system_check", "job_agent.ollama_setup",
+                   # pystray picks its backend by name at runtime: PyInstaller can't see it.
+                   "pystray._win32"],
     # The web app never uses these. PySide6 / matplotlib belonged to the Qt UI
     # (removed in 12i): excluded in case a developer still has them installed.
-    # PIL is only for the developer screenshot helper.
-    excludes=["PySide6", "shiboken6", "matplotlib", "PIL", "streamlit", "altair", "pydeck",
+    excludes=["PySide6", "shiboken6", "matplotlib", "streamlit", "altair", "pydeck",
               "pyarrow", "pytest", "_pytest", "IPython", "jupyter", "notebook", "tkinter"],
+    # pystray is LGPL-3.0: ship it as plain .py files in _internal\pystray\
+    # (not inside the compressed archive), so a user can replace it (13a, D24).
+    module_collection_mode={"pystray": "py"},
     noarchive=False,
 )
 pyz = PYZ(a.pure)

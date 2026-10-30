@@ -816,3 +816,76 @@ On copies of your installed app's data (4 resumes, run log):
   and why a token cap beats a time limit across PCs of different speed.
 - **Measure the measurement**: change one thing (the wait) and see whether
   the effect follows.
+
+---
+
+## 13a — Tray icon ✅ (30 Oct 2026)
+
+### Goal
+JobLens keeps working while its window is closed, and tells you when it
+needs you: open, run in the background, a notification when a cover note
+is waiting, quit.
+
+### What was done
+- **`desktop_web/tray.py`:** `RunState` follows the same events the page
+  gets. The decisions are pure functions:
+  - `close_action`: hide while working, quit when idle
+  - `status_text`
+  - `notification`
+
+  `Tray` wraps pystray: the menu (Open, status, Stop the run, Quit), the
+  hover text, one "still working" notification per session, and
+  notifications only while the window is hidden.
+- **`desktop_web/instance.py`:** one JobLens at a time (local socket +
+  random token in `instance.json`).
+- **`desktop_web/app.py`:**
+  - the single-instance check comes **before** marking interrupted runs, so
+    a second start never marks the first one's run
+  - the tray is fed every event
+  - pywebview's `closing` handler hides or quits
+  - the tray and the listener are cleaned up on exit
+  - `--smoke` skips both
+- **Packaging:** pystray (LGPL-3.0) as plain `.py` files with its license
+  texts; Pillow back in the build; the self-test checks the tray parts.
+  Installer **58 MB** (was 54: Pillow); app folder 140 MB.
+- **Notices:** a pystray LGPL section; Pillow and six.
+- Tests: **169** (+14: the tray's decisions from event sequences, hide vs
+  quit, notifications only while hidden, no icon → never hide, the
+  single-instance handshake, a wrong token, a stale file).
+
+### Checked in the real window, with the real agent
+Wired exactly as `app.main()` does it, on copies of your installed app's data:
+- during step 1, the tray's hover text said "Working: reading the posting
+  (step 1 of 5)"
+- **X while working:** the window hid, the run kept going, and one
+  notification said "JobLens is still working"
+- **a second `python -m desktop_web`:** the window came back in **1.4 s**
+  and the second copy exited (code 0)
+- **Stop from the tray menu:** the run stopped, the page showed "Stopped",
+  and the tray went back to "Idle"
+- **X when idle:** the app quit, the tray icon was removed, and
+  `instance.json` was deleted
+- frozen build + test install: the tray check passes in the build and in
+  the installed copy; clean uninstall
+
+### Problems hit
+1. **Order matters at start:** marking leftover "running" runs as
+   interrupted has to wait until we know this is the only JobLens.
+   Otherwise a second start would mark the first one's live run.
+2. **pystray's thread isn't a daemon**: without `tray.stop()` in a
+   `finally`, the app couldn't exit.
+3. **pystray is LGPL**: handled like Qt was (replaceable files + notice)
+   instead of writing a Win32 tray by hand (D24).
+4. A full-desktop screenshot in the test also captured your other apps. I
+   deleted it and removed that capture from the driver: screenshots only
+   of the JobLens window from now on. It did show that **Do not disturb**
+   is on (the bell with "z"), which hides notification banners; they then
+   wait in the notification center.
+
+### Concepts learned
+- **Two event loops in one process:** pywebview owns the main thread;
+  pystray runs its own Windows message loop on another.
+- **Cancelling a window close** from a handler (pywebview's blocking
+  `closing` event).
+- **Single-instance apps:** a local socket plus a shared secret.
+- **LGPL in a frozen app:** keep the library replaceable.

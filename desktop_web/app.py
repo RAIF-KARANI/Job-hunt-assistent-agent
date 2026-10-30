@@ -123,7 +123,19 @@ def main(argv=None) -> int:
         return self_test(str(args.self_test))
     if not webview2_version():
         return _no_webview2()
+
+    # 13a: one JobLens at a time. A second start brings the first one's
+    # window back (it may be hidden in the tray) and exits. Not for --smoke:
+    # the build's window test must never touch a JobLens you have open.
+    instance = None
+    if not args.smoke:
+        from desktop_web.instance import SingleInstance
+        instance = SingleInstance(paths.APP_HOME)
+        if instance.ask_running_copy_to_show():
+            return 0
+
     # 12j: runs still marked "running" were cut off when the app last closed.
+    # (After the check above: a second start must not mark the first one's run.)
     from job_agent import runlog
     try:
         runlog.mark_interrupted()
@@ -151,9 +163,52 @@ def main(argv=None) -> int:
 
     if args.smoke:
         webview.start(_smoke, (window, args.smoke, args.screenshot), gui="edgechromium")
-    else:
+        return 0
+
+    tray = _start_tray(window, api, holder)
+    instance.listen(on_show=lambda: _bring_back(window, tray))
+    try:
         webview.start(gui="edgechromium", debug=args.dev)  # debug = F12 dev tools
+    finally:
+        if tray:
+            tray.stop()  # its thread would otherwise keep the process alive
+        instance.close()
     return 0
+
+
+def _bring_back(window, tray) -> None:
+    if tray:
+        tray.hidden = False
+    window.show()
+    window.restore()  # in case it was minimized
+
+
+def _start_tray(window, api, holder):
+    """13a: the tray icon, fed the same events as the page. If it can't
+    start, the app works as before (closing quits)."""
+    from desktop_web.tray import Tray
+
+    quitting = {"now": False}
+
+    def quit_app():
+        quitting["now"] = True
+        window.destroy()
+
+    tray = Tray(paths.resource_path("assets/joblens.png"), show=lambda: _bring_back(window, tray),
+                stop_run=api.stop_run, quit_app=quit_app)
+    try:
+        tray.start()
+    except Exception as e:
+        print(f"! tray icon: {e}")
+        return None
+    to_page = holder["send"]
+
+    def send(event):
+        to_page(event)
+        tray.on_event(event)
+    holder["send"] = send
+    window.events.closing += lambda: True if quitting["now"] else tray.window_closing(hide=window.hide)
+    return tray
 
 
 if __name__ == "__main__":

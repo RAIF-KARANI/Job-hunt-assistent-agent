@@ -57,6 +57,20 @@ def self_test(report_path: str) -> int:
         return "ok"
     check("print() in the windowed app", no_console_print)
 
+    def tray_parts():
+        # 13a: the tray's Windows backend (loaded by name) and its icon image.
+        import importlib
+
+        from PIL import Image
+
+        importlib.import_module("pystray._win32")
+        with Image.open(paths.resource_path("assets/joblens.png")) as img:
+            size = img.size
+        import pystray
+        where = "replaceable .py files" if pystray.__file__.endswith(".py") else "inside the archive"
+        return f"icon {size[0]}x{size[1]}; pystray as {where}"
+    check("tray icon (pystray + Pillow)", tray_parts)
+
     def build_graph():
         import sqlite3
 

@@ -1,0 +1,176 @@
+"""
+The tray icon (13a, D24): JobLens keeps working while its window is closed.
+
+    closing the window while the agent works  -> the window hides to the tray
+    closing it when nothing is going on        -> the app quits, as before
+    a cover note waits for you (window hidden) -> a Windows notification
+    tray menu: Open JobLens, the status, Stop the run, Quit
+
+pystray runs its own Windows message loop on its own thread, next to
+pywebview's (which owns the main thread). It is LGPL-3.0, so it ships as
+plain .py files the user can replace (joblens.spec, THIRD_PARTY_NOTICES.md).
+
+The decisions are pure functions (close_action, status_text, notification),
+so they're tested without a tray or a window (tests/test_tray.py).
+"""
+
+from typing import Callable
+
+Event = dict
+
+
+# ---------------------------------------------------------------------------
+# What the tray knows, from the same events the page gets
+# ---------------------------------------------------------------------------
+
+
+class RunState:
+    """The agent's state, followed from bridge events."""
+
+    def __init__(self):
+        self.busy = False
+        self.waiting: str | None = None   # "review" | "paste_posting": the agent waits for you
+        self.step: int | None = None
+        self.title: str | None = None     # "AI Engineer @ Northwind" once step 1 knows it
+
+    def update(self, event: Event) -> None:
+        kind = event.get("type")
+        if kind == "busy":
+            self.busy = bool(event.get("busy"))
+        elif kind == "started":
+            self.waiting, self.step, self.title = None, None, None
+        elif kind == "step":
+            self.waiting, self.step = None, event.get("step")
+        elif kind == "step_detail" and event.get("step") == 1 and " @ " in str(event.get("text", "")):
+            self.title = event["text"]
+        elif kind == "paused":
+            self.waiting = event.get("kind")
+            summary = event.get("summary") or {}
+            if summary.get("title") and summary.get("company"):
+                self.title = f"{summary['title']} @ {summary['company']}"
+        elif kind in ("finished", "failed", "stopped"):
+            self.waiting, self.step = None, None
+
+    @property
+    def working(self) -> bool:
+        """Something you'd lose by quitting: a step running, or a draft waiting for you."""
+        return self.busy or self.waiting is not None
+
+
+def close_action(state: RunState) -> str:
+    """The window's close button: "hide" (keep working in the tray) or "quit"."""
+    return "hide" if state.working else "quit"
+
+
+STEP_NAMES = {1: "reading the posting", 2: "comparing your resumes", 3: "researching the company",
+              4: "saving to the tracker", 5: "writing the cover note"}
+
+
+def status_text(state: RunState) -> str:
+    """The tray menu's first line (and the icon's hover text)."""
+    if state.waiting == "review":
+        return "Your cover note is ready to review"
+    if state.waiting == "paste_posting":
+        return "Waiting for you to paste the job text"
+    if state.busy:
+        return f"Working: {STEP_NAMES.get(state.step, 'starting')} (step {state.step or 1} of 5)"
+    return "Idle"
+
+
+def notification(event: Event, state: RunState) -> tuple[str, str] | None:
+    """(title, message) to show when the window is hidden, or None."""
+    kind = event.get("type")
+    job = state.title or "your job"
+    if kind == "paused" and event.get("kind") == "review":
+        return "Cover note ready", f"The draft for {job} is waiting for your review. Open JobLens from the tray."
+    if kind == "paused" and event.get("kind") == "paste_posting":
+        return "JobLens needs you", "The job page couldn't be read. Open JobLens and paste the job text."
+    if kind == "finished":
+        return "Run finished", f"{job}: " + ("saved to the tracker." if event.get("decision") == "approve"
+                                             else "done.")
+    if kind == "failed":
+        return "Run failed", f"{job}: {str(event.get('error', ''))[:120]}"
+    return None
+
+
+# ---------------------------------------------------------------------------
+# The icon itself
+# ---------------------------------------------------------------------------
+
+
+class Tray:
+    """The tray icon for one window. `actions` are callables from app.py:
+    show(), hide(), stop_run(), quit()."""
+
+    def __init__(self, icon_path, show: Callable[[], None], stop_run: Callable[[], object],
+                 quit_app: Callable[[], None]):
+        self.state = RunState()
+        self.hidden = False
+        self._show, self._stop_run, self._quit = show, stop_run, quit_app
+        self._told_about_tray = False
+        self._icon = None
+        self._icon_path = icon_path
+
+    # -- lifecycle --
+    def start(self) -> None:
+        import pystray
+        from PIL import Image
+
+        menu = pystray.Menu(
+            pystray.MenuItem("Open JobLens", lambda: self.open(), default=True),  # also a click on the icon
+            pystray.MenuItem(lambda _: status_text(self.state), None, enabled=False),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("Stop the run", lambda: self._stop_run(), visible=lambda _: self.state.busy),
+            pystray.MenuItem(lambda _: "Quit JobLens (stops the run)" if self.state.working else "Quit JobLens",
+                             lambda: self._quit()),
+        )
+        self._icon = pystray.Icon("JobLens", Image.open(self._icon_path), "JobLens", menu)
+        self._icon.run_detached()  # its own thread and Windows message loop
+
+    def stop(self) -> None:
+        """Remove the icon (its thread isn't a daemon: the app can't exit before this)."""
+        if self._icon is not None:
+            self._icon.stop()
+            self._icon = None
+
+    # -- the window --
+    def open(self) -> None:
+        self.hidden = False
+        self._show()
+
+    def window_closing(self, hide: Callable[[], None]) -> bool:
+        """pywebview's `closing` handler. Returns False to keep the app running."""
+        if self._icon is None or close_action(self.state) == "quit":
+            return True  # no tray icon to come back from: never hide the window
+        hide()
+        self.hidden = True
+        if not self._told_about_tray:  # once per session: after that you know
+            self._told_about_tray = True
+            self.notify("JobLens is still working",
+                        "Closing the window doesn't stop the agent. It's in the tray; you'll be told when it needs you.")
+        self._refresh()
+        return False
+
+    # -- events (the same ones the page gets) --
+    def on_event(self, event: Event) -> None:
+        self.state.update(event)
+        if self.hidden:
+            note = notification(event, self.state)
+            if note:
+                self.notify(*note)
+        self._refresh()
+
+    def notify(self, title: str, message: str) -> None:
+        if self._icon is not None:
+            try:
+                self._icon.notify(message, title)
+            except Exception:  # a notification is never worth a crash
+                pass
+
+    def _refresh(self) -> None:
+        if self._icon is not None:
+            try:
+                self._icon.title = f"JobLens · {status_text(self.state)}"[:127]  # Windows' tooltip limit
+                self._icon.update_menu()
+            except Exception:
+                pass

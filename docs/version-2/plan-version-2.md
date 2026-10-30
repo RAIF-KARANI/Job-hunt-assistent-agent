@@ -41,10 +41,10 @@ with a three.js "job galaxy" on the Dashboard. The agent (`job_agent/`) stays as
 **Tests:** keep all `job_agent` tests; replace the Qt tab tests with bridge
 tests plus a few Playwright checks against the front end served locally.
 
-## Phase 13 — Tray + auto-update ⏳
+## Phase 13 — Tray + auto-update 🚧
 | Step | What |
 |---|---|
-| 13a | Tray icon (pystray): open, "run in background" during long analyses, notification when a cover note is waiting, quit |
+| 13a ✅ | Tray icon (pystray): open, "run in background" during long analyses, notification when a cover note is waiting, quit; plus one JobLens at a time (D24) |
 | 13b | Update check: GitHub Releases API on startup (at most once a day), compare with `__version__` |
 | 13c | Settings: "check for updates" on/off, "check now" |
 | 13d | Update flow: download the installer, check its size/hash, run it, close the app (Inno Setup upgrades in place, same AppId) |

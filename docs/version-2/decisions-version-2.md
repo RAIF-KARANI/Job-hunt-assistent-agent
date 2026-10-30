@@ -359,5 +359,33 @@ step 2 took 3–8 min, and the only way out was closing the app).
 - **Step 5's timer** shows "drafting · waiting for you": the old timer
   included the time you spent reading the draft.
 
+## D24 — Tray icon and one JobLens at a time ✅ (30 Oct 2026, step 13a)
+- **Closing the window while the agent works** (a step running, or a draft
+  waiting for you) **hides it to the tray**; the run goes on. One
+  notification says so, once per session. **Closing it when nothing is
+  going on quits**, as before, so the app never lingers by surprise. (A
+  Settings switch "always keep running in the tray" can come with 13c.)
+- **Notifications while hidden:** the cover note is ready, the job text
+  must be pasted, the run finished or failed. Windows shows them as
+  banners unless Do not disturb is on (then they wait in the notification
+  center).
+- **Tray menu:** Open JobLens (also a click on the icon), a status line
+  ("Working: comparing your resumes (step 2 of 5)"), Stop the run, Quit
+  (says "stops the run" while working; a quit run shows as interrupted).
+- **One JobLens at a time:** a second start brings the first one's window
+  back (it may be hidden) and exits. It's a local socket on 127.0.0.1 with a
+  random token in `instance.json`, so no other program can trigger it, and a
+  stale file from a crash doesn't block starting. The second start never
+  marks the first one's run as interrupted (the check comes first).
+- **pystray (LGPL-3.0)**, not a home-made tray: it handles the Windows
+  message loop, menus and notifications. Compliance as for Qt before: it
+  ships **unmodified, as plain .py files** (`module_collection_mode`), so
+  it can be replaced, with its license texts and a notice. The alternative,
+  ~300 lines of raw Win32 code to maintain, wasn't worth it.
+- **If the tray can't start**, closing quits as before: a window must
+  never hide with no icon to bring it back.
+- The build's window test (`--smoke`) skips the tray and the single-instance
+  check, so it never touches a JobLens you have open.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)
