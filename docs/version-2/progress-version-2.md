@@ -889,3 +889,24 @@ Wired exactly as `app.main()` does it, on copies of your installed app's data:
   `closing` event).
 - **Single-instance apps:** a local socket plus a shared secret.
 - **LGPL in a frozen app:** keep the library replaceable.
+
+---
+
+## Release v0.3.1 ✅ (30 Oct 2026, D25)
+A friend needed the new app before Phase 13 is finished, so the new UI
+went out early as **v0.3.1**:
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v0.3.1
+- Contents: Phase 12 (new UI), 12j (Stop, answer cap, estimates), 13a (tray).
+- Files: `JobLens-Setup-0.3.1.exe` (58 MB) and a portable zip (71 MB),
+  with SHA-256 checksums in the notes. GitHub's digests of the uploads
+  match them.
+- Before publishing:
+  - the self-test and window test of the build passed
+  - no resumes, `.env`, databases, email address or dev preview data in the app
+- Tag `v0.3.1` → `b81fe37` on `version-2`; `main` stays at v0.3.0 until v1.0.0.
+- Two hiccups:
+  1. Claude Code's permission check blocked me from publishing (a public
+     page), so you ran `gh release create` yourself.
+  2. My first command used a short commit id, which GitHub rejects as a
+     target (HTTP 422). The full 40-character id worked. Nothing was
+     half-created by the failed try.
