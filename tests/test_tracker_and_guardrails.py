@@ -98,3 +98,11 @@ def test_review_routing():
     assert cover_note.route_after_review({"decision": "approve"}) == "save"
     assert cover_note.route_after_review({"decision": "edit"}) == "draft"
     assert cover_note.route_after_review({"decision": "reject"}) == "__end__"
+
+
+def test_get_cover_notes_newest_first():
+    # Moved from the Qt Tracker's tests in 12i; the Tracker sheet shows notes[0].
+    job_id = tracker.save_job("https://d.example/4", _job("Dev"), _best(50), None)
+    cover_note.save_cover_note(job_id, _job("Dev"), "first", approved=True)
+    cover_note.save_cover_note(job_id, _job("Dev"), "second", approved=True)
+    assert [n["text"] for n in tracker.get_cover_notes(job_id)] == ["second", "first"]

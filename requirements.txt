@@ -5,7 +5,7 @@ python-dotenv>=1.0      # loads settings from the .env file
 
 # ---- LLM provider (pick the one that matches LLM_PROVIDER in .env) ----
 langchain-ollama>=0.3   # local models via Ollama (current choice: qwen3)
-# langchain-anthropic   # Claude: now installed for the desktop app (see Phase 9 below)
+langchain-anthropic>=0.3  # optional Claude provider (API key in Settings)
 # langchain-openai      # uncomment to use OpenAI (GPT)
 # langchain-google-genai  # uncomment to use Gemini
 
@@ -27,13 +27,12 @@ pytest>=8.0             # run: python -m pytest
 streamlit>=1.40                    # run: streamlit run app.py
 langgraph-checkpoint-sqlite>=2.0   # paused runs saved to disk (survive page reloads)
 
-# ---- Phase 9: Windows desktop app (python desktop_app.py) ----
-PySide6-Essentials>=6.7 # Qt widgets (Essentials = ~80 MB instead of ~230 MB full PySide6)
-matplotlib>=3.8         # charts in the desktop Dashboard tab
-langchain-anthropic>=0.3  # optional Claude provider (API key in Settings)
-
-# ---- Phase 12: version-2 desktop app (web UI in a native window) ----
+# ---- The desktop app (version 2: python -m desktop_web) ----
+# The window is a web page (frontend/, React) in Edge WebView2. The Qt app
+# of version 0.3 (PySide6 + matplotlib) was removed in step 12i.
 pywebview>=6.0          # Edge WebView2 window + JS <-> Python bridge (desktop_web/)
+pillow>=10              # developer tools only: scripts/make_icon.py, --smoke --screenshot
+# Node.js is needed to BUILD the UI (cd frontend && npm ci && npm run build), not to run it.
 
 # ---- Phase 8c: tracing (TRACING=langfuse in .env) ----
 langfuse>=3.0           # SDK + LangChain callback handler; server: infra/langfuse

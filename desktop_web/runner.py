@@ -1,7 +1,7 @@
 """
 Run the LangGraph agent on a background thread and report what happens as events.
 
-The same job as desktop/agent_worker.py (the Qt version), without Qt:
+The same job the Qt app's agent worker did (v0.3; removed in 12i), without Qt:
 
     runner = AgentRunner(emit=print)
     runner.start("https://jobs.example/1")      # returns at once

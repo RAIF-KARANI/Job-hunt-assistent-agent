@@ -27,6 +27,12 @@ version (v0.3.0, phases 0–11) live in [docs/base-version/](docs/base-version/)
 | [handover.md](docs/base-version/handover.md) | How to run, change, build, release and continue the project |
 | [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Licenses of the components bundled in the app |
 
+Version 2 (the new web UI in a native window, then tray and auto-update;
+released as v1.0.0) has its own plan, decisions and journal in
+[docs/version-2/](docs/version-2/): [plan](docs/version-2/plan-version-2.md),
+[decisions](docs/version-2/decisions-version-2.md),
+[progress](docs/version-2/progress-version-2.md).
+
 ---
 
 ## Setup (Windows)
@@ -99,40 +105,59 @@ http://localhost:3000. Every run appears as a session, tagged `cli`/`web`
 and with the model name, and your approve/edit/reject decision is attached
 as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
 
-### Desktop app: JobLens for Windows (Phases 9–11)
+### Desktop app: JobLens for Windows
 
-A native window (Qt) with four tabs: **Analyze**, **Tracker**,
-**Dashboard**, **Settings**.
+A native window (Microsoft Edge WebView2) showing a web UI built with React,
+with five screens:
+- **Dashboard:** key numbers, a **3D "job galaxy"** (closer to the center =
+  better fit), time per step, safety nets, where your applications are.
+- **Analyze:** paste a link, watch the five steps live, then edit and
+  approve, rewrite or reject the cover note.
+- **Tracker:** a board (drag a job to change its status, with undo) and a
+  list, with each job's details and its cover note.
+- **Evals:** how well the agent did: evidence pass rate, your ratings,
+  safety-net checks, time and tokens per step, models compared, recent
+  runs (with Langfuse / LangSmith trace links when tracing is on).
+- **Settings:** model, API key, resumes, theme, 3D level, options.
 
 **Install (users):** download `JobLens-Setup-<version>.exe` from the
 GitHub Releases page and run it. No admin rights needed, no Docker, no
-Python. Windows SmartScreen may say "unknown publisher" (the app isn't
-code-signed): **More info → Run anyway**.
+Python. If the PC lacks Microsoft's WebView2 Runtime (Windows 11 has it),
+the installer adds it. Windows SmartScreen may say "unknown publisher"
+(the app isn't code-signed): **More info → Run anyway**. (Release v0.3.0 is
+still the older Qt app; version 2 ships as v1.0.0.)
 
 **First launch** opens a **Setup Wizard**:
 1. *Run the AI on this PC* (free, private) or *use the Claude API* (key).
 2. Local: JobLens checks your RAM / graphics card / disk and **recommends
    a model that fits**, installs **Ollama** for you (winget) and downloads
    the model with a progress bar.
-3. Add your resume PDFs. Done. (Re-run it any time: Settings → *Run setup wizard*.)
+3. Add your resume PDFs.
+4. **Look and feel:** how much 3D the Dashboard uses (animated, still or a
+   flat map), **recommended from your graphics card**: a local model and
+   the 3D scene share it. Change it any time in Settings.
 
 **Built-in evals (no Docker):** every run is recorded on your PC (steps,
 LLM calls, tokens, timings) together with **automatic quality checks**
 (fake resume quotes caught, claims the judge rejected, evidence pass rate,
 invented URLs/dates removed, failed searches). After each run you can
-**rate** the fit score and the cover note. The **Dashboard** tab charts all
-of it; nothing is sent anywhere.
+**rate** the fit score and the cover note. The **Dashboard** and **Evals**
+screens show all of it; nothing is sent anywhere.
 
 **Uninstall:** Windows Settings → Apps → JobLens → Uninstall. It asks
 whether to **keep your data** (`%LOCALAPPDATA%\JobLens\`: tracker, cover
 notes, resume copies, settings). Ollama and downloaded models are separate
 apps and stay installed.
 
-**Build (developers):**
+**Run and build (developers):** the UI needs [Node.js](https://nodejs.org)
+to **build** (not to run).
 ```powershell
-python desktop_app.py                  # run from source (uses the repo's data/ and .env)
-python scripts/build_installer.py      # PyInstaller app -> self-test -> dist\JobLens-Setup-<version>.exe
-dist\JobLens\JobLens.exe --self-test out.txt   # check a build without opening a window
+cd frontend; npm ci; npm run build; cd ..     # the UI -> desktop_web\web\
+python -m desktop_web                         # run from source (uses the repo's data\ and .env)
+python -m desktop_web --dev                   # with `npm run dev` running: edit React, see it live
+python scripts/build_installer.py             # UI -> PyInstaller -> self-test + window test -> installer
+python scripts/build_installer.py --test-install   # + install, test and uninstall a separate test build
+dist\JobLens\JobLens.exe --self-test out.txt  # check a build without opening a window
 ```
 Needs Inno Setup 6 (`winget install JRSoftware.InnoSetup`). The version
 lives in `job_agent/__init__.py`.
@@ -168,6 +193,8 @@ paste** the job description. Type `END` on its own line when you're done.
 | `OLLAMA_REASONING` | `false` | Qwen3 "thinking" mode |
 | `JUDGE_EVIDENCE` | `true` | second LLM call double-checks skill evidence |
 | `TRACING` | `off` | `off`, `langfuse` (self-hosted), `langsmith` (cloud) |
+| `UI_3D` | `animated` | desktop app's Dashboard: `animated`, `still` or `off` (flat map) |
+| `UI_THEME` | `system` | desktop app: `system` (follow Windows), `dark`, `light` |
 
 To use a cloud model, `pip install` its LangChain package (see
 `requirements.txt`) and add its API key to `.env`. No code changes needed.
@@ -178,11 +205,15 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 92 tests cover the code-only safety nets (evidence and URL/date
-verification, number checks, the tracker, the approval guardrail), the run
-log and quality checks, the PC check and Ollama setup, and the desktop tabs
-and setup wizard (headless Qt). They use temporary databases and need no
-LLM, so they run in under half a minute.
+The 136 tests cover:
+- the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
+- the run log, quality checks and monitoring numbers
+- the PC check, the 3D recommendation and Ollama setup
+- the desktop app's bridge: agent runs with pause/resume, progress events, every call the screens make
+
+They use temporary databases and need no LLM, so they run in seconds. The
+UI itself is checked in the real window with driver scripts (see the
+progress journal).
 
 To compare models on a tracked job:
 ```powershell
@@ -231,8 +262,9 @@ job_agent/
   runlog.py           built-in run log, quality checks, feedback (local SQLite)
   system_check.py     PC check + model recommendations
   ollama_setup.py     detect / install Ollama, download models
-desktop_app.py        JobLens desktop app entry point (+ --self-test)
-desktop/              Qt tabs: analyze, tracker, dashboard, settings; agent worker thread
+desktop_web/          the desktop app: window (app.py), JS <-> Python bridge (bridge.py),
+                      agent runner (runner.py), self-test; `python -m desktop_web`
+frontend/             the UI: React + TypeScript + Vite (+ three.js for the galaxy)
 joblens.spec          PyInstaller recipe for JobLens.exe
 installer/joblens.iss Inno Setup script for JobLens-Setup.exe (+ uninstaller)
 scripts/              build_installer.py (one-command build), make_icon.py
@@ -240,6 +272,7 @@ assets/               app icon (generated by scripts/make_icon.py)
 infra/langfuse/       self-hosted Langfuse (Docker Compose + our override)
 tests/                pytest suite
 docs/base-version/    docs for v0.3.0: idea, plan, progress, architecture, report, handover
+docs/version-2/       version 2: plan, decisions, progress
 ```
 
 ## Using it / deployment
@@ -254,5 +287,6 @@ chosen over a website (cost comparison included).
 ## License
 
 JobLens is released under the [MIT License](LICENSE). The downloadable app
-bundles third-party components (including Qt for Python / PySide6 under
-LGPL-3.0); see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+bundles third-party components (React, three.js, pywebview, LangChain and
+more, all under permissive licenses; fonts under the SIL Open Font
+License); see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -89,3 +89,55 @@ def test_decisions_and_funnel_keep_a_fixed_order():
     f = m.build_status_funnel(jobs)
     assert list(f["status"]) == m.STATUS_ORDER   # lifecycle order, zeros included
     assert f.set_index("status").loc["applied", "jobs"] == 1
+
+
+# ---- the shared KPI logic (moved from the Qt Dashboard's tests in 12i) -------
+
+def test_kpis_from_runs_calls_decisions():
+    runs = pd.DataFrame({"llm_calls": [9, 1, 7], "agent_seconds": [180.0, 10.0, 200.0]})
+    calls = pd.DataFrame({"input_tokens": [100, 200], "output_tokens": [10, 20]})
+    decisions = pd.DataFrame({"decision": ["approve", "edit", "reject"], "count": [1, 0, 3]})
+    k = m.build_kpis(runs, calls, decisions)
+    assert k["runs"] == 3 and k["llm_calls"] == 2
+    assert (k["tokens_in"], k["tokens_out"]) == (300, 30)
+    assert k["median_full_run"] == 190.0       # the 1-call re-draft is excluded
+    assert k["approval_rate"] == 0.25
+
+
+def test_kpis_with_no_data():
+    empty_runs = pd.DataFrame(columns=["llm_calls", "agent_seconds"])
+    empty_calls = pd.DataFrame(columns=["input_tokens", "output_tokens"])
+    k = m.build_kpis(empty_runs, empty_calls, m.build_decisions(pd.DataFrame()))
+    assert k["median_full_run"] is None and k["approval_rate"] is None
+
+
+# ---- local run-log tables (temp database, filled by the real recorder) ----------
+
+def test_local_tables_from_a_recorded_run(tmp_path, monkeypatch):
+    from job_agent import runlog, tracker
+    from job_agent.models import FitAnalysis, ResumeMatch, SkillMatch
+
+    monkeypatch.setattr(tracker, "DB_PATH", tmp_path / "jobs.db")
+    rec = runlog.RunRecorder("r1", "desktop", "ollama", "qwen3:8b")
+    rec.segment_started_at = runlog._now()
+    rec.steps = [("analyze_fit", 80.0, runlog._now())]
+    rec.llm_calls = [("analyze_fit", "qwen3:8b", 2500, 800, 30.0, runlog._now())]
+    rec.tool_calls, rec.tool_failures = 2, 1
+    analysis = FitAnalysis(matching_skills=[SkillMatch(requirement="a", resume_evidence="q")],
+                           missing_skills=[], talking_points=[], verdict="ok")
+    match = ResumeMatch(resume_name="cv", analysis=analysis, unsupported_matches=["b - no"])
+    rec._write(120.0, {"job_id": 1, "all_matches": [match], "decision": "approve"})
+    runlog.save_feedback("r1", 1, "fit_score", "too high")
+
+    runs = m.local_runs(None)
+    assert runs.loc[0, "sessionId"] == "r1" and runs.loc[0, "decision"] == "approve"
+    assert m.local_llm_calls(None)["output_tokens"].tolist() == [800]
+    assert m.local_node_latency(None)["node"].tolist() == ["analyze_fit"]
+    assert m.local_decisions(None).set_index("decision").loc["approve", "count"] == 1
+    quality, pass_rate = m.local_quality(None)
+    assert pass_rate == 0.5                                  # 1 verified of 2 claims
+    per_run = quality.set_index("check")["per_run"]
+    assert per_run["Claims rejected by the judge"] == 1
+    assert per_run["Web searches that failed"] == 1          # from the runs table
+    fb = m.local_feedback().set_index("label")["count"]
+    assert fb["Fit score: too high"] == 1 and fb["Cover note: usable as is"] == 0

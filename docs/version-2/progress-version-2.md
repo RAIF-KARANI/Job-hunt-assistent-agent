@@ -669,3 +669,74 @@ Done when `build_installer.py` passes and a real install and uninstall work.
 - **Inno Setup preprocessor** (`#ifdef`) for two builds from one script.
 - **Testing installers without harming the machine**: a separate AppId,
   a silent install into a temp folder, and before/after checks.
+
+---
+
+## 12i — Remove the Qt UI ✅ (30 Oct 2026)
+
+### Goal
+Delete the Qt UI and PySide6, and update the tests and docs. Done when
+`pytest` is green and the license notice is updated.
+
+### What was done
+- **Deleted:** `desktop/` (the Qt tabs, wizard, worker thread),
+  `desktop_app.py`, and the four Qt-only test files (31 tests of Qt widgets).
+- **Kept by moving:**
+  - the KPI tests and the recorded-run test → `test_monitoring.py`
+  - `get_cover_notes` newest-first → `test_tracker_and_guardrails.py`
+
+  They test logic the new UI still uses. Everything else they covered is
+  now covered by the bridge tests and the real-window drivers.
+- **`requirements.txt`:** PySide6-Essentials and matplotlib removed;
+  langchain-anthropic and pillow (developer tools only) listed plainly;
+  a note that Node is for building only. PySide6, shiboken6 and matplotlib
+  were uninstalled from the venv, so a hidden import would fail now.
+- **README:** the desktop app section is rewritten for version 2:
+  - the five screens
+  - the 3D levels and the "Look and feel" step
+  - running from source (`python -m desktop_web`, `--dev`)
+  - building with Node, `--test-install`
+
+  Also updated: the tests, the project layout, `UI_3D` / `UI_THEME` in the
+  settings table, the license line, and links to these version-2 docs.
+- **Notices:** already updated in 12h (no Qt / LGPL any more).
+- Comments that pointed at deleted files reworded.
+
+### Checked
+- **136 tests** pass with PySide6 and matplotlib uninstalled. 163 − 31 Qt
+  tests + 4 moved ones.
+- The CLI (`main.py`), the Streamlit UI (`app.py`) and the monitoring
+  dashboard (`monitor.py`) still import.
+- `python scripts/build_installer.py --test-install` without Qt installed:
+  - self-test and window test PASS for the build and for the installed copy
+  - clean uninstall
+  - no Qt, matplotlib or Pillow files in the app folder
+  - your real JobLens 0.3.0 and `jobs.db` unchanged
+- The source app's window check on your real profile: 5 sidebar links, page ready.
+
+---
+
+## Phase 12 summary — the new desktop UI ✅
+
+**What it is now:** a React + TypeScript UI in an Edge WebView2 window,
+talking to the unchanged Python agent through a small bridge:
+- 5 screens: Dashboard with the 3D job galaxy, Analyze, Tracker, Evals, Settings
+- a Setup wizard
+
+**Numbers** (12a spike → finished app):
+- installer 81 → **54 MB**
+- app folder 230 → **126 MB**
+- window ready in under 3 s
+- 3D capped at 30 FPS and paused while the agent works (0 FPS then)
+
+**Decisions:** D13–D22.
+
+**Tests:** 136 automated tests (agent, run log, bridge); every screen
+checked in the real window with driver scripts on copies of the real data.
+
+**What I'd do differently:** write files with Windows paths using the file
+tools from the start (three escaping bugs came from shell heredocs). Add a
+JSON `allow_nan=False` check at the bridge from day one.
+
+**Next:** Phase 13, tray icon and auto-update. Then the v1.0.0 release:
+that's when your installed 0.3.0 gets upgraded.

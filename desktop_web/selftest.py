@@ -1,5 +1,5 @@
 """
-Self-test for the PACKAGED app (12h), ported from desktop_app.py's.
+Self-test for the PACKAGED app (12h), ported from the Qt app's (v0.3; removed in 12i).
 
     JobLens.exe --self-test report.txt      (checks, no window)
     JobLens.exe --smoke result.json         (opens the window, checks the page)

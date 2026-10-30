@@ -45,8 +45,8 @@ a = Analysis(
     # Imported inside functions (only when that provider / screen is used), so be explicit.
     hiddenimports=["langchain_ollama", "langchain_anthropic", "desktop_web.selftest",
                    "job_agent.monitoring", "job_agent.system_check", "job_agent.ollama_setup"],
-    # The web app never uses these. The old Qt UI (PySide6, matplotlib) is
-    # left out of the build since 12h and deleted from the repo in 12i.
+    # The web app never uses these. PySide6 / matplotlib belonged to the Qt UI
+    # (removed in 12i): excluded in case a developer still has them installed.
     # PIL is only for the developer screenshot helper.
     excludes=["PySide6", "shiboken6", "matplotlib", "PIL", "streamlit", "altair", "pydeck",
               "pyarrow", "pytest", "_pytest", "IPython", "jupyter", "notebook", "tkinter"],
