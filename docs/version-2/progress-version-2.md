@@ -1134,3 +1134,26 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v0.3.2
     installer and checksum
 - You published it with `gh release create` (my permission check blocks
   public pages); the full commit id worked first time.
+
+---
+
+## Merge: `version-2` → `main` ✅ (31 Oct 2026, D3 + D25)
+GitHub Actions minutes are used up, so every check ran here (D3) on the
+commit that was merged:
+1. **Tests:** 216 passed, with SyntaxWarnings as errors.
+2. **Front end from a clean `npm ci`:** typecheck clean, production build,
+   no dev mock in the bundle.
+3. **The app from source, on your real profile:** the page ready, 5 sidebar
+   links, the Dashboard looked right (7 jobs, the galaxy, the panel).
+4. **Packaging:** `build_installer.py --test-install`:
+   - the WebView2 bootstrapper signed by Microsoft
+   - the frozen app's self-test PASS (real web search, real Ollama call) and window test OK
+   - the test build installed, its installed copy passed both tests, and it uninstalled clean
+   - your real JobLens (0.3.2) untouched
+5. **Merge safety:**
+   - `main` is an ancestor of `version-2` (a fast-forward, no conflicts)
+   - in the 118 files that changed, no `.env`, databases, resumes,
+     installers, keys or tokens, and no email address
+   - no resume file names, job links or Windows user paths in any commit
+     (those only ever lived in scratch test scripts)
+   - no data folder tracked

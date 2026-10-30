@@ -402,6 +402,11 @@ Amends D10. A friend needs the new app now, before Phase 13 is finished.
 - **v1.0.0** = version 2 **with the Phase 14 features** (you: "keep 1.0.0
   for both ui update and features"). This corrects the note above and the
   Phase 13 summary, which put v1.0.0 straight after Phase 13.
+- **`main` follows the latest release** (31 Oct; replaces "main stays at
+  v0.3.0"). The Latest release was the new app while the repo's front page
+  still showed the Qt app's README. `version-2` was merged into `main` after
+  the D3 local checks (no CI), as a fast-forward. Phase 14 continues on
+  `version-2` and is merged again for v1.0.0.
 
 ## D26 — The update check ✅ (30 Oct 2026, step 13b)
 - **Source:** GitHub's public `releases/latest` for this repo, no account.
