@@ -1110,3 +1110,27 @@ Your settings now really apply. Two of them were being ignored until now:
 
 If Langfuse (Docker) isn't running, each run waits a few seconds when it
 ends, trying to send its traces. Set Tracing to Off unless you use it.
+
+---
+
+## Release v0.3.2 ✅ (31 Oct 2026, D25)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v0.3.2
+- Contents:
+  - the settings-after-restart fix (your friend's 0.3.1 went back to qwen3:8b on every start)
+  - 13b–13d: the update check, Settings → Updates, verified in-app installs
+
+  **The first version that updates itself**: 0.3.x users install it by
+  hand once.
+- Checked before publishing:
+  - the build's self-test and window test passed
+  - the built app started fresh with a saved `llama3.2` used llama3.2 (a
+    real call answered)
+  - privacy scan clean
+- After publishing:
+  - marked Latest
+  - GitHub's SHA-256 of both uploads matches the notes
+  - tag → `2c7f217`
+  - JobLens's own updater (as 0.3.1, real API) offers v0.3.2 with the right
+    installer and checksum
+- You published it with `gh release create` (my permission check blocks
+  public pages); the full commit id worked first time.
