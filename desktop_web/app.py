@@ -123,6 +123,12 @@ def main(argv=None) -> int:
         return self_test(str(args.self_test))
     if not webview2_version():
         return _no_webview2()
+    # 12j: runs still marked "running" were cut off when the app last closed.
+    from job_agent import runlog
+    try:
+        runlog.mark_interrupted()
+    except Exception as e:  # the run log must never stop the app from opening
+        print(f"! run log: {e}")
 
     if args.dev:
         url = DEV_URL

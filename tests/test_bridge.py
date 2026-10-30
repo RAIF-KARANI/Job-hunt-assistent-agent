@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import threading
+import time
 from typing import TypedDict
 
 import pytest
@@ -784,3 +785,89 @@ def test_print_works_without_a_console():
     finally:
         runner_mod._log_route.reset(token)
     assert lines == ["[1/5] Reading the job posting..."]
+
+
+# ---- 12j: Stop, interrupted runs, time estimates --------------------------------
+
+def working_graph(started: threading.Event, seconds: float = 10):
+    """A step that keeps working (one small runnable call every 50 ms, like an
+    LLM writing tokens) until it's stopped or `seconds` pass."""
+    from langchain_core.runnables import RunnableLambda
+
+    def work(state, config):
+        print("[2/5] Comparing your resumes with the job...")
+        started.set()
+        tick = RunnableLambda(lambda x: time.sleep(0.05))
+        end = time.time() + seconds
+        while time.time() < end:
+            tick.invoke(0, config)  # each call passes the callbacks: Stop is checked here
+        return {"text": "finished without being stopped"}
+
+    g = StateGraph(S)
+    g.add_node("analyze_fit", work)
+    g.add_edge(START, "analyze_fit")
+    g.add_edge("analyze_fit", END)
+    return g.compile(checkpointer=InMemorySaver())
+
+
+def test_stop_ends_the_running_step():
+    started = threading.Event()
+    api, events = make_api(working_graph(started))
+    run_id = api.start_run("https://jobs.example/1")["run_id"]
+    assert started.wait(5)
+    t = time.time()
+    assert api.stop_run() is True
+    step(api)
+    assert time.time() - t < 2                                  # moments, not the 10 s the step needed
+    kinds = [e["type"] for e in events]
+    assert "stopping" in kinds and of_type(events, "stopped")[-1]["run_id"] == run_id
+    assert not of_type(events, "finished") and not of_type(events, "failed")
+    assert api.run_state()["busy"] is False
+    with tracker._db() as conn:                                  # in the run log as "stopped", not an error
+        row = conn.execute("SELECT status, error FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+    assert (row["status"], row["error"]) == ("stopped", None)
+
+
+def test_stop_when_nothing_runs():
+    api, events = make_api(review_graph())
+    assert api.stop_run() is False and events == []
+
+
+def test_a_run_is_in_the_log_while_it_runs():
+    started = threading.Event()
+    api, _ = make_api(working_graph(started))
+    run_id = api.start_run("https://jobs.example/1")["run_id"]
+    assert started.wait(5)
+    with tracker._db() as conn:
+        assert conn.execute("SELECT status FROM runs WHERE run_id = ?", (run_id,)).fetchone()[0] == "running"
+    api.stop_run()
+    step(api)
+
+
+def test_closing_the_app_mid_run_shows_as_interrupted():
+    from job_agent import runlog
+
+    runlog.init_db()
+    with tracker._db() as conn:
+        conn.executemany(
+            "INSERT INTO runs (run_id, started_at, updated_at, interface, status) VALUES (?, ?, ?, ?, 'running')",
+            [("closed", "2026-10-30 17:03:00", "2026-10-30 17:21:40", "desktop"),
+             ("cli-run", "2026-10-30 17:05:00", "2026-10-30 17:06:00", "cli")])
+    assert runlog.mark_interrupted() == 1                       # a CLI run going on now is left alone
+    data = Api(send=lambda e: None).evals(None)
+    recent = {r["run_id"]: r for r in data["recent"]}
+    assert recent["closed"]["result"] == "interrupted"
+    assert recent["closed"]["agent_seconds"] == 18 * 60 + 40     # start to its last finished step
+    assert recent["cli-run"]["result"] == "running"
+    assert data["kpis"]["unfinished"] == 1 and data["kpis"]["unfinished_seconds"] == 1120
+
+
+def test_step_estimates_from_this_pcs_runs():
+    seed_run_log()  # analyze_fit 90-200 s in three runs, draft 16 s
+    estimates = Api(send=lambda e: None).step_estimates()
+    assert estimates["2"] == round((90 + 100 + 200) / 3, 1)
+    assert estimates["5"] == 16.0 and "3" not in estimates      # no research step recorded
+
+
+def test_no_estimates_before_the_first_run():
+    assert Api(send=lambda e: None).step_estimates() == {}

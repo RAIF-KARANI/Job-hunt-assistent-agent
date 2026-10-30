@@ -195,6 +195,29 @@
   font-weight: 500;
 }
 
+/* 12j: stopped by you (not an error: neutral, not red) */
+.step[data-status="stopped"] .step-marker {
+  background: var(--surface-2);
+  border-color: var(--text-faint);
+  color: var(--text-muted);
+}
+
+.step-usual {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.steps-estimate {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+}
+
+.stop-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 /* ---- live log ---- */
 
 .log-card {

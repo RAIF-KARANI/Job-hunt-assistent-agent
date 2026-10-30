@@ -740,3 +740,79 @@ JSON `allow_nan=False` check at the bridge from day one.
 
 **Next:** Phase 13, tray icon and auto-update. Then the v1.0.0 release:
 that's when your installed 0.3.0 gets upgraded.
+
+---
+
+## 12j — Fixes from the first real use ✅ (30 Oct 2026)
+
+### Goal
+You installed the app and analyzed a LinkedIn job (Revolut, UAE) with 4
+resumes. Step 2 ran past 8 minutes and the only way out was closing the
+app, which left no trace. Done when a run can be stopped mid-step, a
+closed run appears in Evals as interrupted, and each fix has tests.
+
+### What I found first (measured, not guessed)
+- **Nothing was broken: it was slow.** Each resume comparison wrote
+  ~1,150 tokens at ~10 tokens/s (the 12a spike measured 18–37): 4 resumes
+  × ~110 s = 7.5 min for step 2. The GPU was shared with ~30 other
+  programs (Wallpaper Engine, Chrome, Steam, Docker Desktop...). Your second
+  run took 26 s / 3m 25s / 59 s / 0 s.
+- My first guess, a model stuck repeating itself, was **wrong for that run**:
+  every answer ended normally. But nothing would have stopped one that did:
+  no answer-length limit, and Claude's client default was 128,000 tokens.
+- Step 5's "3m 49s" was mostly you reading the draft (writing it takes ~16 s).
+
+### What was done
+- **Answer-length cap** (`job_agent/llm.py`, D23): 4,096 tokens per call for
+  Ollama, Claude, OpenAI and Gemini (`LLM_MAX_OUTPUT_TOKENS`). A cut-off
+  answer raises `AnswerTooLong` with a clear message and is not retried.
+  The retry helper is our own `with_retries()`, because LangChain's
+  `.with_retry()` can't exclude exception types.
+- **Stop** (`desktop_web/runner.py`): `StopSignal` callback, `stop_run()`
+  bridge call, `stopping` / `stopped` events; the Analyze screen gets a
+  Stop button (asks once), a "Stopped" panel and a neutral ✕ on the step.
+- **Unfinished runs** (`job_agent/runlog.py`):
+  - a run row from the start, touched after each step
+  - `mark_interrupted()` when the app starts
+  - "stopped" instead of an error after Stop
+  - Evals: result labels, the time for interrupted runs, and an
+    "Unfinished runs" tile
+- **Estimates:** `step_estimates()` (average per step on this PC) →
+  "A run usually takes about 5m 5s on this PC" and "usually about 3m 25s
+  here" under the running step.
+- **Step 5 timer:** "16s · 3m 53s waiting for you" (writing vs waiting).
+- Docs: D23; Phase 14 got three candidates, each with its question;
+  `LLM_MAX_OUTPUT_TOKENS` in the README settings table.
+- Tests: **155** (+13 for the cap and retry rules, +6 for Stop, the
+  running row, interrupted runs and estimates).
+
+### Checked in the real window, with the real agent
+On copies of your installed app's data (4 resumes, run log):
+- the estimates showed "about 5m 5s" for a run and "3m 25s" for step 2
+- **Stop during step 2: the run ended 0.3 s after the click**; step 2 shows
+  stopped, nothing was saved to the tracker, and the run log says
+  `stopped` with no error
+- **Ollama is free at once after Stop:** a quick call took 2.2 s, the same
+  as idle. (A first measurement said 9–11 s; that was my test call using a
+  different context size, which makes Ollama reload the model.)
+- **closing the window mid-step**, then starting again: the run was marked
+  interrupted and shown in Evals, in Recent runs and in the new tile
+- the real model and a forced 8-token cap: one attempt, 2.9 s, clear message
+- the step-5 split, fed timed events: one draft "16s · 3m 53s waiting for
+  you"; with a rewrite "36s · 3m 33s waiting for you"
+
+### Problems hit
+1. A first design put a desktop-app import inside `job_agent` (to stop
+   retries after Stop). Wrong direction: the agent must not know any UI.
+   The fix: `RunStopped` is defined in `job_agent/llm.py`, and the UI raises it.
+2. The "Ollama still busy after Stop" measurement was misleading (the
+   context-size reload above). Varying the wait before the call exposed it:
+   the extra time didn't shrink, so it wasn't leftover work.
+
+### Concepts learned
+- **Cooperative cancellation**: a thread can't be killed, so the work checks
+  a flag at its own callback points. Streaming makes those points frequent.
+- **Per-call output limits** (`num_predict`, `max_tokens`) as a safety net,
+  and why a token cap beats a time limit across PCs of different speed.
+- **Measure the measurement**: change one thing (the wait) and see whether
+  the effect follows.

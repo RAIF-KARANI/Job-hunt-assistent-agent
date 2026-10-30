@@ -141,6 +141,8 @@ export type AgentEvent =
   | PausedEvent
   | FinishedEvent
   | { type: "failed"; error: string; at: number }
+  | { type: "stopping"; at: number } // Stop pressed (12j)
+  | { type: "stopped"; run_id: string; at: number } // the run ended at its next checkpoint
   | SetupProgress;
 
 /** Installing Ollama or downloading a model (12g). Not part of an agent run. */
@@ -240,6 +242,8 @@ export interface EvalsData {
     tokens_out_per_run: number | null;
     tool_calls: number;
     tool_failures: number;
+    unfinished: number; // closed app, Stop or error (12j)
+    unfinished_seconds: number;
   };
   trend: { run_id: string; started_at: string; rate: number }[]; // oldest first
   ratings: { label: string; aspect: string; rating: string; count: number }[];
@@ -250,7 +254,7 @@ export interface EvalsData {
     run_id: string;
     started_at: string;
     model: string;
-    result: "approved" | "rejected" | "not finished" | "error" | "done";
+    result: "approved" | "rejected" | "not finished" | "error" | "done" | "stopped" | "interrupted" | "running";
     agent_seconds: number;
     llm_calls: number;
     tokens: number;
@@ -275,6 +279,9 @@ export interface PyApi {
   start_run(url: string, fresh?: boolean): Promise<{ run_id: string }>;
   resume(answer: Answer): Promise<void>;
   paste_text(text: string): Promise<void>;
+  stop_run(): Promise<boolean>;
+  /** Typical seconds per timeline step on this PC: {"1": 27.4, "2": 66.4, ...}. */
+  step_estimates(): Promise<Partial<Record<string, number>>>;
   run_state(): Promise<RunState>;
   save_feedback(runId: string | null, jobId: number | null, ratings: Record<string, string>, comment?: string): Promise<number>;
   feedback_options(): Promise<FeedbackOptions>;

@@ -21,10 +21,19 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from job_agent import settings  # noqa: F401  (loads on import)
 
 
+def max_output_tokens() -> int:
+    """The longest answer one LLM call may write (12j). Real answers are at
+    most ~1,200 tokens (the fit analysis); a model stuck repeating itself
+    would otherwise write until its whole context is full: 25+ minutes on a
+    slow PC, and real money with an API (Claude's default limit is 128,000)."""
+    return int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "4096"))
+
+
 def get_llm() -> BaseChatModel:
     provider = os.getenv("LLM_PROVIDER", "ollama").lower()
     model = os.getenv("LLM_MODEL", "qwen3:8b")
     temperature = float(os.getenv("LLM_TEMPERATURE", "0.2"))
+    limit = max_output_tokens()
 
     # ---- Local model via Ollama (current choice) ----
     # Runs on your machine: free, private, no API key. Ollama must be running.
@@ -41,6 +50,7 @@ def get_llm() -> BaseChatModel:
             # Context window (tokens). Too small and long job pages get cut off
             # silently, so the model "forgets" the start of the text.
             num_ctx=int(os.getenv("OLLAMA_NUM_CTX", "16384")),
+            num_predict=limit,  # the answer-length cap (12j)
         )
 
     # ---- Claude (Anthropic) ----
@@ -48,21 +58,21 @@ def get_llm() -> BaseChatModel:
     if provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=model, temperature=temperature)
+        return ChatAnthropic(model=model, temperature=temperature, max_tokens=limit)
 
     # ---- OpenAI (GPT) ----
     # pip install langchain-openai ; set OPENAI_API_KEY in .env
     if provider == "openai":
         from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(model=model, temperature=temperature)
+        return ChatOpenAI(model=model, temperature=temperature, max_tokens=limit)
 
     # ---- Google Gemini ----
     # pip install langchain-google-genai ; set GOOGLE_API_KEY in .env
     if provider == "google":
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        return ChatGoogleGenerativeAI(model=model, temperature=temperature)
+        return ChatGoogleGenerativeAI(model=model, temperature=temperature, max_output_tokens=limit)
 
     raise ValueError(
         f"Unknown LLM_PROVIDER '{provider}'. Use: ollama, anthropic, openai, google."
@@ -74,16 +84,73 @@ def get_llm() -> BaseChatModel:
 # ---------------------------------------------------------------------------
 
 
+class AnswerTooLong(RuntimeError):
+    """The model hit the answer-length cap: the reply was cut off (12j)."""
+
+
+class RunStopped(RuntimeError):
+    """The user stopped the run (12j). Raised by a UI's callback while the
+    model is writing; never retried."""
+
+
+# How each provider says "I stopped because of the length limit".
+_CUT_OFF = {"done_reason": "length", "stop_reason": "max_tokens", "finish_reason": "length"}
+
+
+def was_cut_off(message) -> bool:
+    meta = getattr(message, "response_metadata", None) or {}
+    return any(str(meta.get(key, "")).lower() == value for key, value in _CUT_OFF.items())
+
+
+def _checked(result: dict):
+    """with_structured_output(include_raw=True) -> the parsed object, or an error.
+    A cut-off answer is AnswerTooLong (not worth retrying: a model stuck
+    repeating itself usually gets stuck again); a bad answer is re-raised."""
+    raw = result.get("raw")
+    if raw is not None and was_cut_off(raw):
+        raise AnswerTooLong(
+            f"The AI's answer was cut off at {max_output_tokens():,} tokens (it was probably "
+            "repeating itself). Try again, or try a different model. The limit is "
+            "LLM_MAX_OUTPUT_TOKENS in the settings file.")
+    if result.get("parsing_error") is not None:
+        raise result["parsing_error"]
+    if result.get("parsed") is None:
+        raise ValueError("The AI's answer didn't match the expected structure.")
+    return result["parsed"]
+
+
+def with_retries(runnable, attempts: int = 3):
+    """Try up to `attempts` times, but never retry a cut-off answer or a
+    stopped run. (LangChain's .with_retry() can't exclude exception types.)
+    The config is passed on, so callbacks (run log, tracing, the Stop
+    button) still see every call."""
+    from langchain_core.runnables import RunnableLambda
+
+    def run(value, config):
+        for attempt in range(1, attempts + 1):
+            try:
+                return runnable.invoke(value, config)
+            except (AnswerTooLong, RunStopped):
+                raise
+            except Exception:
+                if attempt == attempts:
+                    raise
+    return RunnableLambda(run, name="structured_llm")
+
+
 def structured_llm(schema):
-    """get_llm().with_structured_output(schema), retried up to 3 times.
+    """get_llm().with_structured_output(schema), tried up to 3 times.
 
     Small models occasionally return JSON that doesn't match the schema
     (a missing field, a string instead of a list). Pydantic rejects it, and
-    .with_retry() simply asks again. Because temperature > 0, the next answer
-    is usually valid. Every structured LLM call in the project goes through
-    this function.
+    we simply ask again. Because temperature > 0, the next answer is usually
+    valid. An answer cut off by the length cap is NOT retried (12j). Every
+    structured LLM call in the project goes through this function.
     """
-    return get_llm().with_structured_output(schema).with_retry(stop_after_attempt=3)
+    from langchain_core.runnables import RunnableLambda
+
+    chain = get_llm().with_structured_output(schema, include_raw=True) | RunnableLambda(_checked)
+    return with_retries(chain)
 
 
 def llm_status() -> tuple[bool, str]:

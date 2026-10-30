@@ -38,9 +38,11 @@ import uuid
 from contextvars import ContextVar
 from typing import Callable
 
+from langchain_core.callbacks import BaseCallbackHandler
 from langgraph.types import Command
 
 from job_agent import runlog
+from job_agent.llm import RunStopped
 from job_agent.tracing import flush, record_decision, tracing_config
 
 Event = dict
@@ -93,6 +95,32 @@ def _install_stdout() -> None:
         sys.stdout = _RoutedStdout(sys.stdout)
 
 
+class StopSignal(BaseCallbackHandler):
+    """The Stop button (12j). A thread can't be killed from outside, so the
+    run stops itself: once `stop()` is called, the next callback raises
+    RunStopped. Ollama calls on_llm_new_token for EVERY token, even in a
+    plain .invoke(), so an answer being written is cut off mid-way (its
+    connection closes and Ollama stops generating). An API model that
+    doesn't stream stops when its current call returns.
+
+    raise_error = True: LangChain lets the exception through instead of
+    logging and ignoring it, as it does for other callback errors."""
+
+    raise_error = True
+
+    def __init__(self):
+        self.requested = threading.Event()
+
+    def stop(self) -> None:
+        self.requested.set()
+
+    def _check(self, *args, **kwargs) -> None:
+        if self.requested.is_set():
+            raise RunStopped("Stopped by you.")
+
+    on_chain_start = on_chat_model_start = on_llm_start = on_llm_new_token = on_tool_start = _check
+
+
 def default_graph():
     """The real agent with the on-disk checkpointer (paused runs survive restarts)."""
     from langgraph.checkpoint.sqlite import SqliteSaver
@@ -113,6 +141,7 @@ class AgentRunner:
         self._graph = graph            # built lazily: importing the agent takes ~2 s
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
+        self._stop = StopSignal()  # replaced for every segment (_launch)
         self.run_id: str | None = None
         self.last_pause: Event | None = None   # lets a reloaded page show the review again
         self.history: list[Event] = []          # this run's events, for a reloaded page
@@ -197,11 +226,22 @@ class AgentRunner:
             clean["feedback"] = answer["feedback"].strip()
         return clean
 
+    def stop(self) -> bool:
+        """Stop the step that's running (Stop button). Returns False if nothing
+        is running. The run ends with a `stopped` event within moments."""
+        with self._lock:
+            if not self.busy:
+                return False
+            self._stop.stop()
+        self.emit({"type": "stopping"})
+        return True
+
     def _launch(self, graph_input) -> None:
         with self._lock:  # two quick clicks must not start two runs
             if self.busy:
                 raise RuntimeError("The agent is still working on the current step.")
             self.last_pause = None
+            self._stop = StopSignal()  # fresh for every segment
             self._thread = threading.Thread(target=self._run, args=(graph_input,),
                                             name="joblens-agent", daemon=True)
             self._thread.start()
@@ -252,8 +292,9 @@ class AgentRunner:
         return ""
 
     def _config(self) -> dict:
-        return {"configurable": {"thread_id": self.run_id},
-                **tracing_config(self.run_id, interface=self.interface)}
+        config = tracing_config(self.run_id, interface=self.interface)
+        config["callbacks"] = [*config.get("callbacks", []), self._stop]
+        return {"configurable": {"thread_id": self.run_id}, **config}
 
     def _run(self, graph_input) -> None:
         self.emit({"type": "busy", "busy": True})
@@ -266,6 +307,11 @@ class AgentRunner:
                 self._graph = default_graph()
             self._graph.invoke(graph_input, self._config())
             snapshot = self._graph.get_state({"configurable": {"thread_id": self.run_id}})
+        except RunStopped:
+            # Nothing is saved to the tracker; the steps already done stay in
+            # the checkpoint (a "continue" feature could use them: Phase 14).
+            self.emit({"type": "stopped", "run_id": self.run_id})
+            return
         except Exception as e:  # never let an error kill the thread silently
             self.emit({"type": "failed", "error": f"{type(e).__name__}: {e}"})
             return

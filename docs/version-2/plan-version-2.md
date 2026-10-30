@@ -36,6 +36,7 @@ with a three.js "job galaxy" on the Dashboard. The agent (`job_agent/`) stays as
 | 12g ✅ | **Settings + Setup wizard** ported (local vs API, PC check, Ollama install, model download progress) + new **"Look and feel" step** and **Settings → Appearance** (`UI_3D`, recommended from the PC check, D14) | first-run flow works on a clean profile; recommendation rule unit-tested |
 | 12h ✅ | **Packaging**: front-end build in `build_installer.py`, WebView2 check in the installer, self-test updated | `build_installer.py` passes; real install/uninstall works |
 | 12i ✅ | Remove the Qt UI and PySide6; update tests and docs | `pytest` green, LGPL notice updated |
+| 12j ✅ | **Fixes from the first real use** (30 Oct, installed app, a LinkedIn job, 4 resumes: step 2 took 3–8 min and there was no way to stop): **Stop** button on Analyze; a time estimate from your own past runs; a cap on answer length (a runaway answer fails within minutes, not 15+); step 5 timer split into "drafting" and "waiting for you"; the run log records **interrupted** (app closed) and **stopped** runs, so Evals counts them | a run can be stopped mid-step; a closed run appears in Evals as interrupted; tests for each |
 
 **Tests:** keep all `job_agent` tests; replace the Qt tab tests with bridge
 tests plus a few Playwright checks against the front end served locally.
@@ -56,3 +57,18 @@ To be listed (Q1). Candidates from the base version:
 - Follow-up reminders for jobs applied more than 7 days ago (pairs with the tray)
 - Eval suite: compare models on saved jobs
 - Shorter LLM outputs for speed
+
+Candidates from the first real use (30 Oct), each with the question to
+answer before building it:
+- **Choose which resumes to compare for a run.** Step 2 makes one call per
+  resume; with 4 resumes it took 3–8 min. *Question: a checklist on the
+  Analyze screen each time, or a default set in Settings (e.g. "UAE
+  resumes only for UAE jobs")?*
+- **Shorter answers in the fit analysis** (every step faster, ~30–50 %).
+  Each resume comparison wrote ~1,150 tokens. *Question: how much
+  explanation do you want to keep? The evidence check needs the resume
+  quotes, so those stay; the long verdict text could shrink.*
+- **"Continue where you left off"** after the app was closed mid-run. The
+  checkpoints already keep the finished steps; today a restart begins
+  again from step 1. *Question: offer it automatically on the next start,
+  or only from the interrupted run in Evals / Analyze?*

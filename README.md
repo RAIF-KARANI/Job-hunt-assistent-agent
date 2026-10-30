@@ -192,6 +192,7 @@ paste** the job description. Type `END` on its own line when you're done.
 | `OLLAMA_NUM_CTX` | `16384` | context window; too small silently truncates text |
 | `OLLAMA_REASONING` | `false` | Qwen3 "thinking" mode |
 | `JUDGE_EVIDENCE` | `true` | second LLM call double-checks skill evidence |
+| `LLM_MAX_OUTPUT_TOKENS` | `4096` | longest answer one LLM call may write (real answers: ≤ ~1,200); a cut-off answer fails at once with a clear message |
 | `TRACING` | `off` | `off`, `langfuse` (self-hosted), `langsmith` (cloud) |
 | `UI_3D` | `animated` | desktop app's Dashboard: `animated`, `still` or `off` (flat map) |
 | `UI_THEME` | `system` | desktop app: `system` (follow Windows), `dark`, `light` |

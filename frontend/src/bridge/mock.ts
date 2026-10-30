@@ -48,6 +48,13 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     start_run: async (url) => run.start(url),
     resume: async (answer) => run.resume(answer),
     paste_text: async () => run.pasted(),
+    // The scripted run's timers keep going after this; fine for a preview.
+    stop_run: async () => {
+      emit({ type: "stopping", at: Date.now() / 1000 });
+      setTimeout(() => emit({ type: "stopped", run_id: "preview-run", at: Date.now() / 1000 }), 600);
+      return true;
+    },
+    step_estimates: async () => ({ "1": 27, "2": 205, "3": 59, "4": 0.2, "5": 16 }),
     save_feedback: async (_run, _job, ratings) => Object.values(ratings).filter(Boolean).length,
     get_job: async (id) => mockJob(jobs.find((j) => j.id === id) ?? jobs[0]),
     set_status: async (id, status) => {
@@ -147,6 +154,8 @@ function mockEvals(model: string | null): EvalsData {
       tokens_out_per_run: 4800,
       tool_calls: 26,
       tool_failures: 1,
+      unfinished: 2,
+      unfinished_seconds: 1490,
     },
     trend: (local ? rates : [0.7, 0.78]).map((rate, i) => ({ run_id: `r${i}`, started_at: `2026-10-${String(10 + i).padStart(2, "0")} 10:00:00`, rate })),
     ratings: [

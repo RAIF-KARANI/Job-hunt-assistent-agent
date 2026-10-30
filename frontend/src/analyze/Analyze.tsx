@@ -24,11 +24,21 @@ export function Analyze() {
   const [fresh, setFresh] = useState(false);
   const [checking, setChecking] = useState(false);
   const [problem, setProblem] = useState<{ text: string; settings: boolean } | null>(null);
+  const [estimates, setEstimates] = useState<Partial<Record<string, number>>>({});
 
   // A run that started before this page opened (or before a reload) shows its link.
   useEffect(() => {
     if (run.url) setUrl((current) => current || run.url);
   }, [run.url]);
+
+  // Typical step times on this PC (12j), refreshed when a run ends.
+  useEffect(() => {
+    if (run.busy) return;
+    getApi()
+      .then((api) => api.step_estimates())
+      .then(setEstimates)
+      .catch(() => setEstimates({}));
+  }, [run.busy]);
 
   const waiting = run.phase === "review" || run.phase === "paste";
   const locked = checking || run.busy || waiting;
@@ -101,6 +111,7 @@ export function Analyze() {
           <span>Analyze again if already tracked</span>
         </label>
         <StartButton run={run} checking={checking} disabled={locked || !url.trim()} />
+        {run.busy && run.phase === "running" && <StopControl stopping={run.stopping} />}
       </form>
 
       {problem && (
@@ -120,7 +131,7 @@ export function Analyze() {
 
       <div className="analyze-grid">
         <section className="analyze-progress" aria-label="Agent progress">
-          <Steps steps={run.steps} />
+          <Steps steps={run.steps} estimates={estimates} />
           <LiveLog lines={run.log} />
         </section>
         <div className="analyze-panel">
@@ -143,6 +154,48 @@ function StartButton({ run, checking, disabled }: { run: RunView; checking: bool
     <button type="submit" className={`btn start ${status ? `btn-status${waiting ? " waiting" : ""}` : "btn-primary"}`} disabled={disabled}>
       {label}
     </button>
+  );
+}
+
+/** Stop the running step (12j). Asks once, like Reject (D17): a run is minutes of work. */
+function StopControl({ stopping }: { stopping: boolean }) {
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const stop = async () => {
+    setError(null);
+    try {
+      await (await getApi()).stop_run();
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  };
+
+  if (stopping) {
+    return (
+      <button type="button" className="btn btn-secondary start" disabled>
+        Stopping…
+      </button>
+    );
+  }
+  if (!confirm) {
+    return (
+      <button type="button" className="btn btn-secondary start" onClick={() => setConfirm(true)}>
+        Stop
+      </button>
+    );
+  }
+  return (
+    <span className="stop-confirm" role="group" aria-label="Stop this run?">
+      <span className="hint">Stop this run? Nothing is saved.</span>
+      <button type="button" className="btn btn-danger btn-sm" onClick={() => void stop()} autoFocus>
+        Stop
+      </button>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirm(false)}>
+        Keep going
+      </button>
+      {error && <span className="error">{error}</span>}
+    </span>
   );
 }
 
@@ -171,6 +224,23 @@ function Panel({ run, onAnswer, onPaste, onAnother, onRetry }: PanelProps) {
       return <PastePanel key={run.runId} payload={run.paste!} busy={run.busy} onPaste={onPaste} onStop={onAnother} />;
     case "finished":
       return <ResultPanel key={run.runId} result={run.result!} onAnother={onAnother} />;
+    case "stopped":
+      return (
+        <section className="card review" aria-labelledby="stopped-title">
+          <header className="panel-head">
+            <h2 id="stopped-title">Stopped</h2>
+          </header>
+          <p className="lead">You stopped the run. Nothing was saved to the tracker, and the run is listed as stopped in Evals.</p>
+          <div className="actions">
+            <button type="button" className="btn btn-primary" onClick={onRetry} disabled={run.busy}>
+              Start again
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={onAnother}>
+              Clear
+            </button>
+          </div>
+        </section>
+      );
     case "failed":
       return (
         <section className="card review" aria-labelledby="failed-title">

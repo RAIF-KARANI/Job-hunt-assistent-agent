@@ -22,6 +22,9 @@ const RESULT_TONE: Record<string, string> = {
   "not finished": "warn",
   error: "danger",
   done: "neutral",
+  stopped: "neutral", // you chose to stop: not an error
+  interrupted: "warn", // the app was closed mid-run
+  running: "neutral",
 };
 
 function TracingChips({ status }: { status: TracingStatus | null }) {
@@ -177,6 +180,13 @@ export function Evals() {
               <span className="tile-label">Tool failures</span>
               <span className="tile-value">{k ? pct(share(k.tool_failures, k.tool_calls)) : "–"}</span>
               <span className="tile-note">{k ? `${k.tool_failures} of ${k.tool_calls} ${k.tool_calls === 1 ? "search" : "searches"} failed` : " "}</span>
+            </div>
+            <div className="tile">
+              <span className="tile-label">Unfinished runs</span>
+              <span className="tile-value">{k ? k.unfinished : "–"}</span>
+              <span className="tile-note">
+                {k && k.unfinished ? `${seconds(k.unfinished_seconds)} of agent time; closed, stopped or failed` : "every run finished"}
+              </span>
             </div>
           </section>
 

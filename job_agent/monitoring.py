@@ -383,12 +383,24 @@ def _per_run_quality(quality: pd.DataFrame) -> pd.DataFrame:
     return q
 
 
+UNFINISHED = ("error", "stopped", "interrupted")
+
+
 def _result(run) -> str:
-    if run["status"] == "error":
-        return "error"
+    if run["status"] in UNFINISHED or run["status"] == "running":
+        return run["status"]  # running = going on right now
     if run["status"] == "paused":
         return "not finished"
     return {"approve": "approved", "reject": "rejected"}.get(run["decision"], "done")
+
+
+def _seconds(run) -> float:
+    """Agent time; an interrupted run never wrote its totals, so use the
+    time from its start to its last finished step (12j)."""
+    if run["agent_seconds"] or run["status"] != "interrupted":
+        return float(run["agent_seconds"] or 0)
+    started, last = pd.to_datetime(run["started_at"]), pd.to_datetime(run["updated_at"])
+    return max(0.0, (last - started).total_seconds())
 
 
 def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
@@ -437,6 +449,9 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
         "tokens_out_per_run": _num(full["output_tokens"].mean()) if len(full) else None,
         "tool_calls": int(runs["tool_calls"].sum()),
         "tool_failures": int(runs["tool_failures"].sum()),
+        # 12j: runs that never finished (closed app, Stop, error) and their time
+        "unfinished": int(runs["status"].isin(UNFINISHED).sum()),
+        "unfinished_seconds": float(sum(_seconds(r) for _, r in runs[runs["status"].isin(UNFINISHED)].iterrows())),
     }
 
     # ---- evidence pass rate, run by run ----
@@ -474,7 +489,7 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
         job_id = int(r["job_id"]) if pd.notna(r["job_id"]) else None
         recent_rows.append({
             "run_id": r["run_id"], "started_at": r["started_at"], "model": r["model"],
-            "result": _result(r), "agent_seconds": float(r["agent_seconds"] or 0),
+            "result": _result(r), "agent_seconds": _seconds(r),
             "llm_calls": int(r["llm_calls"] or 0),
             "tokens": int((r["input_tokens"] or 0) + (r["output_tokens"] or 0)),
             "pass_rate": _num(rates_all.get(r["run_id"])),

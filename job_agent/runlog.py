@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS runs (
     provider       TEXT,
     model          TEXT,
     job_id         INTEGER,
-    status         TEXT,                       -- paused / done / error
+    status         TEXT,                       -- running / paused / done / error / stopped / interrupted
     decision       TEXT,                       -- approve / reject (when done)
     segments       INTEGER DEFAULT 0,          -- 1 = start, +1 per resume
     agent_seconds  REAL DEFAULT 0,             -- working time, waiting excluded
@@ -171,6 +171,7 @@ class RunRecorder(BaseCallbackHandler):
         if parent_run_id is None:
             self._starts[run_id] = (time.time(), "root", None)
             self.segment_started_at = _now()  # the run's start, not when it's first written
+            self._mark_running()
         elif name == node and name in TIMED_STEPS:  # the node itself, not its insides
             self._starts[run_id] = (time.time(), "step", name)
 
@@ -182,13 +183,41 @@ class RunRecorder(BaseCallbackHandler):
         if kind == "step":
             with self._lock:
                 self.steps.append((step, time.time() - t0, _now()))
+            self._touch()
         else:  # the top-level graph finished this segment (also when paused)
             self._write(time.time() - t0, outputs if isinstance(outputs, dict) else {})
 
     def on_chain_error(self, error, *, run_id, parent_run_id=None, **kwargs):
         start = self._starts.pop(run_id, None)
         if start and start[1] == "root":
-            self._write(time.time() - start[0], {}, error=f"{type(error).__name__}: {error}")
+            from job_agent.llm import RunStopped  # the user pressed Stop: not an error
+
+            if isinstance(error, RunStopped):
+                self._write(time.time() - start[0], {}, status="stopped")
+            else:
+                self._write(time.time() - start[0], {}, error=f"{type(error).__name__}: {error}")
+
+    # --- 12j: a run is in the log while it runs, so a closed app leaves a trace ---
+    def _mark_running(self) -> None:
+        try:
+            init_db()
+            now = _now()
+            with tracker._db() as conn:
+                conn.execute(
+                    """INSERT INTO runs (run_id, started_at, updated_at, interface, provider, model,
+                                         status, tracing) VALUES (?, ?, ?, ?, ?, ?, 'running', ?)
+                       ON CONFLICT(run_id) DO UPDATE SET status = 'running', updated_at = excluded.updated_at""",
+                    (self.run_id, now, now, self.interface, self.provider, self.model, self.tracing))
+        except Exception as e:  # observability must never break the product
+            print(f"! run log not saved: {e}")
+
+    def _touch(self) -> None:
+        """After each step: `updated_at` shows how far an interrupted run got."""
+        try:
+            with tracker._db() as conn:
+                conn.execute("UPDATE runs SET updated_at = ? WHERE run_id = ?", (_now(), self.run_id))
+        except Exception:
+            pass
 
     # --- LLM calls ---
     def on_chat_model_start(self, serialized, messages, *, run_id, metadata=None, **kwargs):
@@ -217,7 +246,8 @@ class RunRecorder(BaseCallbackHandler):
                 self.tool_failures += 1  # tools return errors as text (Phase 3)
 
     # --- writing ---
-    def _write(self, seconds: float, values: dict, error: str | None = None) -> None:
+    def _write(self, seconds: float, values: dict, error: str | None = None,
+               status: str | None = None) -> None:
         """One transaction per segment; a logging problem must never break a run."""
         try:
             init_db()
@@ -227,7 +257,7 @@ class RunRecorder(BaseCallbackHandler):
                 self.llm_calls.clear()
                 tools, failures = self.tool_calls, self.tool_failures
                 self.tool_calls = self.tool_failures = 0
-            status = "error" if error else status_from_state(values)
+            status = status or ("error" if error else status_from_state(values))
             with tracker._db() as conn:
                 decision = values.get("decision") if status == "done" else None
                 conn.execute(
@@ -270,6 +300,16 @@ class RunRecorder(BaseCallbackHandler):
 # ---------------------------------------------------------------------------
 # 11c: your feedback
 # ---------------------------------------------------------------------------
+
+
+def mark_interrupted(interface: str = "desktop") -> int:
+    """At app start (12j): this app's runs still marked 'running' were cut off
+    when the app was closed (nothing else can be running them now). Only one
+    interface, so a CLI run going on at the same time is left alone."""
+    init_db()
+    with tracker._db() as conn:
+        return conn.execute("UPDATE runs SET status = 'interrupted' WHERE status = 'running' AND interface = ?",
+                            (interface,)).rowcount
 
 
 def save_feedback(run_id: str | None, job_id: int | None, aspect: str, rating: str,

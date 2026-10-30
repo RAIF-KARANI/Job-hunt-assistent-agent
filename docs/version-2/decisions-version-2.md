@@ -330,5 +330,34 @@ is reworded.
 - **The version stays 0.3.0** until the release (D10: v1.0.0 after
   Phase 13).
 
+## D23 — Stop, an answer-length cap, and unfinished runs in the log ✅ (30 Oct 2026, step 12j)
+From the first real use of the installed app (a LinkedIn job, 4 resumes:
+step 2 took 3–8 min, and the only way out was closing the app).
+- **Answer-length cap: 4,096 tokens per LLM call** (`LLM_MAX_OUTPUT_TOKENS`).
+  The largest real answer is ~1,230 tokens, so normal runs never reach it.
+  Before, Ollama had no limit and Claude's client default was 128,000 (a
+  runaway costs money). **A cut-off answer is not retried**: it fails at
+  once with a clear message, because a model stuck repeating itself usually
+  repeats again. A token cap, not a time limit: a normal answer on a slow PC
+  can take minutes, so a time limit would be wrong on one PC or the other.
+- **Stop button** on Analyze (asks once, like Reject in D17). A thread can't
+  be killed, so the run stops itself: a callback raises `RunStopped` at the
+  next event. Ollama reports every token, so an answer being written stops
+  at once and Ollama is free immediately (measured). If the model is still
+  reading the prompt, Stop waits for its first token (up to a few seconds).
+  `RunStopped` lives in `job_agent` (no UI dependency) and is never retried.
+- **Nothing is saved to the tracker on Stop or close** (a half-analyzed job
+  would be a wrong card). The finished steps stay in the checkpoint; a
+  "continue where you left off" feature is a Phase 14 candidate.
+- **The run log has a row from the start** ("running", refreshed after each
+  step). At start, the app marks its own leftover "running" runs as
+  **interrupted** (only `desktop` ones: a CLI run going on is left alone).
+  Stop → **stopped** (not an error). Evals shows both, plus an
+  "Unfinished runs" tile with the agent time they cost.
+- **Time estimates** come from this PC's own run log (average per step), not
+  from guesses.
+- **Step 5's timer** shows "drafting · waiting for you": the old timer
+  included the time you spent reading the draft.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

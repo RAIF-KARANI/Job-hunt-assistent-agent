@@ -143,6 +143,22 @@ class Api:
     def paste_text(self, text: str) -> None:
         self._runner.paste_text(text)
 
+    def stop_run(self) -> bool:
+        """The Stop button (12j): ends the running step; nothing is saved."""
+        return self._runner.stop()
+
+    def step_estimates(self) -> dict:
+        """Typical seconds per timeline step on THIS PC, from the run log
+        (all time): {"1": 27.4, "2": 66.4, ...}. Empty before the first run."""
+        from job_agent import monitoring as m
+
+        nodes = {r["node"]: r for r in _records(m.local_node_latency(None))}
+        # The page's 5 steps = the graph's nodes (job_agent/graph.py, D15).
+        parts = {"1": ["check_tracker", "read_posting"], "2": ["analyze_fit"],
+                 "3": ["research_company"], "4": ["save_to_tracker"], "5": ["draft"]}
+        return {step: round(sum(nodes[n]["avg_seconds"] for n in names if n in nodes), 1)
+                for step, names in parts.items() if any(n in nodes for n in names)}
+
     def run_state(self) -> dict:
         """What a (re)loaded page needs to catch up, including this run's events to replay."""
         return to_json({"busy": self._runner.busy, "run_id": self._runner.run_id,

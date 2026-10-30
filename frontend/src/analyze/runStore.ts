@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
 import { getApi, onEvent } from "../bridge/bridge";
 import type { AgentEvent, FinishedEvent, PastePayload, ReviewPayload, RunSummary, StepNumber } from "../bridge/types";
 
-export type StepStatus = "pending" | "running" | "done" | "reused" | "waiting" | "failed";
+export type StepStatus = "pending" | "running" | "done" | "reused" | "waiting" | "failed" | "stopped";
 
 export interface Step {
   n: StepNumber;
@@ -18,11 +18,15 @@ export interface Step {
   status: StepStatus;
   detail: string | null;
   warn: boolean;
-  startedAt: number | null; // ms
+  startedAt: number | null; // ms, the FIRST start (a rewrite starts step 5 again)
   endedAt: number | null; // ms
+  /** Time the agent spent on the step (12j): step 5 also waits for YOU, which isn't agent time. */
+  workedMs: number;
+  /** Start of the current working stretch (ms), while status is "running". */
+  runningSince: number | null;
 }
 
-export type Phase = "idle" | "running" | "review" | "paste" | "finished" | "failed";
+export type Phase = "idle" | "running" | "review" | "paste" | "finished" | "failed" | "stopped";
 
 export interface RunView {
   phase: Phase;
@@ -36,6 +40,8 @@ export interface RunView {
   paste: PastePayload | null;
   result: FinishedEvent | null;
   error: string | null;
+  /** Stop was pressed; the run ends at its next checkpoint (12j). */
+  stopping: boolean;
 }
 
 export const STEP_TITLES: Record<StepNumber, string> = {
@@ -57,6 +63,8 @@ function freshSteps(): Step[] {
     warn: false,
     startedAt: null,
     endedAt: null,
+    workedMs: 0,
+    runningSince: null,
   }));
 }
 
@@ -72,13 +80,16 @@ export const IDLE: RunView = {
   paste: null,
   result: null,
   error: null,
+  stopping: false,
 };
 
 const ms = (seconds: number) => seconds * 1000;
 
 /** Finish every running step (a later step started, or the run paused/ended). */
 function closeRunning(steps: Step[], at: number, status: StepStatus = "done"): Step[] {
-  return steps.map((s) => (s.status === "running" ? { ...s, status, endedAt: at } : s));
+  return steps.map((s) =>
+    s.status === "running" ? { ...s, status, endedAt: at, workedMs: s.workedMs + at - (s.runningSince ?? at), runningSince: null } : s,
+  );
 }
 
 function setStep(steps: Step[], n: StepNumber, change: Partial<Step>): Step[] {
@@ -110,7 +121,15 @@ export function reduce(view: RunView, event: AgentEvent): RunView {
         phase: "running",
         review: null,
         paste: null,
-        steps: setStep(steps, event.step, { status: "running", detail: event.text, warn: false, startedAt: at, endedAt: null }),
+        // A rewrite starts step 5 again: keep its first start and its earlier work time.
+        steps: setStep(steps, event.step, {
+          status: "running",
+          detail: event.text,
+          warn: false,
+          startedAt: steps[event.step - 1].startedAt ?? at,
+          runningSince: at,
+          endedAt: null,
+        }),
       };
     }
 
@@ -174,7 +193,13 @@ export function reduce(view: RunView, event: AgentEvent): RunView {
     }
 
     case "failed":
-      return { ...view, phase: "failed", error: event.error, review: null, paste: null, steps: closeRunning(view.steps, ms(event.at), "failed") };
+      return { ...view, phase: "failed", error: event.error, review: null, paste: null, stopping: false, steps: closeRunning(view.steps, ms(event.at), "failed") };
+
+    case "stopping":
+      return { ...view, stopping: true };
+
+    case "stopped":
+      return { ...view, phase: "stopped", stopping: false, review: null, paste: null, steps: closeRunning(view.steps, ms(event.at), "stopped") };
 
     default:
       return view; // not about the agent run (e.g. a model download in Settings)
