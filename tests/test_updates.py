@@ -146,6 +146,14 @@ def test_switched_off_means_no_request(api, monkeypatch):
     assert events == [] and a.update_status()["enabled"] is False
 
 
+def test_check_now_works_even_when_switched_off_and_tells_the_sidebar(api, monkeypatch):
+    a, events = api
+    monkeypatch.setenv("UPDATE_CHECK", "false")
+    result = a.check_for_updates()  # you asked: so ask, even with the daily check off
+    assert result["newer"] and result["enabled"] is False
+    assert events[-1]["type"] == "update_available" and events[-1]["latest"] == "v1.0.0"
+
+
 def test_the_setting_is_writable(api):
     a, _ = api
     assert a.save_settings({"UPDATE_CHECK": "false"})["UPDATE_CHECK"] == "false"

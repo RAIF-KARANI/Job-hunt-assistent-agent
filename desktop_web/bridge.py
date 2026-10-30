@@ -404,7 +404,10 @@ class Api:
         """Ask GitHub now ("Check now" in Settings, 13c), even if the switch is off."""
         from desktop_web import updates
 
-        return {**self._updates.check(force=True), "enabled": updates.enabled()}
+        result = self._updates.check(force=True)
+        if result.get("newer"):  # the sidebar shows it too
+            self._emit({"type": "update_available", "latest": result["latest"], "page": result["page"]})
+        return {**result, "enabled": updates.enabled()}
 
     def _startup_update_check(self) -> None:
         """Run by app.py on a background thread once the window is open: at

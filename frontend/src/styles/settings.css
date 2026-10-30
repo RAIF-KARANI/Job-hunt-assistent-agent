@@ -494,3 +494,14 @@
   display: block;
   margin-top: 2px;
 }
+
+/* 13c: Settings -> Updates */
+.updates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.update-state {
+  margin: 0;
+}

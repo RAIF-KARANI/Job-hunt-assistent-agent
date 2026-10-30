@@ -949,3 +949,29 @@ newer JobLens than `__version__`.
 - **Semantic versions compared as numbers**, not text.
 - **Being a polite API client:** cache, back off after errors, send nothing
   but what's needed.
+
+---
+
+## 13c — Update settings ✅ (30 Oct 2026)
+
+### What was done
+- **Settings → Updates** (`frontend/src/settings/UpdatesCard.tsx`):
+  - this version
+  - whether a newer one exists, with a link to the release
+  - when it last checked
+  - the error in plain words ("Couldn't reach GitHub (no internet?)",
+    "GitHub asked to wait")
+  - the once-a-day switch (`UPDATE_CHECK`, saved at once)
+  - **Check now**
+- **Check now works even with the switch off** (you asked), and tells the
+  sidebar when it finds a newer version.
+- Tests: **193** (+1: "Check now" with the switch off, and the sidebar event).
+
+### Checked in the real window, against the real GitHub API
+- **pretending to be 0.3.0, switch off:**
+  - no request at start (waited past the 5 s delay)
+  - turning the switch on wrote `UPDATE_CHECK=true`
+  - Check now: "Version 0.3.1 is available (you have 0.3.0). See what's new
+    and download", and the sidebar showed "Update available: v0.3.1"
+- **as 0.3.1:** "You're up to date: JobLens 0.3.1 is the newest version."
+- **offline (simulated):** "Couldn't reach GitHub (no internet?)"; nothing else changed

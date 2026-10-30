@@ -7,6 +7,7 @@ import { errorMessage, getApi } from "../bridge/bridge";
 import type { LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
 import { LevelPicker } from "./LevelPicker";
 import { ResumeList } from "./ResumeList";
+import { UpdatesCard } from "./UpdatesCard";
 
 const DEFAULT_MODELS: Record<string, string> = { ollama: "qwen3:8b", anthropic: "claude-haiku-5-5" };
 const THEMES: { id: Theme; label: string }[] = [
@@ -263,6 +264,21 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
           </select>
           <span className="hint">Applies after restarting JobLens. The run log behind Evals is always on.</span>
         </label>
+      </section>
+
+      <section className="card settings-card" aria-labelledby="updates-title">
+        <div className="section-head">
+          <h2 id="updates-title">Updates</h2>
+          {saved === "updates" && (
+            <span className="saved" role="status">
+              Saved
+            </span>
+          )}
+        </div>
+        <UpdatesCard
+          enabled={(settings.UPDATE_CHECK ?? "true") !== "false"}
+          onToggle={(on) => void saveNow({ UPDATE_CHECK: on ? "true" : "false" }, "updates")}
+        />
       </section>
     </div>
   );

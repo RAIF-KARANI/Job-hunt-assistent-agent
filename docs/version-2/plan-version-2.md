@@ -46,7 +46,7 @@ tests plus a few Playwright checks against the front end served locally.
 |---|---|
 | 13a ✅ | Tray icon (pystray): open, "run in background" during long analyses, notification when a cover note is waiting, quit; plus one JobLens at a time (D24) |
 | 13b ✅ | Update check: GitHub Releases API on startup (at most once a day), compare with `__version__` |
-| 13c | Settings: "check for updates" on/off, "check now" |
+| 13c ✅ | Settings: "check for updates" on/off, "check now" |
 | 13d | Update flow: download the installer, check its size/hash, run it, close the app (Inno Setup upgrades in place, same AppId) |
 
 Needs the repo to be **public** so the app can read the Releases (D11).
