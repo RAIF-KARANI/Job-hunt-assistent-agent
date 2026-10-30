@@ -143,7 +143,22 @@ export type AgentEvent =
   | { type: "failed"; error: string; at: number }
   | { type: "stopping"; at: number } // Stop pressed (12j)
   | { type: "stopped"; run_id: string; at: number } // the run ended at its next checkpoint
+  | { type: "update_available"; latest: string; page: string } // 13b
   | SetupProgress;
+
+/** Api.update_status() / check_for_updates() (13b). */
+export interface UpdateStatus {
+  current: string;
+  latest: string | null; // "v1.0.0"
+  newer: boolean;
+  page?: string; // the release page
+  name?: string;
+  notes?: string;
+  installer?: { name: string; size: number; url: string; sha256: string | null } | null;
+  checked_at: number | null; // seconds
+  error: string | null;
+  enabled: boolean; // the UPDATE_CHECK setting
+}
 
 /** Installing Ollama or downloading a model (12g). Not part of an agent run. */
 export interface SetupProgress {
@@ -280,6 +295,8 @@ export interface PyApi {
   resume(answer: Answer): Promise<void>;
   paste_text(text: string): Promise<void>;
   stop_run(): Promise<boolean>;
+  update_status(): Promise<UpdateStatus>;
+  check_for_updates(): Promise<UpdateStatus>;
   /** Typical seconds per timeline step on this PC: {"1": 27.4, "2": 66.4, ...}. */
   step_estimates(): Promise<Partial<Record<string, number>>>;
   run_state(): Promise<RunState>;

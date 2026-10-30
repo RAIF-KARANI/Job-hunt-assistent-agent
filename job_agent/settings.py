@@ -28,6 +28,7 @@ DEFAULTS = {
     "OLLAMA_NUM_CTX": "16384",
     "JUDGE_EVIDENCE": "true",
     "TRACING": "off",
+    "UPDATE_CHECK": "true",   # look for a newer JobLens once a day (13b)
 }
 
 # Suggested model per provider for the Setup screen.

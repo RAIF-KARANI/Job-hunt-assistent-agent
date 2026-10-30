@@ -2,7 +2,7 @@
 // build and look at screens without Python. Not included in production
 // builds (bridge.ts only loads it when import.meta.env.DEV).
 
-import type { AgentEvent, Answer, EvalsData, JobDetail, JobRow, PyApi, Settings } from "./types";
+import type { AgentEvent, Answer, EvalsData, JobDetail, JobRow, PyApi, Settings, UpdateStatus } from "./types";
 
 export function mockApi(emit: (event: AgentEvent) => void): PyApi {
   let settings: Settings = {
@@ -55,6 +55,9 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       return true;
     },
     step_estimates: async () => ({ "1": 27, "2": 205, "3": 59, "4": 0.2, "5": 16 }),
+    // ?update in the address pretends a newer version exists
+    update_status: async () => mockUpdate(),
+    check_for_updates: async () => mockUpdate(),
     save_feedback: async (_run, _job, ratings) => Object.values(ratings).filter(Boolean).length,
     get_job: async (id) => mockJob(jobs.find((j) => j.id === id) ?? jobs[0]),
     set_status: async (id, status) => {
@@ -129,6 +132,19 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       langsmith: "off",
       langsmith_url: "https://smith.langchain.com/",
     }),
+  };
+}
+
+function mockUpdate(): UpdateStatus {
+  const newer = location.search.includes("update");
+  return {
+    current: "dev",
+    latest: newer ? "v1.0.0" : "v0.3.1",
+    newer,
+    page: "https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases",
+    checked_at: Date.now() / 1000,
+    error: null,
+    enabled: true,
   };
 }
 

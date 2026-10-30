@@ -396,5 +396,25 @@ Amends D10. A friend needs the new app now, before Phase 13 is finished.
   hand once; from then on updates come by themselves.
 - `main` stays at v0.3.0 until v1.0.0; the v0.3.1 tag points at `version-2`.
 
+## D26 — The update check ✅ (30 Oct 2026, step 13b)
+- **Source:** GitHub's public `releases/latest` for this repo, no account.
+  Drafts and pre-releases are never offered (that endpoint skips them).
+- **What GitHub sees:** one request with the User-Agent `JobLens/<version>`.
+  No personal data, no device id, nothing about your jobs.
+- **When:** at most **once a day**, 5 s after the window opened, on a
+  background thread (startup never waits). The answer is cached in
+  `update_check.json` in the data folder. After a network error it tries
+  again an hour later, not at every start. After an update it asks again
+  at once (the cached answer was about the old version).
+- **Versions are compared as numbers** (`0.3.10` > `0.3.9`); anything that
+  isn't `X.Y.Z` (e.g. `1.0.0-rc1`) is never offered.
+- **Only the installer** `JobLens-Setup-<version>.exe` is offered (not the
+  portable zip, never a test build), with the **SHA-256 GitHub publishes**
+  for it. 13d checks the download against it before running anything.
+- **Shown** as "Update available: v1.0.0" in the sidebar (the approved
+  concept); for now it opens the release page; 13d installs from there.
+- **`UPDATE_CHECK`** setting, on by default; when off, no request is made
+  at all. The switch and "Check now" are 13c.
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

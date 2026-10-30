@@ -167,6 +167,7 @@ def main(argv=None) -> int:
 
     tray = _start_tray(window, api, holder)
     instance.listen(on_show=lambda: _bring_back(window, tray))
+    _check_for_updates_later(window, api)
     try:
         webview.start(gui="edgechromium", debug=args.dev)  # debug = F12 dev tools
     finally:
@@ -174,6 +175,26 @@ def main(argv=None) -> int:
             tray.stop()  # its thread would otherwise keep the process alive
         instance.close()
     return 0
+
+
+def _check_for_updates_later(window, api) -> None:
+    """13b: once per app start, a few seconds after the page loaded, on a
+    background thread (startup never waits for GitHub)."""
+    started = threading.Event()
+
+    def later():
+        time.sleep(5)
+        try:
+            api._startup_update_check()
+        except Exception as e:  # an update check must never break the app
+            print(f"! update check: {e}")
+
+    def on_loaded():
+        if not started.is_set():  # `loaded` fires again on every page reload
+            started.set()
+            threading.Thread(target=later, name="joblens-updates", daemon=True).start()
+
+    window.events.loaded += on_loaded
 
 
 def _bring_back(window, tray) -> None:

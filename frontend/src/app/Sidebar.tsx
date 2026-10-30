@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRun } from "../analyze/runStore";
-import { getApi } from "../bridge/bridge";
+import { getApi, onEvent } from "../bridge/bridge";
 import type { LlmStatus, Theme } from "../bridge/types";
 import { Icon, Logo, type IconName } from "./Icon";
 import { PAGES, type PageId } from "./routes";
@@ -29,6 +29,20 @@ export function Sidebar({ page, model, theme, onTheme }: Props) {
       .then(setStatus)
       .catch((e: Error) => setStatus({ ok: false, message: e.message }));
   }, [model]);
+
+  // 13b: a newer JobLens on GitHub. The check runs in Python a few seconds
+  // after start (at most once a day); the last answer is cached, so read it
+  // now and also listen for the live result.
+  const [update, setUpdate] = useState<{ latest: string; page: string } | null>(null);
+  useEffect(() => {
+    getApi()
+      .then((api) => api.update_status())
+      .then((u) => u.newer && u.latest && setUpdate({ latest: u.latest, page: u.page ?? "" }))
+      .catch(() => undefined);
+    return onEvent((e) => {
+      if (e.type === "update_available") setUpdate({ latest: e.latest, page: e.page });
+    });
+  }, []);
 
   const [dot, label] = run.busy
     ? ["var(--accent)", "Agent working"]
@@ -70,6 +84,12 @@ export function Sidebar({ page, model, theme, onTheme }: Props) {
             {label}
           </span>
           <span className="model-card-name">{model}</span>
+          {update && (
+            // A web link: opened in the browser (bridge.ts). 13d installs it from here.
+            <a className="update-link" href={update.page} title="Open the release page">
+              Update available: {update.latest}
+            </a>
+          )}
         </div>
 
         <div className="theme-switch" role="group" aria-label="Theme">

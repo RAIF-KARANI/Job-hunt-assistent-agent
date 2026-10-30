@@ -196,6 +196,7 @@ paste** the job description. Type `END` on its own line when you're done.
 | `TRACING` | `off` | `off`, `langfuse` (self-hosted), `langsmith` (cloud) |
 | `UI_3D` | `animated` | desktop app's Dashboard: `animated`, `still` or `off` (flat map) |
 | `UI_THEME` | `system` | desktop app: `system` (follow Windows), `dark`, `light` |
+| `UPDATE_CHECK` | `true` | desktop app: look for a newer release on GitHub at most once a day (sends only the app version) |
 
 To use a cloud model, `pip install` its LangChain package (see
 `requirements.txt`) and add its API key to `.env`. No code changes needed.

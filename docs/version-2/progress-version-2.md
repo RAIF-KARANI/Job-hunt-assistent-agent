@@ -910,3 +910,42 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v0.3.1
   2. My first command used a short commit id, which GitHub rejects as a
      target (HTTP 422). The full 40-character id worked. Nothing was
      half-created by the failed try.
+
+---
+
+## 13b — Update check ✅ (30 Oct 2026)
+
+### Goal
+On startup, at most once a day, ask GitHub Releases whether there's a
+newer JobLens than `__version__`.
+
+### What was done
+- **`desktop_web/updates.py`:**
+  - pure rules: `parse_version` / `is_newer` (numbers, `X.Y.Z` only);
+    `pick_installer` (`JobLens-Setup-<version>.exe` with GitHub's SHA-256);
+    `check_due` (once a day; an hour after an error; at once after an update)
+  - `UpdateChecker`: fetch, cache in `update_check.json`, never raises
+- **Bridge:** `update_status()` (cached, no network), `check_for_updates()`
+  (now, for 13c's "Check now"), `_startup_update_check()` (sends an
+  `update_available` event to the page).
+- **`app.py`:** the check runs on a background thread 5 s after the first
+  page load (not again on reloads).
+- **Setting** `UPDATE_CHECK` (on by default; when off, no request at all).
+- **Sidebar:** "Update available: v…" under the model, linking to the release page.
+- Tests: **192** (+23: versions, newer-than, which file is offered,
+  once a day / after an error / after an update, the cache, offline,
+  no release yet, the setting).
+
+### Checked against the real GitHub API
+- as 0.3.1: up to date; pretending to be 0.3.0: v0.3.1 offered, with
+  `JobLens-Setup-0.3.1.exe`, 57,793,533 bytes and the published SHA-256
+- in the real window (pretending to be 0.3.0): "Update available: v0.3.1"
+  appeared 6.3 s after start; clicking it opened the release page in the
+  browser (the window stayed on JobLens); a reload used the cache (still
+  **one** request to GitHub)
+- unauthenticated limit: 60 requests an hour per IP (once a day is far below it)
+
+### Concepts learned
+- **Semantic versions compared as numbers**, not text.
+- **Being a polite API client:** cache, back off after errors, send nothing
+  but what's needed.

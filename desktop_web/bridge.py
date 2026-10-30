@@ -54,6 +54,7 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "UI_3D": ("animated", "still", "off"),   # D14
     "UI_THEME": ("system", "dark", "light"),
     "SETUP_DONE": ("true", "false"),
+    "UPDATE_CHECK": ("true", "false"),        # 13b
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 
@@ -117,6 +118,8 @@ class Api:
         self._runner = AgentRunner(emit=self._emit, graph=graph)
         self._window = None  # set by app.py, for native file dialogs
         self._setup_lock = threading.Lock()  # one install / download at a time
+        from desktop_web.updates import UpdateChecker
+        self._updates = UpdateChecker(paths.APP_HOME, __version__)  # 13b
 
     def _emit(self, event: Event) -> None:
         self._send(to_json(event))
@@ -388,6 +391,32 @@ class Api:
                   done: bool = False, ok: bool | None = None) -> None:
         self._emit({"type": "setup_progress", "what": what, "message": message,
                     "fraction": fraction, "done": done, "ok": ok})
+
+    # ---- updates (13b) --------------------------------------------------------
+
+    def update_status(self) -> dict:
+        """The last update check's answer (no network): for the sidebar."""
+        from desktop_web import updates
+
+        return {**self._updates.status(), "enabled": updates.enabled()}
+
+    def check_for_updates(self) -> dict:
+        """Ask GitHub now ("Check now" in Settings, 13c), even if the switch is off."""
+        from desktop_web import updates
+
+        return {**self._updates.check(force=True), "enabled": updates.enabled()}
+
+    def _startup_update_check(self) -> None:
+        """Run by app.py on a background thread once the window is open: at
+        most once a day (cached), and only if the setting is on. Tells the
+        page if there's a newer version."""
+        from desktop_web import updates
+
+        if not updates.enabled():
+            return
+        result = self._updates.check()
+        if result.get("newer"):
+            self._emit({"type": "update_available", "latest": result["latest"], "page": result["page"]})
 
     # ---- settings -----------------------------------------------------------
 
