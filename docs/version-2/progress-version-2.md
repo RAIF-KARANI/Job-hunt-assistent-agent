@@ -975,3 +975,90 @@ newer JobLens than `__version__`.
     and download", and the sidebar showed "Update available: v0.3.1"
 - **as 0.3.1:** "You're up to date: JobLens 0.3.1 is the newest version."
 - **offline (simulated):** "Couldn't reach GitHub (no internet?)"; nothing else changed
+
+---
+
+## 13d — Install an update from inside the app ✅ (30 Oct 2026)
+
+### Goal
+From "Update available", download the installer, check its size and hash,
+run it, and close the app; Inno Setup upgrades in place (same AppId).
+
+### What was done (D27)
+- **`desktop_web/updates.py`:**
+  - `check_source`: only our GitHub release downloads, only
+    `JobLens-Setup-X.Y.Z.exe`, only with a SHA-256; checked before any request
+  - `download`: streams with progress; size + SHA-256; a failed file is
+    deleted, no `.part` left
+  - `launch_installer`: verifies again, then runs it detached and silent
+    with `/RELAUNCH=1` and a log
+  - `clean_downloads`
+- **Bridge:** `download_update()` (`update_progress` / `update_ready`
+  events) and `install_update()` (refused during a run; closes the app a
+  second later). `app.py` passes the app's close and cleans old downloads at start.
+- **Installer:** a `[Run]` entry starts the new JobLens when `/RELAUNCH=1`
+  was given; `RestartApplications=no` (one restart, not two).
+- **UI:**
+  - the sidebar link goes to Settings → Updates
+  - "Download and install v… (58 MB)" → progress bar → "✓ Downloaded and
+    verified: size and SHA-256 match what GitHub published" → "Install now"
+    → "JobLens will open again in a moment"
+- Tests: **211** (+18):
+  - wrong name / address / repo / no checksum refused before any request
+  - tampered bytes and a cut-off file refused and deleted
+  - a file swapped on disk caught before running
+  - the silent switches
+  - the bridge: download → install → close; no install during a run, or before a download
+  - old downloads cleaned
+
+### End-to-end test (test build only; your installed JobLens untouched)
+Two test installers from one fresh build ("0.3.1" and "0.3.2", the separate
+"JobLens Test Build" AppId), a temp AppData folder, and a local web server
+standing in for GitHub (trusted by the test process only):
+1. installed 0.3.1 silently, started it, put a marker file in its data folder
+2. a tampered download: **refused** ("SHA-256 doesn't match"), nothing left
+3. the real path: downloaded and verified in 2.8 s → Install now → the
+   running 0.3.1 closed → **upgraded in place in 14.3 s** (Windows now shows
+   0.3.2, same folder) → **the new version started by itself** → the marker
+   file was still there
+4. uninstalled: no files, no registry entry; your real JobLens (open at the
+   time) had the same checksum and kept running
+- The screens in the real window: the sidebar link → Settings → download →
+  verified → Install now, and the installer was started with exactly the
+  switches above.
+
+### Problems hit
+1. **The first end-to-end run hung for 3 minutes:** my test only
+   *pretended* the app closes itself, so the installer met a running JobLens.
+   With a real close (by process id, never your own window) it took 14 s.
+   The installer now writes a log (`install.log`), which is how I could see
+   it working.
+2. Inno's Restart Manager also "attempted to restart applications": switched
+   off, because `/RELAUNCH` already does it.
+3. Git Bash turned Inno's `/D…` and `/Q` switches into file paths. Needed
+   `MSYS_NO_PATHCONV=1` when calling ISCC by hand.
+4. A fresh build overwrote the local `dist\JobLens-Setup-0.3.1.exe` with a
+   newer build. The published v0.3.1 on GitHub is unchanged; the local file
+   just isn't identical to it any more.
+
+### Concepts learned
+- **Supply-chain safety for self-updating apps:** pin the source, verify a
+  published hash, check again just before running (time-of-check vs
+  time-of-use).
+- **Silent upgrades in place** with Inno Setup: same AppId, Restart Manager,
+  command-line parameters read by the script (`{param:RELAUNCH}`).
+- **End-to-end tests that can't hurt the machine:** a separate AppId, a temp
+  AppData folder, a local stand-in for the server, by-process-id actions only.
+
+---
+
+## Phase 13 summary ✅
+Tray icon, one JobLens at a time, the once-a-day update check, update
+settings, and verified in-app updates. **JobLens can now update itself.**
+Next: **v1.0.0**:
+- merge `version-2` into `main`
+- version 1.0.0
+- the release
+
+Everyone on 0.3.x (you, your friend) installs v1.0.0 by hand once; later
+versions come by themselves.

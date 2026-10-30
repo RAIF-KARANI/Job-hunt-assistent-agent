@@ -505,3 +505,19 @@
 .update-state {
   margin: 0;
 }
+
+/* 13d: download -> verified -> install */
+.install-update {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.install-update .hint,
+.install-update .check-status {
+  margin: 0;
+}

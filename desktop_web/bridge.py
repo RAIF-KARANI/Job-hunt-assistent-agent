@@ -120,6 +120,10 @@ class Api:
         self._setup_lock = threading.Lock()  # one install / download at a time
         from desktop_web.updates import UpdateChecker
         self._updates = UpdateChecker(paths.APP_HOME, __version__)  # 13b
+        self._update_lock = threading.Lock()  # 13d: one download at a time
+        self._update_file = None
+        self._http_get = None  # None = requests.get; tests serve a stand-in
+        self._quit = None  # set by app.py
 
     def _emit(self, event: Event) -> None:
         self._send(to_json(event))
@@ -408,6 +412,48 @@ class Api:
         if result.get("newer"):  # the sidebar shows it too
             self._emit({"type": "update_available", "latest": result["latest"], "page": result["page"]})
         return {**result, "enabled": updates.enabled()}
+
+    def download_update(self) -> dict:
+        """13d: download the newer installer and verify it (size + SHA-256
+        from GitHub), streaming `update_progress` events. Runs nothing."""
+        from desktop_web import updates
+
+        status = self._updates.status()
+        installer = status.get("installer")
+        if not status.get("newer") or not installer:
+            raise RuntimeError("There's no newer version to download. Check for updates first.")
+        if not self._update_lock.acquire(blocking=False):
+            raise RuntimeError("The update is already downloading.")
+        try:
+            folder = paths.APP_HOME / "updates"
+            updates.clean_downloads(folder)
+            self._update_file = updates.download(
+                installer, folder, get=self._http_get,
+                progress=lambda done, total: self._emit({"type": "update_progress", "done": done, "total": total}))
+        finally:
+            self._update_lock.release()
+        self._emit({"type": "update_ready", "latest": status["latest"]})
+        return {"ok": True, "latest": status["latest"], "verified": True}
+
+    def install_update(self) -> dict:
+        """13d: run the verified installer and close JobLens; the installer
+        upgrades in place and starts the new version. Not during a run."""
+        from desktop_web import updates
+
+        if self._runner.busy or self._runner.last_pause:
+            raise RuntimeError("Finish or stop the current run first: installing closes JobLens.")
+        status = self._updates.status()
+        path = getattr(self, "_update_file", None)
+        if not path or not status.get("installer") or not path.exists():
+            raise RuntimeError("Download the update first.")
+        updates.launch_installer(path, status["installer"])  # checks the file once more
+        if self._quit:
+            threading.Timer(1.0, self._quit).start()  # let this answer reach the page first
+        return {"ok": True}
+
+    def _on_quit(self, quit_app) -> None:
+        """How the app closes itself (app.py) when the installer takes over."""
+        self._quit = quit_app
 
     def _startup_update_check(self) -> None:
         """Run by app.py on a background thread once the window is open: at

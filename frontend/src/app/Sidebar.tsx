@@ -85,8 +85,8 @@ export function Sidebar({ page, model, theme, onTheme }: Props) {
           </span>
           <span className="model-card-name">{model}</span>
           {update && (
-            // A web link: opened in the browser (bridge.ts). 13d installs it from here.
-            <a className="update-link" href={update.page} title="Open the release page">
+            // 13d: to Settings → Updates, where it downloads, verifies and installs.
+            <a className="update-link" href="#/settings" title="Download and install it in Settings → Updates">
               Update available: {update.latest}
             </a>
           )}

@@ -21,6 +21,82 @@ function plainError(error: string): string {
   return `The check failed: ${error}`;
 }
 
+const MB = (bytes: number) => `${(bytes / 1e6).toFixed(0)} MB`;
+
+/** 13d (D27): download → verified → install. Nothing runs until the file
+ *  matches the size and SHA-256 GitHub published for it. */
+function InstallUpdate({ status }: { status: UpdateStatus }) {
+  const installer = status.installer!;
+  const [step, setStep] = useState<"idle" | "downloading" | "ready" | "installing">("idle");
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  useEffect(
+    () =>
+      onEvent((e) => {
+        if (e.type === "update_progress") setProgress({ done: e.done, total: e.total });
+      }),
+    [],
+  );
+
+  const run = async (call: "download_update" | "install_update") => {
+    setProblem(null);
+    setStep(call === "download_update" ? "downloading" : "installing");
+    try {
+      await (await getApi())[call]();
+      setStep(call === "download_update" ? "ready" : "installing"); // installing: JobLens is about to close
+    } catch (e) {
+      setProblem(errorMessage(e));
+      setStep(call === "download_update" ? "idle" : "ready");
+    }
+  };
+
+  const fraction = progress && progress.total ? progress.done / progress.total : null;
+  return (
+    <div className="install-update">
+      {step === "idle" && (
+        <button type="button" className="btn btn-primary" onClick={() => void run("download_update")}>
+          Download and install {status.latest} ({MB(installer.size)})
+        </button>
+      )}
+      {step === "downloading" && (
+        <>
+          <p className="hint" role="status">
+            Downloading {installer.name}… {progress ? `${MB(progress.done)} of ${MB(progress.total)}` : ""}
+          </p>
+          <div className="progress" role="progressbar" aria-label="Downloading the update" aria-valuemin={0} aria-valuemax={100}
+            aria-valuenow={fraction === null ? undefined : Math.round(fraction * 100)}>
+            <span className={fraction === null ? "progress-fill indeterminate" : "progress-fill"} style={fraction === null ? undefined : { width: `${fraction * 100}%` }} />
+          </div>
+        </>
+      )}
+      {step === "ready" && (
+        <>
+          <p className="check-status ok" role="status">
+            <span aria-hidden="true">✓</span> Downloaded and verified: size and SHA-256 match what GitHub published.
+          </p>
+          <div className="row-actions">
+            <button type="button" className="btn btn-primary" onClick={() => void run("install_update")}>
+              Install now
+            </button>
+            <span className="hint">JobLens closes, updates, and opens again. Your data stays.</span>
+          </div>
+        </>
+      )}
+      {step === "installing" && (
+        <p className="hint" role="status">
+          Installing {status.latest}… JobLens will open again in a moment.
+        </p>
+      )}
+      {problem && (
+        <p className="error" role="alert">
+          {problem}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function UpdatesCard({ enabled, onToggle }: { enabled: boolean; onToggle(on: boolean): void }) {
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [checking, setChecking] = useState(false);
@@ -77,6 +153,9 @@ export function UpdatesCard({ enabled, onToggle }: { enabled: boolean; onToggle(
         {status ? checkedAgo(status.checked_at) : ""}
         {status?.error && ` · ${plainError(status.error)}`}
       </p>
+
+      {/* Right under "Version X is available": the one thing to do next. */}
+      {status?.newer && status.installer && <InstallUpdate status={status} />}
 
       <label className="check">
         <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />

@@ -61,6 +61,9 @@ SolidCompression=yes
 WizardStyle=modern
 ; Close a running JobLens before installing / uninstalling.
 CloseApplications=yes
+; 13d: after an in-app update, /RELAUNCH=1 starts the new JobLens ([Run]). Don't
+; also let Windows' Restart Manager restart what it closed: one way, not two.
+RestartApplications=no
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
@@ -82,6 +85,9 @@ Name: "{autodesktop}\{#TheAppName}"; Filename: "{app}\JobLens.exe"; Tasks: deskt
 ; Before the app can start: the WebView2 Runtime, silently (per user, no admin prompt).
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Installing Microsoft Edge WebView2 Runtime..."; Flags: waituntilterminated; Check: NeedsWebView2
 Filename: "{app}\JobLens.exe"; Description: "Launch JobLens"; Flags: nowait postinstall skipifsilent
+; 13d: an update started from inside JobLens runs silently and asks with /RELAUNCH=1
+; to open the new version when it's done (a plain silent install doesn't).
+Filename: "{app}\JobLens.exe"; Flags: nowait; Check: RelaunchAfterUpdate
 
 [Code]
 { Windows paths are limited to 260 characters. JobLens' deepest file adds
@@ -97,6 +103,11 @@ var
   Version: String;
 begin
   Result := RegQueryStringValue(Root, Key, 'pv', Version) and (Version <> '') and (Version <> '0.0.0.0');
+end;
+
+function RelaunchAfterUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
 
 function NeedsWebView2: Boolean;

@@ -144,6 +144,8 @@ export type AgentEvent =
   | { type: "stopping"; at: number } // Stop pressed (12j)
   | { type: "stopped"; run_id: string; at: number } // the run ended at its next checkpoint
   | { type: "update_available"; latest: string; page: string } // 13b
+  | { type: "update_progress"; done: number; total: number } // 13d: bytes
+  | { type: "update_ready"; latest: string } // downloaded and verified
   | SetupProgress;
 
 /** Api.update_status() / check_for_updates() (13b). */
@@ -297,6 +299,10 @@ export interface PyApi {
   stop_run(): Promise<boolean>;
   update_status(): Promise<UpdateStatus>;
   check_for_updates(): Promise<UpdateStatus>;
+  /** 13d: download + verify (size and SHA-256 from GitHub); runs nothing. */
+  download_update(): Promise<{ ok: boolean; latest: string; verified: boolean }>;
+  /** 13d: run the verified installer; JobLens closes and the new version opens. */
+  install_update(): Promise<{ ok: boolean }>;
   /** Typical seconds per timeline step on this PC: {"1": 27.4, "2": 66.4, ...}. */
   step_estimates(): Promise<Partial<Record<string, number>>>;
   run_state(): Promise<RunState>;

@@ -416,5 +416,31 @@ Amends D10. A friend needs the new app now, before Phase 13 is finished.
 - **`UPDATE_CHECK`** setting, on by default; when off, no request is made
   at all. The switch and "Check now" are 13c.
 
+## D27 — Installing an update from inside the app ✅ (30 Oct 2026, step 13d)
+JobLens runs a program it downloaded, so every rule here is about only ever
+running the real installer.
+- **Where from:** only `https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/download/…`
+  (GitHub redirects to its own storage; the requests library follows that),
+  and only a file named `JobLens-Setup-X.Y.Z.exe`. Checked **before** any request.
+- **Verified twice:** size and **SHA-256 must match what GitHub publishes**
+  (the asset `digest`), right after the download and again right before
+  running it (the file sat on disk in between). A file that fails is
+  deleted; nothing is ever run.
+- **No checksum, no install:** a release without a published SHA-256 only
+  gets the release-page link.
+- **Not during a run** (a step running or a draft waiting): installing
+  closes JobLens.
+- **How:** the installer runs detached and silent (`/SILENT /SUPPRESSMSGBOXES
+  /NORESTART /RELAUNCH=1 /LOG=…`). JobLens closes itself a second later.
+  Inno Setup upgrades in place (same AppId, same folder; the data folder is
+  never touched) and starts the new version (`/RELAUNCH=1`, a new [Run]
+  entry; a plain silent install doesn't start the app). Windows' Restart
+  Manager is not allowed to restart it too (`RestartApplications=no`).
+- **Downloads are cleaned up** at the next start; the installer's log stays
+  next to it until then.
+- **The flow:** the sidebar's "Update available" goes to Settings →
+  Updates: "Download and install v… (58 MB)" → progress → "✓ Downloaded and
+  verified" → "Install now".
+
 ## Open questions ❓
 - Q1: Which new features go into v2? (we'll discuss them later)

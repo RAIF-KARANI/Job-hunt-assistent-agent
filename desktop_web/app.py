@@ -168,6 +168,10 @@ def main(argv=None) -> int:
     tray = _start_tray(window, api, holder)
     instance.listen(on_show=lambda: _bring_back(window, tray))
     _check_for_updates_later(window, api)
+    # 13d: the installer takes over -> close (never during a run: refused before)
+    api._on_quit(window.destroy)
+    from desktop_web import updates
+    updates.clean_downloads(paths.APP_HOME / "updates")  # last update's installer, no longer needed
     try:
         webview.start(gui="edgechromium", debug=args.dev)  # debug = F12 dev tools
     finally:

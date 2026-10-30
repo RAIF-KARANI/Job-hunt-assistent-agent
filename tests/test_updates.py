@@ -4,6 +4,7 @@ network is used; the release data has the shape the real API returns.
 """
 
 import json
+import threading
 
 import pytest
 
@@ -159,3 +160,169 @@ def test_the_setting_is_writable(api):
     assert a.save_settings({"UPDATE_CHECK": "false"})["UPDATE_CHECK"] == "false"
     with pytest.raises(ValueError):
         a.save_settings({"UPDATE_CHECK": "sometimes"})
+
+
+# ---- 13d: download, verify, install ---------------------------------------------
+
+import hashlib  # noqa: E402
+
+from desktop_web.updates import UpdateRefused, check_source, download, launch_installer, verify  # noqa: E402
+
+GOOD = b"MZ" + b"\x00" * 5000  # stands in for an installer
+GOOD_SHA = hashlib.sha256(GOOD).hexdigest()
+URL = f"https://github.com/{updates.REPO}/releases/download/v1.0.0/JobLens-Setup-1.0.0.exe"
+
+
+def installer(**change):
+    return {"name": "JobLens-Setup-1.0.0.exe", "size": len(GOOD), "url": URL, "sha256": GOOD_SHA, **change}
+
+
+class FakeResponse:
+    def __init__(self, body):
+        self.body, self.headers = body, {"Content-Length": str(len(body))}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def raise_for_status(self):
+        pass
+
+    def iter_content(self, size):
+        for i in range(0, len(self.body), size):
+            yield self.body[i:i + size]
+
+
+def serving(body):
+    asked = []
+
+    def get(url, **kwargs):
+        asked.append(url)
+        return FakeResponse(body)
+    return get, asked
+
+
+@pytest.mark.parametrize("change, why", [
+    ({"name": "JobLens-Setup-1.0.0.exe.bat"}, "isn't a JobLens installer"),
+    ({"name": "evil.exe"}, "isn't a JobLens installer"),
+    ({"url": "https://example.com/JobLens-Setup-1.0.0.exe"}, "isn't on JobLens' GitHub"),
+    ({"url": "https://github.com/someone-else/Job-hunt-assistent-agent/releases/download/v1.0.0/JobLens-Setup-1.0.0.exe"},
+     "isn't on JobLens' GitHub"),
+    ({"url": URL.replace("JobLens-Setup-1.0.0.exe", "other.exe")}, "isn't on JobLens' GitHub"),
+    ({"sha256": None}, "no checksum"),
+    ({"sha256": "abc"}, "no checksum"),
+])
+def test_only_our_installer_from_our_releases_with_a_checksum(change, why):
+    with pytest.raises(UpdateRefused, match=why):
+        check_source(installer(**change))
+
+
+def test_a_good_download_is_verified_and_kept(tmp_path):
+    get, asked = serving(GOOD)
+    seen = []
+    path = download(installer(), tmp_path, progress=lambda done, total: seen.append((done, total)), get=get)
+    assert path.read_bytes() == GOOD and asked == [URL]
+    assert seen[-1] == (len(GOOD), len(GOOD))
+    assert [p.name for p in tmp_path.iterdir()] == ["JobLens-Setup-1.0.0.exe"]   # no .part left
+
+
+def test_a_tampered_download_is_refused_and_deleted(tmp_path):
+    evil = b"MZ" + b"\x01" * 5000  # same size, different bytes
+    get, _ = serving(evil)
+    with pytest.raises(UpdateRefused, match="SHA-256 doesn't match"):
+        download(installer(), tmp_path, get=get)
+    assert list(tmp_path.iterdir()) == []                                      # nothing left to run
+
+
+def test_a_cut_off_download_is_refused(tmp_path):
+    get, _ = serving(GOOD[:1000])
+    with pytest.raises(UpdateRefused, match="bytes, GitHub says"):
+        download(installer(), tmp_path, get=get)
+
+
+def test_nothing_is_downloaded_from_a_wrong_place(tmp_path):
+    get, asked = serving(GOOD)
+    with pytest.raises(UpdateRefused):
+        download(installer(url="https://example.com/JobLens-Setup-1.0.0.exe"), tmp_path, get=get)
+    assert asked == []                                                          # refused before any request
+
+
+def test_the_file_is_checked_again_right_before_it_runs(tmp_path):
+    get, _ = serving(GOOD)
+    path = download(installer(), tmp_path, get=get)
+    path.write_bytes(b"MZ" + b"\x02" * 5000)     # swapped on disk after the download
+    started = []
+    with pytest.raises(UpdateRefused):
+        launch_installer(path, installer(), run=lambda *a, **k: started.append(a))
+    assert started == []
+
+
+def test_a_verified_installer_starts_silently_and_reopens_joblens(tmp_path):
+    get, _ = serving(GOOD)
+    path = download(installer(), tmp_path, get=get)
+    started = []
+    launch_installer(path, installer(), run=lambda args, **kw: started.append((args, kw)))
+    args, kw = started[0]
+    assert args[0] == str(path) and {"/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/RELAUNCH=1"} <= set(args)
+    assert kw["creationflags"]  # detached: it outlives JobLens, which closes for it
+
+
+def newer_api(tmp_path, monkeypatch, body=GOOD):
+    from desktop_web.bridge import Api
+    from job_agent import paths
+
+    monkeypatch.setattr(paths, "APP_HOME", tmp_path)
+    events = []
+    a = Api(send=events.append)
+    rel = release()
+    rel["assets"][1].update({"size": len(GOOD), "digest": f"sha256:{GOOD_SHA}", "browser_download_url": URL})
+    a._updates = UpdateChecker(tmp_path, "0.3.1", fetch=lambda c: rel)
+    a._updates.check()
+    a._http_get, _ = serving(body)  # the download is served by a stand-in
+    return a, events
+
+
+def test_bridge_download_then_install_closes_the_app(tmp_path, monkeypatch):
+    a, events = newer_api(tmp_path, monkeypatch)
+    assert a.download_update() == {"ok": True, "latest": "v1.0.0", "verified": True}
+    kinds = [e["type"] for e in events]
+    assert "update_progress" in kinds and kinds[-1] == "update_ready"
+    started, quit_called = [], threading.Event()
+    monkeypatch.setattr(updates, "launch_installer", lambda path, inst: started.append(path))
+    a._on_quit(quit_called.set)
+    assert a.install_update() == {"ok": True}
+    assert started and started[0].name == "JobLens-Setup-1.0.0.exe"
+    assert quit_called.wait(3)                                                 # JobLens closes for the installer
+
+
+def test_no_install_during_a_run(tmp_path, monkeypatch):
+    a, _ = newer_api(tmp_path, monkeypatch)
+    a.download_update()
+    a._runner.last_pause = {"type": "paused", "kind": "review"}               # a draft is waiting for you
+    with pytest.raises(RuntimeError, match="Finish or stop the current run first"):
+        a.install_update()
+
+
+def test_install_needs_a_download_first(tmp_path, monkeypatch):
+    a, _ = newer_api(tmp_path, monkeypatch)
+    with pytest.raises(RuntimeError, match="Download the update first"):
+        a.install_update()
+
+
+def test_download_needs_a_newer_version(tmp_path, monkeypatch):
+    from desktop_web.bridge import Api
+
+    a = Api(send=lambda e: None)
+    a._updates = UpdateChecker(tmp_path, "1.0.0", fetch=lambda c: release("v1.0.0"))
+    a._updates.check()
+    with pytest.raises(RuntimeError, match="no newer version"):
+        a.download_update()
+
+
+def test_old_downloads_are_cleaned_up(tmp_path):
+    (tmp_path / "JobLens-Setup-0.3.1.exe").write_bytes(b"old")
+    (tmp_path / "JobLens-Setup-1.0.0.exe.part").write_bytes(b"half")
+    updates.clean_downloads(tmp_path)
+    assert list(tmp_path.iterdir()) == []

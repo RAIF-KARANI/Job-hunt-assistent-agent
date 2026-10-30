@@ -58,6 +58,15 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     // ?update in the address pretends a newer version exists
     update_status: async () => mockUpdate(),
     check_for_updates: async () => mockUpdate(),
+    download_update: async () => {
+      for (let i = 1; i <= 10; i++) {
+        await new Promise((r) => setTimeout(r, 250));
+        emit({ type: "update_progress", done: i * 5_780_000, total: 57_800_000 });
+      }
+      emit({ type: "update_ready", latest: "v1.0.0" });
+      return { ok: true, latest: "v1.0.0", verified: true };
+    },
+    install_update: async () => ({ ok: true }),
     save_feedback: async (_run, _job, ratings) => Object.values(ratings).filter(Boolean).length,
     get_job: async (id) => mockJob(jobs.find((j) => j.id === id) ?? jobs[0]),
     set_status: async (id, status) => {

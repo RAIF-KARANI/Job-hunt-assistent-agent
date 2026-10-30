@@ -130,6 +130,97 @@ class UpdateChecker:
         return result
 
 
+# ---------------------------------------------------------------------------
+# 13d: download, verify, install (D27)
+# ---------------------------------------------------------------------------
+
+DOWNLOAD_PREFIX = f"https://github.com/{REPO}/releases/download/"
+_INSTALLER_NAME = re.compile(r"^JobLens-Setup-\d+\.\d+\.\d+\.exe$")
+
+
+class UpdateRefused(RuntimeError):
+    """The download isn't what GitHub published (or isn't from GitHub): never run it."""
+
+
+def check_source(installer: dict) -> None:
+    """Only this repo's release downloads, only a file named like our
+    installer, and only with a published SHA-256. Checked before downloading."""
+    name, url = installer.get("name") or "", installer.get("url") or ""
+    if not _INSTALLER_NAME.match(name):
+        raise UpdateRefused(f"'{name}' isn't a JobLens installer.")
+    if not (url.startswith(DOWNLOAD_PREFIX) and url.endswith("/" + name)):
+        raise UpdateRefused("The download isn't on JobLens' GitHub releases.")
+    if not re.fullmatch(r"[0-9a-f]{64}", installer.get("sha256") or ""):
+        raise UpdateRefused("GitHub publishes no checksum for this file: download it from the release page instead.")
+
+
+def sha256_of(path: Path) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def verify(path: Path, installer: dict) -> None:
+    """Size and SHA-256 must both match what GitHub published."""
+    size = path.stat().st_size
+    if installer.get("size") and size != installer["size"]:
+        raise UpdateRefused(f"The download has {size:,} bytes, GitHub says {installer['size']:,}.")
+    if sha256_of(path) != installer["sha256"]:
+        raise UpdateRefused("The download's SHA-256 doesn't match the one GitHub published.")
+
+
+def download(installer: dict, folder: Path, progress=None, get=None) -> Path:
+    """Fetch the installer to `folder`, verify it, and return its path. A
+    file that fails a check is deleted. `progress(done, total)` while it runs."""
+    check_source(installer)
+    if get is None:
+        import requests
+        get = requests.get
+    folder.mkdir(parents=True, exist_ok=True)
+    final = folder / installer["name"]
+    part = folder / (installer["name"] + ".part")
+    try:
+        with get(installer["url"], stream=True, timeout=(10, 60)) as r:  # follows GitHub's redirect
+            r.raise_for_status()
+            total, done = installer.get("size") or int(r.headers.get("Content-Length") or 0), 0
+            with open(part, "wb") as f:
+                for chunk in r.iter_content(1 << 16):
+                    f.write(chunk)
+                    done += len(chunk)
+                    if progress:
+                        progress(done, total)
+        verify(part, installer)
+        part.replace(final)
+        return final
+    finally:
+        part.unlink(missing_ok=True)  # a failed or refused download leaves nothing behind
+
+
+def launch_installer(path: Path, installer: dict, run=None) -> None:
+    """Check the file once more (it sat on disk since the download), then start
+    it detached, silently: Inno Setup upgrades in place (same AppId, your
+    data untouched) and starts the new JobLens when it's done (/RELAUNCH=1)."""
+    verify(path, installer)
+    import subprocess
+
+    flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    log = path.with_name("install.log")  # what the installer did, for troubleshooting
+    (run or subprocess.Popen)([str(path), "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/RELAUNCH=1",
+                               f"/LOG={log}"], creationflags=flags, close_fds=True)
+
+
+def clean_downloads(folder: Path, keep: str | None = None) -> None:
+    """Delete old installers (after an update they're no longer needed)."""
+    if folder.exists():
+        for f in folder.iterdir():
+            if f.name != keep:
+                f.unlink(missing_ok=True)
+
+
 def enabled() -> bool:
     """The UPDATE_CHECK setting (on by default; the switch is in Settings, 13c)."""
     return os.getenv("UPDATE_CHECK", "true").lower() != "false"
