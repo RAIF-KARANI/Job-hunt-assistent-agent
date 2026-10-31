@@ -10,6 +10,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { Answer } from "../bridge/types";
+import { ContinueBanner } from "./ContinueBanner";
 import { LiveLog } from "./LiveLog";
 import { PastePanel } from "./PastePanel";
 import { ResultPanel } from "./ResultPanel";
@@ -79,6 +80,14 @@ export function Analyze() {
   const answer = (a: Answer) => call((api) => api.resume(a));
   const paste = (text: string) => call((api) => api.paste_text(text));
 
+  /** 14d: pick the stopped run up after its last finished step. */
+  const carryOn = () =>
+    call(async (api) => {
+      const status = await api.llm_status();
+      if (!status.ok) throw new Error(status.message);
+      await api.continue_run(run.runId!);
+    });
+
   const another = () => {
     dismiss();
     setUrl("");
@@ -116,6 +125,7 @@ export function Analyze() {
         {run.busy && run.phase === "running" && <StopControl stopping={run.stopping} />}
       </form>
       <ResumeChoice value={resumes} onChange={setResumes} disabled={locked} />
+      {run.phase === "idle" && !run.busy && <ContinueBanner refresh={run.runId} disabled={checking} />}
 
       {problem && (
         <div className="notice notice-danger" role="alert">
@@ -138,7 +148,7 @@ export function Analyze() {
           <LiveLog lines={run.log} />
         </section>
         <div className="analyze-panel">
-          <Panel run={run} onAnswer={answer} onPaste={paste} onAnother={another} onRetry={() => void start()} />
+          <Panel run={run} onAnswer={answer} onPaste={paste} onAnother={another} onRetry={() => void start()} onContinue={() => void carryOn()} />
         </div>
       </div>
     </div>
@@ -208,9 +218,10 @@ interface PanelProps {
   onPaste(text: string): void;
   onAnother(): void;
   onRetry(): void;
+  onContinue(): void;
 }
 
-function Panel({ run, onAnswer, onPaste, onAnother, onRetry }: PanelProps) {
+function Panel({ run, onAnswer, onPaste, onAnother, onRetry, onContinue }: PanelProps) {
   switch (run.phase) {
     case "review":
       return (
@@ -233,9 +244,15 @@ function Panel({ run, onAnswer, onPaste, onAnother, onRetry }: PanelProps) {
           <header className="panel-head">
             <h2 id="stopped-title">Stopped</h2>
           </header>
-          <p className="lead">You stopped the run. Nothing was saved to the tracker, and the run is listed as stopped in Evals.</p>
+          <p className="lead">
+            You stopped the run. Nothing was saved to the tracker. Continue picks it up at the step you stopped; the steps already
+            finished aren't redone.
+          </p>
           <div className="actions">
-            <button type="button" className="btn btn-primary" onClick={onRetry} disabled={run.busy}>
+            <button type="button" className="btn btn-primary" onClick={onContinue} disabled={run.busy}>
+              Continue
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={onRetry} disabled={run.busy}>
               Start again
             </button>
             <button type="button" className="btn btn-ghost" onClick={onAnother}>

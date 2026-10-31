@@ -925,3 +925,153 @@ def test_resume_settings_are_writable_and_no_line_breaks_get_into_env():
         api.save_settings({"RESUMES_DEFAULT": "CV.pdf\nOLLAMA_BASE_URL=http://evil:11434"})
     with pytest.raises(ValueError, match="line breaks"):
         api.save_settings({"LLM_MODEL": "qwen3:8b\rTRACING=langsmith"})
+
+
+# ---- 14d: continue where you left off ------------------------------------------
+
+class C(TypedDict, total=False):
+    url: str
+    fresh: bool
+    resumes: list
+    job: JobPosting
+    best_match: ResumeMatch
+    company: dict
+    job_id: int
+    draft: str
+    answer: dict
+    saved_path: str
+
+
+JOB = JobPosting(title="AI Engineer", company="Acme", location="Remote", employment_type="Full-time",
+                 seniority="Mid", salary="Not specified", summary="s", required_skills=[],
+                 nice_to_have_skills=[], responsibilities=[])
+
+
+def pipeline_graph(started: threading.Event, calls: list):
+    """The real agent's node names. analyze_fit keeps working (stoppable) the
+    FIRST time only, so a continued run gets through it."""
+    from langchain_core.runnables import RunnableLambda
+
+    def read_posting(state):
+        calls.append("read_posting")
+        print("[1/5] Reading the job posting...")
+        return {"job": JOB}
+
+    def analyze_fit(state, config):
+        calls.append("analyze_fit")
+        print("[2/5] Comparing your resumes with the job...")
+        if calls.count("analyze_fit") == 1:
+            started.set()
+            tick = RunnableLambda(lambda x: time.sleep(0.05))
+            end = time.time() + 10
+            while time.time() < end:
+                tick.invoke(0, config)
+        analysis = FitAnalysis(matching_skills=[], missing_skills=[], talking_points=[], verdict="ok")
+        return {"best_match": ResumeMatch(resume_name="cv_ai", analysis=analysis, fit_score=75)}
+
+    def research_company(state):
+        calls.append("research_company")
+        print("[3/5] Researching the company...")
+        return {"company": {"what_they_do": "x"}}
+
+    def cover_note_node(state):
+        calls.append("cover_note")
+        return {"answer": interrupt({"kind": "approval", "draft": "Dear Acme", "warnings": [], "revision": 1})}
+
+    g = StateGraph(C)
+    for name, fn in [("read_posting", read_posting), ("analyze_fit", analyze_fit),
+                     ("research_company", research_company), ("cover_note", cover_note_node)]:
+        g.add_node(name, fn)
+    g.add_edge(START, "read_posting")
+    g.add_edge("read_posting", "analyze_fit")
+    g.add_edge("analyze_fit", "research_company")
+    g.add_edge("research_company", "cover_note")
+    g.add_edge("cover_note", END)
+    return g.compile(checkpointer=InMemorySaver())
+
+
+def stopped_in_step_2():
+    started, calls = threading.Event(), []
+    api, events = make_api(pipeline_graph(started, calls))
+    run_id = api.start_run("https://jobs.example/1")["run_id"]
+    assert started.wait(5)
+    api.stop_run()
+    step(api)
+    return api, events, calls, run_id
+
+
+def test_a_stopped_run_is_offered_with_what_is_done():
+    api, _, _, run_id = stopped_in_step_2()
+    offer = api.unfinished_run()
+    assert offer["run_id"] == run_id and offer["status"] == "stopped"
+    assert offer["url"] == "https://jobs.example/1"
+    assert (offer["title"], offer["company"]) == ("AI Engineer", "Acme")
+    assert offer["next_step"] == 2
+    assert [d["step"] for d in offer["done"]] == [1]
+    assert offer["done"][0]["detail"] == "AI Engineer @ Acme"
+
+
+def test_continue_does_not_redo_finished_steps():
+    api, events, calls, run_id = stopped_in_step_2()
+    events.clear()
+    api.continue_run(run_id)
+    step(api)
+    assert calls == ["read_posting", "analyze_fit", "analyze_fit", "research_company", "cover_note"]
+    first = events[0]
+    assert first["type"] == "continued" and first["run_id"] == run_id
+    assert [d["step"] for d in first["done"]] == [1]
+    assert of_type(events, "paused")[-1]["run_id"] == run_id    # same run, now at the review
+    assert api.unfinished_run() is None                         # it's on screen, waiting for you
+    with tracker._db() as conn:
+        assert conn.execute("SELECT status FROM runs WHERE run_id = ?", (run_id,)).fetchone()[0] == "paused"
+
+
+def test_a_review_left_waiting_comes_back_after_a_restart():
+    started, calls = threading.Event(), []
+    graph = pipeline_graph(started, calls)
+    calls.append("analyze_fit")                                 # don't block: as if already run once
+    api, _ = make_api(graph)
+    run_id = api.start_run("https://jobs.example/1")["run_id"]
+    step(api)
+    # The app closed while the draft waited; a new app (new runner) opens.
+    api2, events2 = make_api(graph)
+    offer = api2.unfinished_run()
+    assert offer["status"] == "paused" and offer["next_step"] == 5
+    assert [d["step"] for d in offer["done"]] == [1, 2, 3, 4]
+    assert offer["done"][1]["detail"] == "best: cv_ai · fit 75"
+    before = list(calls)
+    api2.continue_run(run_id)
+    assert calls == before                                      # no AI work: the draft is shown again
+    pause = of_type(events2, "paused")[-1]
+    assert pause["payload"]["draft"] == "Dear Acme"
+    api2.resume({"decision": "reject"})                         # and it can be answered
+    step(api2)
+    assert of_type(events2, "finished")
+
+
+def test_discard_stops_offering_the_run():
+    api, _, _, run_id = stopped_in_step_2()
+    api.discard_run(run_id)
+    assert api.unfinished_run() is None
+    with pytest.raises(RuntimeError, match="can't be continued"):
+        api.continue_run(run_id)
+    with tracker._db() as conn:                                 # Evals still shows it as stopped
+        assert conn.execute("SELECT status FROM runs WHERE run_id = ?", (run_id,)).fetchone()[0] == "stopped"
+
+
+def test_only_the_latest_run_is_offered():
+    api, _, _, old = stopped_in_step_2()
+    new = api.start_run("https://jobs.example/2")["run_id"]     # a newer run, paused at its review
+    step(api)
+    assert api.unfinished_run() is None                         # that one is on screen
+    restarted, _ = make_api(api._runner._graph)
+    assert restarted.unfinished_run()["run_id"] == new != old
+
+
+def test_a_finished_run_is_not_offered():
+    api, events = make_api(review_graph())
+    api.start_run("https://jobs.example/1")
+    step(api)
+    api.resume({"decision": "reject"})
+    step(api)
+    assert api.unfinished_run() is None

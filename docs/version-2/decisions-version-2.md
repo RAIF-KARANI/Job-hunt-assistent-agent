@@ -493,5 +493,22 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
   "2–3 sentences" request for the verdict, so Settings doesn't promise a
   longer verdict.
 
+## D30 — Continue where you left off: what is offered ✅ (31 Oct 2026, step 14d)
+- **Only your latest run** is offered, and only if it didn't finish:
+  - closed mid-run ("interrupted")
+  - stopped with Stop
+  - or a cover note / paste left waiting for you ("paused")
+
+  A run you left days ago and then followed with others isn't offered.
+- **Failed runs are not offered.** An error (bad link, model crash) would
+  usually just happen again. "Try again" stays for those.
+- **Continue** runs from the checkpoint. The step that was cut off runs
+  again; the finished steps don't. A run that was waiting for you shows the
+  same draft again, with no AI work.
+- **Discard:**
+  - marks the run so it isn't offered again
+  - deletes its checkpoint
+  - leaves the run in Evals as it was (still "stopped" or "interrupted")
+
 ## Open questions ❓
 - (none)

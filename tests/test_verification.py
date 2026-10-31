@@ -23,6 +23,17 @@ def test_exact_quote_is_verified():
     assert is_evidence_in_resume("Exposed 12 REST endpoints with JWT", RESUME)
 
 
+def test_quote_from_the_end_of_a_sentence_is_verified():
+    # The full stop used to stay on the last word: "images." != "images".
+    assert is_evidence_in_resume("Shipped Docker images", "Shipped Docker images. Then more.")
+
+
+def test_dots_inside_words_still_count():
+    resume = "Built APIs in Node.js and .NET, cut latency to 1.2 s."
+    assert is_evidence_in_resume("APIs in Node.js and .NET", resume)
+    assert not is_evidence_in_resume("APIs in Node and NET", "Built APIs in Node.js and .NET")
+
+
 def test_quote_with_small_changes_is_still_verified():
     # Small models often tweak a word; 80% of words matching is enough.
     assert is_evidence_in_resume("Exposed 12 REST endpoints using JWT and bcrypt", RESUME)

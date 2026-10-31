@@ -110,6 +110,26 @@ export function reduce(view: RunView, event: AgentEvent): RunView {
     case "started":
       return { ...IDLE, busy: view.busy, phase: "running", runId: event.run_id, url: event.url, startedAt: ms(event.at), steps: freshSteps() };
 
+    case "continued": {
+      // 14d: the finished steps come back as done, with the time they took then.
+      const at = ms(event.at);
+      const steps = freshSteps().map((s): Step => {
+        const done = event.done.find((d) => d.step === s.n);
+        if (!done) return s;
+        const worked = done.seconds === null ? 0 : ms(done.seconds);
+        const timed = done.seconds !== null && !done.reused;
+        return {
+          ...s,
+          status: done.reused ? "reused" : "done",
+          detail: done.detail ?? s.detail,
+          startedAt: timed ? at - worked : null,
+          endedAt: timed ? at : null,
+          workedMs: worked,
+        };
+      });
+      return { ...IDLE, busy: view.busy, phase: "running", runId: event.run_id, url: event.url, startedAt: at, steps };
+    }
+
     case "step": {
       const at = ms(event.at);
       const steps = closeRunning(view.steps, at).map((s) =>

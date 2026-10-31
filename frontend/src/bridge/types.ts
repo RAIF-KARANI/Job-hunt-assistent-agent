@@ -135,6 +135,7 @@ export type AgentEvent =
   | { type: "busy"; busy: boolean }
   | { type: "log"; text: string }
   | { type: "started"; run_id: string; url: string; at: number }
+  | { type: "continued"; run_id: string; url: string; done: DoneStep[]; at: number } // 14d
   | { type: "step"; step: StepNumber; text: string; at: number }
   | { type: "step_detail"; step: StepNumber; text: string; warn: boolean; at: number }
   | { type: "reused"; job_id: number; at: number }
@@ -147,6 +148,26 @@ export type AgentEvent =
   | { type: "update_progress"; done: number; total: number } // 13d: bytes
   | { type: "update_ready"; latest: string } // downloaded and verified
   | SetupProgress;
+
+/** A step a continued run already finished (14d). `seconds` is null if the app closed before it was logged. */
+export interface DoneStep {
+  step: StepNumber;
+  detail: string | null;
+  seconds: number | null;
+  reused: boolean;
+}
+
+/** Api.unfinished_run() (14d): the last run, if it can be continued. */
+export interface UnfinishedRun {
+  run_id: string;
+  status: "interrupted" | "stopped" | "paused";
+  updated_at: string; // UTC "YYYY-MM-DD HH:MM:SS"
+  url: string;
+  title: string | null;
+  company: string | null;
+  next_step: StepNumber;
+  done: DoneStep[];
+}
 
 /** Api.update_status() / check_for_updates() (13b). */
 export interface UpdateStatus {
@@ -298,6 +319,9 @@ export interface PyApi {
   resume(answer: Answer): Promise<void>;
   paste_text(text: string): Promise<void>;
   stop_run(): Promise<boolean>;
+  unfinished_run(): Promise<UnfinishedRun | null>;
+  continue_run(runId: string): Promise<void>;
+  discard_run(runId: string): Promise<void>;
   update_status(): Promise<UpdateStatus>;
   check_for_updates(): Promise<UpdateStatus>;
   /** 13d: download + verify (size and SHA-256 from GitHub); runs nothing. */

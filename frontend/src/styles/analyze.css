@@ -515,3 +515,32 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* 14d: "Your last run didn't finish" */
+
+.continue-banner {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+}
+
+.continue-text h2 {
+  margin: 0 0 2px;
+  font-size: var(--text-md);
+}
+
+.continue-text p {
+  margin: 2px 0;
+}
+
+.continue-actions {
+  display: flex;
+  gap: var(--space-2);
+}

@@ -85,7 +85,8 @@ FEEDBACK_OPTIONS = {
 # Columns added after a table was first released: (table, column, type).
 # CREATE TABLE IF NOT EXISTS never changes an existing table, so databases
 # made by an older JobLens version need these added - a tiny "migration".
-MIGRATIONS = [("runs", "decision", "TEXT"), ("runs", "tracing", "TEXT")]
+MIGRATIONS = [("runs", "decision", "TEXT"), ("runs", "tracing", "TEXT"),
+              ("runs", "dismissed", "INTEGER DEFAULT 0")]  # 14d: Discard pressed
 
 
 def init_db() -> None:
@@ -310,6 +311,39 @@ def mark_interrupted(interface: str = "desktop") -> int:
     with tracker._db() as conn:
         return conn.execute("UPDATE runs SET status = 'interrupted' WHERE status = 'running' AND interface = ?",
                             (interface,)).rowcount
+
+
+# Statuses that 14d's Continue can pick up: cut off by closing the app, the
+# Stop button, or a cover note left waiting for your decision.
+CONTINUABLE = ("interrupted", "stopped", "paused")
+
+
+def last_unfinished(interface: str = "desktop") -> dict | None:
+    """14d: this interface's LATEST run, if it didn't finish and wasn't discarded.
+    Only the latest: a run you left days ago, then did others, isn't offered."""
+    init_db()
+    with tracker._db() as conn:
+        row = conn.execute("SELECT run_id, status, updated_at, dismissed FROM runs WHERE interface = ? "
+                           "ORDER BY started_at DESC, rowid DESC LIMIT 1", (interface,)).fetchone()
+    if row and row["status"] in CONTINUABLE and not row["dismissed"]:
+        return {"run_id": row["run_id"], "status": row["status"], "updated_at": row["updated_at"]}
+    return None
+
+
+def dismiss(run_id: str) -> None:
+    """14d: Discard. The run stays in Evals as it was; it's just not offered again."""
+    init_db()
+    with tracker._db() as conn:
+        conn.execute("UPDATE runs SET dismissed = 1 WHERE run_id = ?", (run_id,))
+
+
+def step_seconds(run_id: str) -> dict[str, float]:
+    """Agent time per graph node so far (all segments), for a continued run's timeline."""
+    init_db()
+    with tracker._db() as conn:
+        rows = conn.execute("SELECT step, SUM(seconds) AS s FROM run_steps WHERE run_id = ? GROUP BY step",
+                            (run_id,)).fetchall()
+    return {r["step"]: r["s"] for r in rows}
 
 
 def save_feedback(run_id: str | None, job_id: int | None, aspect: str, rating: str,

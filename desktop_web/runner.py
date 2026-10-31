@@ -56,6 +56,10 @@ REUSED_LINE = re.compile(r"^Already tracked as job #(\d+)")
 SCORING_LINE = re.compile(r"^- scoring '(.+?)'")
 SCORE_LINE = re.compile(r"^(\d+)/100\s+(.+?)\s+\[")                # 86/100  cv_ai   [skills ...]
 
+# 14d: graph node -> timeline step (step 5 is the cover-note subgraph).
+NODE_STEP = {"check_tracker": 1, "read_posting": 1, "analyze_fit": 2,
+             "research_company": 3, "save_to_tracker": 4, "cover_note": 5}
+
 
 # Where print() goes for the code running right now. A ContextVar, not a
 # thread id: LangGraph/LangChain run parallel work on pool threads that
@@ -239,6 +243,95 @@ class AgentRunner:
         self.emit({"type": "stopping"})
         return True
 
+    # ---- 14d: continue where you left off ------------------------------------
+
+    def unfinished(self) -> dict | None:
+        """The last run, if it can be continued: what's done and what's next."""
+        last = runlog.last_unfinished(self.interface)
+        if not last or self.busy or (last["run_id"] == self.run_id and self.last_pause):
+            return None  # nothing to offer, or it's already on screen waiting for you
+        snapshot = self._state(last["run_id"])
+        if not snapshot or not (snapshot.next or snapshot.interrupts):
+            return None  # no checkpoint (e.g. a CLI run), or nothing left to do
+        values = snapshot.values
+        next_step = min((NODE_STEP.get(n, 5) for n in snapshot.next), default=5)
+        job = values.get("job")
+        return {
+            "run_id": last["run_id"],
+            "status": last["status"],
+            "updated_at": last["updated_at"],
+            "url": values.get("url", ""),
+            "title": job.title if job else None,
+            "company": job.company if job else None,
+            "next_step": next_step,
+            "done": self._done_steps(last["run_id"], values, next_step),
+        }
+
+    def continue_run(self, run_id: str) -> None:
+        """Pick the run up after its last finished step (the checkpoint)."""
+        info = self.unfinished()
+        if not info or info["run_id"] != run_id:
+            raise RuntimeError("That run can't be continued any more.")
+        with self._lock:
+            if self.busy:
+                raise RuntimeError("The agent is still working on the current step.")
+            self.run_id = run_id
+            self.history, self._step, self._scores = [], 0, {}
+        self.last_pause = None
+        self._ai_draft, self._revision, self._decision, self._final_text = "", 0, "", ""
+        self.emit({"type": "continued", "run_id": run_id, "url": info["url"], "done": info["done"]})
+        done = len(info["done"])
+        self.emit({"type": "log", "text": "Continuing where you left off: "
+                   + (f"step{'s 1-' if done > 1 else ' '}{done} already done, not redone." if done else "from the start.")})
+        snapshot = self._state(run_id)
+        if snapshot.interrupts:
+            self._report(snapshot)  # it was waiting for you: show that again, no AI work
+        else:
+            self._launch(None)      # None = carry on from the checkpoint
+
+    def discard(self, run_id: str) -> None:
+        """Don't offer this run again, and drop its checkpoint (it can be large)."""
+        if self.busy and run_id == self.run_id:
+            raise RuntimeError("Stop the run first.")
+        runlog.dismiss(run_id)
+        try:
+            self._graph_or_load().checkpointer.delete_thread(run_id)
+        except Exception as e:  # a leftover checkpoint only costs disk space
+            print(f"! checkpoint not deleted: {e}")
+
+    def _graph_or_load(self):
+        with self._lock:
+            if self._graph is None:
+                self._graph = default_graph()
+            return self._graph
+
+    def _state(self, run_id: str):
+        try:
+            return self._graph_or_load().get_state({"configurable": {"thread_id": run_id}})
+        except Exception:
+            return None
+
+    @staticmethod
+    def _done_steps(run_id: str, values: dict, next_step: int) -> list[dict]:
+        """The timeline's finished steps, rebuilt from the checkpoint and the run log."""
+        seconds = runlog.step_seconds(run_id)
+        nodes = {1: ("check_tracker", "read_posting"), 2: ("analyze_fit",),
+                 3: ("research_company",), 4: ("save_to_tracker",)}
+        best, job = values.get("best_match"), values.get("job")
+        details = {
+            1: f"{job.title} @ {job.company}" if job else None,
+            2: f"best: {best.resume_name} · fit {best.fit_score}" if best else None,
+            3: "Company researched" if values.get("company") else "Continued without research",
+            4: f"Saved as job #{values['job_id']}" if values.get("job_id") else None,
+        }
+        done = []
+        for step in range(1, next_step):
+            secs = [seconds[n] for n in nodes.get(step, ()) if n in seconds]
+            done.append({"step": step, "detail": details.get(step),
+                         "seconds": round(sum(secs), 1) if secs else None,
+                         "reused": bool(values.get("reused"))})
+        return done
+
     def _launch(self, graph_input) -> None:
         with self._lock:  # two quick clicks must not start two runs
             if self.busy:
@@ -309,12 +402,12 @@ class AgentRunner:
         try:
             if self._graph is None:
                 self.emit({"type": "log", "text": "Loading the agent..."})
-                self._graph = default_graph()
-            self._graph.invoke(graph_input, self._config())
-            snapshot = self._graph.get_state({"configurable": {"thread_id": self.run_id}})
+            graph = self._graph_or_load()
+            graph.invoke(graph_input, self._config())
+            snapshot = graph.get_state({"configurable": {"thread_id": self.run_id}})
         except RunStopped:
             # Nothing is saved to the tracker; the steps already done stay in
-            # the checkpoint (a "continue" feature could use them: Phase 14).
+            # the checkpoint, so Continue (14d) can pick up from there.
             self.emit({"type": "stopped", "run_id": self.run_id})
             return
         except Exception as e:  # never let an error kill the thread silently
@@ -324,7 +417,10 @@ class AgentRunner:
             _log_route.set(None)
             flush()
             self.emit({"type": "busy", "busy": False})
+        self._report(snapshot)
 
+    def _report(self, snapshot) -> None:
+        """After a segment: paused for you, or finished."""
         if snapshot.interrupts:
             payload = dict(snapshot.interrupts[0].value)
             kind = "paste_posting" if payload.get("kind") == "paste_posting" else "review"

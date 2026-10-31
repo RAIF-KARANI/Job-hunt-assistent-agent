@@ -158,6 +158,18 @@ class Api:
         """The Stop button (12j): ends the running step; nothing is saved."""
         return self._runner.stop()
 
+    def unfinished_run(self) -> dict | None:
+        """14d: the last run, if it stopped before the end and can be continued."""
+        return to_json(self._runner.unfinished())
+
+    def continue_run(self, run_id: str) -> None:
+        """14d: carry on after the last finished step (finished steps aren't redone)."""
+        self._runner.continue_run(str(run_id))
+
+    def discard_run(self, run_id: str) -> None:
+        """14d: don't offer that run again. Nothing in the tracker or Evals changes."""
+        self._runner.discard(str(run_id))
+
     def step_estimates(self) -> dict:
         """Typical seconds per timeline step on THIS PC, from the run log
         (all time): {"1": 27.4, "2": 66.4, ...}. Empty before the first run."""

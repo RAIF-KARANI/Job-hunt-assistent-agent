@@ -54,6 +54,25 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       setTimeout(() => emit({ type: "stopped", run_id: "preview-run", at: Date.now() / 1000 }), 600);
       return true;
     },
+    // ?unfinished in the address shows the 14d "Continue" banner
+    unfinished_run: async () =>
+      location.search.includes("unfinished")
+        ? {
+            run_id: "old-run",
+            status: "interrupted" as const,
+            updated_at: "2026-10-31 09:12:00",
+            url: "https://jobs.example/ai-engineer",
+            title: "AI Engineer",
+            company: "Acme",
+            next_step: 3 as const,
+            done: [
+              { step: 1 as const, detail: "AI Engineer @ Acme (Remote)", seconds: 27, reused: false },
+              { step: 2 as const, detail: "best: cv_ai · fit 75", seconds: 31, reused: false },
+            ],
+          }
+        : null,
+    continue_run: async () => undefined,
+    discard_run: async () => undefined,
     step_estimates: async () => ({ "1": 27, "2": 205, "3": 59, "4": 0.2, "5": 16 }),
     // ?update in the address pretends a newer version exists
     update_status: async () => mockUpdate(),

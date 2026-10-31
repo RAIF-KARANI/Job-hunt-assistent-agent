@@ -66,8 +66,13 @@ EVIDENCE_THRESHOLD = 0.8
 
 
 def _words(text: str) -> list[str]:
-    """Lowercase words/numbers, ignoring punctuation and tiny words."""
-    return [w for w in re.findall(r"[a-z0-9+#.]+", text.lower()) if len(w) > 2]
+    """Lowercase words/numbers, ignoring punctuation and tiny words.
+
+    Dots are kept inside a word ("node.js", ".net", "1.2") but not at its end:
+    "images." at the end of a resume sentence must match "images" in a quote.
+    """
+    words = (w.rstrip(".") for w in re.findall(r"[a-z0-9+#.]+", text.lower()))
+    return [w for w in words if len(w) > 2]
 
 
 def is_evidence_in_resume(evidence: str, resume_text: str) -> bool:

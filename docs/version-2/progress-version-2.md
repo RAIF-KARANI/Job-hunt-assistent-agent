@@ -1280,3 +1280,47 @@ The resume quote check rejects an exact quote that ends a resume sentence:
 "Shipped Docker images" vs "Shipped Docker images." fails, because the full
 stop stays on the last word. This can lower fit scores. The fix is small,
 but it changes scores, so it should be its own step.
+
+## Quote-check fix (31 Oct 2026, with 14d)
+A resume quote that ended a sentence was rejected: "Shipped Docker images"
+didn't match "Shipped Docker images.", because the full stop stayed on the
+last word. Now a dot at the end of a word is ignored. Dots inside a word
+still count ("Node.js", ".NET", "1.2"). None of your 4 saved jobs had been
+hit by it. 2 tests added.
+
+## 14d — Continue where you left off ✅ (31 Oct 2026, D30)
+
+### What was done
+- **Analyze shows a banner when your last run didn't finish:**
+  - "Your last run didn't finish", with the job, the time, and where it
+    stopped, e.g. "JobLens was closed during step 3 (Research the company).
+    Continue keeps the 2 finished steps."
+  - Buttons: **Continue** / **Discard**.
+- **The Stopped panel** now has **Continue** next to "Start again".
+- **Continue:**
+  - picks the run up from its checkpoint; finished steps are not redone
+  - the timeline shows them as done again, with their details
+  - the live log says "Continuing where you left off: steps 1-2 already done"
+- **A cover note left waiting** when the app closed comes back as it was,
+  with no AI work. Before this, it was lost after a restart.
+- **Discard:** the run isn't offered again, and its checkpoint is deleted.
+  Evals is unchanged.
+
+### Checked in the real window (copy of your data, real agent, 1 resume)
+1. Started the Revolut job and killed the app during step 3, after steps 1
+   (2 min 58 s) and 2 (2 min 2 s) were done.
+2. Reopened it: the banner showed the job and "JobLens was closed during
+   step 3 (Research the company). Continue keeps the 2 finished steps."
+3. Continue: steps 1 and 2 came back as done, with their details. It then
+   ran research (3 min 35 s), saving and the draft, and stopped at the
+   cover-note review.
+4. The run log for the continued run has AI calls **only** for research and
+   the draft: none for reading the posting or comparing resumes.
+
+Not shown: the times for steps 1 and 2. A run killed mid-way never wrote its
+step times to the run log, so those steps show as done without a time.
+
+6 tests added (stopped run offered, nothing redone, a waiting review comes
+back after a restart, Discard, only the latest run, finished runs not
+offered). 238 tests pass and the typecheck is clean. Your real `jobs.db`
+was unchanged.
