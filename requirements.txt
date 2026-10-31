@@ -32,6 +32,7 @@ langgraph-checkpoint-sqlite>=2.0   # paused runs saved to disk (survive page rel
 # of version 0.3 (PySide6 + matplotlib) was removed in step 12i.
 pywebview>=6.0          # Edge WebView2 window + JS <-> Python bridge (desktop_web/)
 pystray==0.19.5         # the tray icon (13a); LGPL-3.0: shipped as replaceable .py files
+reportlab>=4.2          # 14i: cover note as PDF (BSD). .docx and CSV use the standard library
 pillow>=10              # the tray icon's image; also scripts/make_icon.py, --smoke --screenshot
 # Node.js is needed to BUILD the UI (cd frontend && npm ci && npm run build), not to run it.
 

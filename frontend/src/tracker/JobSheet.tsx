@@ -7,6 +7,7 @@ import { prefill } from "../analyze/runStore";
 import { copy } from "../app/clipboard";
 import { ResumePrompt } from "../resume/ResumePrompt";
 import { NotesSection } from "./NotesSection";
+import { Exported } from "../app/Exported";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
@@ -34,6 +35,18 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false); // 14g
+  const [savedNote, setSavedNote] = useState<string | null>(null); // 14i: where the export went
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const exportNote = async (fmt: "txt" | "docx" | "pdf") => {
+    setExportError(null);
+    try {
+      const result = await (await getApi()).export_cover_note(jobId, fmt);
+      if (result) setSavedNote(result.path);
+    } catch (e) {
+      setExportError(errorMessage(e));
+    }
+  };
 
   const followUp = async (action: "done" | "snooze") => {
     setFollowing(true);
@@ -226,6 +239,20 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
                     Approved {ago(note.approved_at)}
                     {job.cover_notes.length > 1 && ` · ${job.cover_notes.length - 1} earlier version${job.cover_notes.length > 2 ? "s" : ""}`}
                   </span>
+                  <div className="export-row" role="group" aria-label="Save the cover note as a file">
+                    <span className="hint">Save as</span>
+                    {(["docx", "pdf", "txt"] as const).map((fmt) => (
+                      <button key={fmt} type="button" className="btn btn-ghost btn-sm" onClick={() => void exportNote(fmt)}>
+                        {fmt === "docx" ? "Word (.docx)" : fmt === "pdf" ? "PDF" : "Text (.txt)"}
+                      </button>
+                    ))}
+                  </div>
+                  {savedNote && <Exported what="Cover note" path={savedNote} />}
+                  {exportError && (
+                    <p className="error" role="alert">
+                      {exportError}
+                    </p>
+                  )}
                 </>
               ) : (
                 <p className="hint">No approved cover note yet.</p>

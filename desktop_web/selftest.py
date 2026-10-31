@@ -71,6 +71,24 @@ def self_test(report_path: str) -> int:
         return f"icon {size[0]}x{size[1]}; pystray as {where}"
     check("tray icon (pystray + Pillow)", tray_parts)
 
+    def documents():
+        # 14i: a cover note as .docx and .pdf (ReportLab + Windows' Arial), in a temp folder.
+        import tempfile
+        import zipfile
+        from pathlib import Path
+
+        from job_agent import export
+        text = "Dear team,\n\nŁódź, Dubai, São Paulo."
+        with tempfile.TemporaryDirectory() as folder:
+            docx, pdf = Path(folder) / "t.docx", Path(folder) / "t.pdf"
+            export.write_docx(docx, text)
+            export.write_pdf(pdf, text)
+            with zipfile.ZipFile(docx) as z:
+                assert "word/document.xml" in z.namelist()
+            assert pdf.read_bytes().startswith(b"%PDF")
+            return f"docx ok; pdf {pdf.stat().st_size // 1024} KB with font {export._pdf_font()}"
+    check("export: Word and PDF files", documents)
+
     def build_graph():
         import sqlite3
 

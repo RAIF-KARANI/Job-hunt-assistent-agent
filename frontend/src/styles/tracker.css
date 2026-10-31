@@ -694,3 +694,23 @@
   display: flex;
   gap: var(--space-2);
 }
+
+/* ---- export (14i) ---- */
+
+.export-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.exported {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.path-inline {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}

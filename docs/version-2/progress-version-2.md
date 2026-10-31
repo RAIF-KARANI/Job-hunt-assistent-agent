@@ -1494,3 +1494,34 @@ clean. Your real data was unchanged.
 
 282 tests pass (10 new in `tests/test_job_notes.py`) and the typecheck is
 clean. Your real data was unchanged.
+
+## 14i — Export ✅ (31 Oct 2026, D35)
+
+### What was done
+- **Export CSV** on the Tracker: every job with its status, fit, best
+  resume, place, salary, interview, contact, notes, link and dates. It opens
+  in Excel.
+- **Save as Word (.docx) / PDF / Text (.txt)** under the cover note in a
+  job's details.
+- Windows' Save dialog with a suggested file name; afterwards "Saved to ..."
+  with **Show in folder**.
+- Safe CSV: cells that Excel would run as formulas are defused.
+- New dependency: **ReportLab** (BSD) for the PDF, added to
+  `requirements.txt` and `THIRD_PARTY_NOTICES.md`. The self-test checks
+  .docx and .pdf export ("pdf 41 KB with font JobLensArial").
+
+### Checked (copy of your data; the Save dialog answered with a folder, since a script can't click it)
+- **Tracker → Export CSV:** "4 jobs saved to ... JobLens jobs - 2026-10-31.csv".
+- **LamdaX → Word, PDF, Text:** all three files were written with the
+  suggested names.
+- **Word** (opened invisibly through Office automation) read the .docx: 1
+  page, 5 paragraphs, 148 words, Calibri 11, no repair prompt.
+- **Excel** read the CSV: 5 rows × 14 columns. The LamdaX row had the
+  interview, the contact, and the two-line note in one cell.
+- **The PDF** in Edge's viewer: 1 page, clean A4 layout, the full note.
+
+Not clicked: **Show in folder** (it opens Explorer on your desktop). Its
+refusal of other paths is tested.
+
+292 tests pass (10 new in `tests/test_export.py`) and the typecheck is
+clean. Your real data was unchanged.

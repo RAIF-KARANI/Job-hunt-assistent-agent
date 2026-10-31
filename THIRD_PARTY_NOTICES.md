@@ -74,6 +74,7 @@ License). https://docs.python.org/3/license.html
 | Beautiful Soup (`beautifulsoup4`) | 4.15.0 | MIT |
 | lxml | 6.1.3 | BSD-3-Clause |
 | pypdf | 6.21.2 | BSD-3-Clause |
+| ReportLab (PDF export) | 5.1.0 | BSD-3-Clause, © ReportLab Europe Ltd. |
 | `ddgs` (DuckDuckGo search) | 9.16.1 | MIT |
 | `primp` | 2.0.1 | MIT |
 | python-dotenv | 1.2.4 | BSD-3-Clause |

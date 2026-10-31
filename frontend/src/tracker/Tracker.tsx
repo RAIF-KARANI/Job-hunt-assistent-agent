@@ -2,6 +2,8 @@
 // details in a side sheet. Status changes are saved to jobs.db at once.
 
 import { useEffect, useRef, useState } from "react";
+import { Exported } from "../app/Exported";
+import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobStatus } from "../bridge/types";
 import { Board } from "./Board";
 import { JobList } from "./JobList";
@@ -37,6 +39,8 @@ export function Tracker() {
   const [statuses, setStatuses] = useState<JobStatus[]>(savedStatuses); // empty = all
   const [openId, setOpenId] = useState<number | null>(null);
   const [followOnly, setFollowOnly] = useState(false); // 14e: only the jobs due a follow-up
+  const [exported, setExported] = useState<{ path: string; count: number } | null>(null); // 14i
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const [lastMove, setLastMove] = useState<Move | null>(null);
   const undoTimer = useRef<number | undefined>(undefined);
@@ -91,6 +95,16 @@ export function Tracker() {
     setView("list");
   };
 
+  const exportCsv = async () => {
+    setExportError(null);
+    try {
+      const result = await (await getApi()).export_tracker();
+      if (result) setExported(result);
+    } catch (e) {
+      setExportError(`Couldn't export: ${errorMessage(e)}`);
+    }
+  };
+
   useEffect(() => {
     if (followOnly && dueCount === 0) setFollowOnly(false); // the last one was handled
   }, [followOnly, dueCount]);
@@ -122,12 +136,22 @@ export function Tracker() {
               </label>
             ))}
           </div>
+          <button type="button" className="btn btn-secondary" onClick={() => void exportCsv()} disabled={!jobs?.length}>
+            Export CSV
+          </button>
         </div>
       </header>
 
       {error && (
         <p className="notice notice-danger" role="alert">
           {error}
+        </p>
+      )}
+
+      {exported && <Exported what={`${exported.count} job${exported.count === 1 ? "" : "s"}`} path={exported.path} />}
+      {exportError && (
+        <p className="notice notice-danger" role="alert">
+          {exportError}
         </p>
       )}
 

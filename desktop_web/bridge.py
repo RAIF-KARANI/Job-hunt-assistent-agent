@@ -130,6 +130,7 @@ class Api:
         self._http_get = None  # None = requests.get; tests serve a stand-in
         self._quit = None  # set by app.py
         self._hotkey = None  # 14f: the shortcut listener, set by app.py
+        self._exported: set[str] = set()  # 14i: files this session wrote (show_in_folder only opens these)
 
     def _emit(self, event: Event) -> None:
         self._send(to_json(event))
@@ -223,6 +224,60 @@ class Api:
 
     def set_status(self, job_id: int, status: str) -> None:
         tracker.update_status(int(job_id), status)  # rejects unknown statuses
+
+    # ---- export (14i) ----------------------------------------------------------
+
+    def export_tracker(self) -> dict | None:
+        """Every job to a CSV file you pick. None = you cancelled."""
+        from job_agent import export
+
+        path = self._save_path(export.tracker_file_name(), "CSV file (*.csv)")
+        if not path:
+            return None
+        count = export.export_tracker_csv(path)
+        self._exported.add(str(path))
+        return {"path": str(path), "count": count}
+
+    def export_cover_note(self, job_id: int, fmt: str) -> dict | None:
+        """The job's latest approved cover note as .txt, .docx or .pdf."""
+        from job_agent import export
+
+        if fmt not in export.FORMATS:
+            raise ValueError(f"Format must be one of {', '.join(export.FORMATS)}")
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        notes = tracker.get_cover_notes(job["id"])
+        if not notes:
+            raise ValueError("This job has no approved cover note yet.")
+        kinds = {"txt": "Text file (*.txt)", "docx": "Word document (*.docx)", "pdf": "PDF document (*.pdf)"}
+        path = self._save_path(export.file_name("Cover note", job["company"], job["title"], ext=fmt), kinds[fmt])
+        if not path:
+            return None
+        export.export_cover_note(path, fmt, notes[0]["text"], title=f"Cover note: {job['title']} at {job['company']}")
+        self._exported.add(str(path))
+        return {"path": str(path)}
+
+    def show_in_folder(self, path: str) -> None:
+        """Open Explorer at a file JobLens just exported (never any other path)."""
+        if str(path) not in self._exported or not Path(path).exists():
+            raise ValueError("Only a file exported in this session can be shown.")
+        subprocess.Popen(["explorer", "/select,", str(Path(path))])
+
+    def _save_path(self, name: str, kind: str) -> Path | None:
+        """The native Save dialog. Tests replace this."""
+        if not self._window:
+            raise RuntimeError("No window to show a file dialog in.")
+        from webview import FileDialog
+
+        chosen = self._window.create_file_dialog(FileDialog.SAVE, save_filename=name, file_types=(kind,))
+        if isinstance(chosen, (list, tuple)):
+            chosen = chosen[0] if chosen else None
+        if not chosen:
+            return None
+        path = Path(chosen)
+        ext = Path(name).suffix
+        return path if path.suffix.lower() == ext else path.with_name(path.name + ext)
 
     def save_notes(self, job_id: int, values: dict) -> dict:
         """14h: your notes, interview date and contact. Returns them as saved."""

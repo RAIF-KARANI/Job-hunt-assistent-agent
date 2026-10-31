@@ -375,6 +375,10 @@ export interface PyApi {
   discard_run(runId: string): Promise<void>;
   followed_up(jobId: number): Promise<void>;
   resume_prompt(jobId: number): Promise<ResumePromptData>;
+  /** 14i: null = you cancelled the Save dialog. */
+  export_tracker(): Promise<{ path: string; count: number } | null>;
+  export_cover_note(jobId: number, fmt: "txt" | "docx" | "pdf"): Promise<{ path: string } | null>;
+  show_in_folder(path: string): Promise<void>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;

@@ -616,5 +616,28 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
   so the follow-up clock (D31) isn't reset by your own notes.
 - A re-analysis keeps them. Old trackers get the columns automatically.
 
+## D35 — Export ✅ (31 Oct 2026, step 14i)
+- **Where:**
+  - **Export CSV** on the Tracker
+  - **Save as: Word (.docx) / PDF / Text (.txt)** under the cover note in a
+    job's details (the latest approved note)
+- **Saving:** Windows' own Save dialog, with a suggested name ("Cover note -
+  LamdaX - AI Engineer.docx", "JobLens jobs - 2026-10-31.csv"). Afterwards
+  "Saved to ..." with **Show in folder**, which only opens a file exported
+  in this session.
+- **CSV:**
+  - one row per job, 14 columns, your notes / interview / contact included
+  - UTF-8 with a BOM, so Excel shows non-English names correctly
+  - a cell starting with `= + - @` gets a leading `'`: job titles come from
+    the web, and Excel would otherwise run such a cell as a formula
+- **.docx** is written with the standard library (a .docx is a zip of XML):
+  Calibri 11, A4. No new dependency.
+- **PDF** uses **ReportLab** (BSD-3-Clause, the one new dependency), with
+  Windows' Arial embedded so any name in the note prints. Helvetica if Arial
+  is missing.
+- No AI anywhere: the files are exactly what's in the tracker.
+- The installed app's self-test now writes a .docx and a .pdf, so a build
+  that can't is caught before release.
+
 ## Open questions ❓
 - (none)
