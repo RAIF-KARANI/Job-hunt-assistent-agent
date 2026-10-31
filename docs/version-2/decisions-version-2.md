@@ -669,5 +669,24 @@ enter them. Every failure was reported as "not reachable".
   waits for you.
 - **Analyzing the same link later starts fresh,** with nothing reused.
 
+## D37 — 1.0.3: the shortcut keeps JobLens in the tray; notification clicks open it ✅ (31 Oct 2026, your choice)
+Amends D32 and 13a's "closing an idle JobLens quits".
+- **While the quick-analyze shortcut is registered,** closing the window
+  hides JobLens to the tray instead of quitting. The shortcut only works
+  while JobLens runs, and your way of using it (scrolling LinkedIn, then
+  Ctrl+Alt+J) needs it running. Quit from the tray icon.
+  - The first close each session shows "JobLens is in the tray: it keeps
+    running so your shortcut and reminders work".
+  - With the shortcut off, or taken by another program, closing quits as
+    before, unless Start with Windows is on (D31).
+  - The other options were "always quit" (1.0.2) and "ask once"; you chose
+    keeping it in the tray.
+- **Clicking a notification opens JobLens on the screen it's about:**
+  - Analyze: "Cover note ready", "JobLens needs you", "Run failed"
+  - the Tracker: "Run finished", "Time to follow up"
+
+  pystray ignores notification clicks (`NIN_BALLOONUSERCLICK`), so JobLens
+  adds that one message to pystray's handler.
+
 ## Open questions ❓
 - (none)

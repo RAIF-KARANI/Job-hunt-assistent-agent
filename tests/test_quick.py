@@ -162,3 +162,43 @@ def test_a_quick_run_is_told_about_even_with_the_window_open():
     assert told == ["Cover note ready"] and tray.quick is False
     tray.on_event({"type": "finished", "decision": "approve"})
     assert told == ["Cover note ready"]                    # from there on you're in the window
+
+
+# ---- 1.0.3: keep in tray while the shortcut is on; notification clicks --------
+
+def test_closing_keeps_joblens_in_the_tray_while_the_shortcut_works():
+    from desktop_web.app import keeps_tray
+
+    class Api:
+        _hotkey = None
+
+    api = Api()
+    assert keeps_tray(api, lambda: False) is False                 # no shortcut: closing quits, as before
+    api._hotkey = type("L", (), {"key": "Ctrl+Alt+J"})()
+    assert keeps_tray(api, lambda: False) is True                  # the shortcut needs JobLens running
+    api._hotkey.key = None                                         # off, or taken by another program
+    assert keeps_tray(api, lambda: False) is False
+    assert keeps_tray(api, lambda: True) is True                   # Start with Windows (14e)
+
+
+def test_clicking_a_notification_opens_the_screen_it_is_about():
+    from pystray._util import win32
+
+    from desktop_web.tray import NIN_BALLOONUSERCLICK
+
+    opened, icon_clicks = [], []
+    tray = Tray("icon.png", show=lambda: None, stop_run=lambda: None, quit_app=lambda: None,
+                open_page=opened.append)
+    tray._icon = type("Icon", (), {"_message_handlers": {win32.WM_NOTIFY: lambda w, l: icon_clicks.append(l)},
+                                   "notify": lambda self, m, t: None, "update_menu": lambda self: None})()
+    tray._catch_notification_clicks()
+    handler = tray._icon._message_handlers[win32.WM_NOTIFY]
+    tray.hidden = True
+    tray.notify("Cover note ready", "The draft is waiting.")
+    handler(0, NIN_BALLOONUSERCLICK)
+    assert opened == ["analyze"] and tray.hidden is False
+    tray.notify("Time to follow up", "2 applications...")
+    handler(0, NIN_BALLOONUSERCLICK)
+    assert opened[-1] == "tracker"
+    handler(0, win32.WM_LBUTTONUP)                                 # a click on the icon still works as before
+    assert icon_clicks == [win32.WM_LBUTTONUP]

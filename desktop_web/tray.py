@@ -10,6 +10,9 @@ The tray icon (13a, D24): JobLens keeps working while its window is closed.
          a day and a line in the menu
     14f: a run started from the quick box (Ctrl+Alt+J) is always told about,
          window hidden or not: you didn't start it from the window
+    1.0.3: while the shortcut is on, closing the window keeps JobLens in the
+         tray (the shortcut needs it running); clicking a notification
+         opens JobLens on the screen it's about (Analyze or the Tracker)
 
 pystray runs its own Windows message loop on its own thread, next to
 pywebview's (which owns the main thread). It is LGPL-3.0, so it ships as
@@ -83,14 +86,21 @@ def status_text(state: RunState) -> str:
     return "Idle"
 
 
+NIN_BALLOONUSERCLICK = 0x0405  # WM_USER + 5: you clicked our notification (shellapi.h)
+
+# Which screen a notification opens when you click it (the page's #/<route>).
+NOTE_PAGES = {"Cover note ready": "analyze", "JobLens needs you": "analyze", "Run failed": "analyze",
+              "Run finished": "tracker", "Time to follow up": "tracker"}
+
+
 def notification(event: Event, state: RunState) -> tuple[str, str] | None:
     """(title, message) to show when the window is hidden, or None."""
     kind = event.get("type")
     job = state.title or "your job"
     if kind == "paused" and event.get("kind") == "review":
-        return "Cover note ready", f"The draft for {job} is waiting for your review. Open JobLens from the tray."
+        return "Cover note ready", f"The draft for {job} is waiting for your review. Click to open it."
     if kind == "paused" and event.get("kind") == "paste_posting":
-        return "JobLens needs you", "The job page couldn't be read. Open JobLens and paste the job text."
+        return "JobLens needs you", "The job page couldn't be read. Click to open JobLens and paste the job text."
     if kind == "finished":
         return "Run finished", f"{job}: " + ("saved to the tracker." if event.get("decision") == "approve"
                                              else "done.")
@@ -122,11 +132,14 @@ class Tray:
 
     def __init__(self, icon_path, show: Callable[[], None], stop_run: Callable[[], object],
                  quit_app: Callable[[], None], keep_in_tray: Callable[[], bool] = lambda: False,
-                 follow_ups: Callable[[], int] = lambda: 0, open_tracker: Callable[[], None] | None = None):
+                 follow_ups: Callable[[], int] = lambda: 0, open_tracker: Callable[[], None] | None = None,
+                 open_page: Callable[[str], None] | None = None):
         self.state = RunState()
         self.hidden = False
         self._show, self._stop_run, self._quit = show, stop_run, quit_app
         self._keep_in_tray, self._open_tracker = keep_in_tray, open_tracker or show
+        self._open_page = open_page or (lambda page: show())
+        self._last_note: str | None = None  # title of the last notification: what a click opens
         self.follow_ups = 0  # jobs due a follow-up; set by count_follow_ups()
         self.quick = False  # 14f: the current run came from the quick box
         self._count = follow_ups
@@ -150,7 +163,30 @@ class Tray:
                              lambda: self._quit()),
         )
         self._icon = pystray.Icon("JobLens", Image.open(self._icon_path), "JobLens", menu)
+        self._catch_notification_clicks()
         self._icon.run_detached()  # its own thread and Windows message loop
+
+    def _catch_notification_clicks(self) -> None:
+        """pystray ignores a click on its notification (NIN_BALLOONUSERCLICK
+        arrives on the same callback message as icon clicks); add it."""
+        try:
+            from pystray._util import win32
+
+            handlers = self._icon._message_handlers
+            original = handlers[win32.WM_NOTIFY]
+
+            def on_notify(wparam, lparam):
+                if lparam == NIN_BALLOONUSERCLICK:
+                    return self.notification_clicked()
+                return original(wparam, lparam)
+            handlers[win32.WM_NOTIFY] = on_notify
+        except Exception:  # another pystray backend or version: clicks just do nothing
+            pass
+
+    def notification_clicked(self) -> None:
+        """Open JobLens on the screen the last notification was about."""
+        self.hidden = False
+        self._open_page(NOTE_PAGES.get(self._last_note or "", "analyze"))
 
     def stop(self) -> None:
         """Remove the icon (its thread isn't a daemon: the app can't exit before this)."""
@@ -184,7 +220,7 @@ class Tray:
                             "Closing the window doesn't stop the agent. It's in the tray; you'll be told when it needs you.")
             else:
                 self.notify("JobLens is in the tray",
-                            "It stays here for your follow-up reminders. Quit it from the tray icon.")
+                            "It keeps running so your shortcut and reminders work. To quit, right-click the tray icon.")
         self._refresh()
         return False
 
@@ -209,6 +245,7 @@ class Tray:
         self._refresh()
 
     def notify(self, title: str, message: str) -> None:
+        self._last_note = title
         if self._icon is not None:
             try:
                 self._icon.notify(message, title)

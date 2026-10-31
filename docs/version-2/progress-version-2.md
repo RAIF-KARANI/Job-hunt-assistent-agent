@@ -1707,3 +1707,52 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.2
   - GitHub's SHA-256 of both uploads matches the notes
   - the updater, asked as 1.0.0 and as 1.0.1 (real API), offers v1.0.2 with
     the right checksum
+
+## 1.0.3: the shortcut keeps JobLens in the tray; notification clicks open it (31 Oct 2026, D37)
+
+### What you saw
+1. You copied a LinkedIn link, pressed Ctrl+Alt+J, and clicked Analyze.
+2. A notification came.
+3. Clicking it opened nothing, and neither did Tray → Open or the Start
+   menu.
+
+### Traced on your PC
+- **Your JobLens was still 1.0.0:** the 1.0.2 update wasn't installed.
+- **20:00:** JobLens started. Its window was then closed while idle, which
+  hit the 1.0.0 bug: the main window was gone, but the process lived on
+  with the hidden quick box. That half-alive process still had the
+  shortcut and the tray, so:
+  - **20:09** (14:39 UTC): the quick run started
+  - **20:13:** it reached the cover-note review (Luxoft, Junior AI
+    Engineer) and the notification came
+- **The click did nothing in any version:** pystray ignores clicks on its
+  notifications.
+- **Tray → Open and the Start menu** asked for a main window that no longer
+  existed (fixed in 1.0.2).
+- I checked that the draft was saved in the checkpoint (21 checkpoints,
+  interrupt saved), then ended the stuck process. Analyze will offer
+  **Continue** for it, with no AI work redone.
+
+### What 1.0.2 alone would do
+Closing JobLens quits it properly, but then Ctrl+Alt+J does nothing until
+you open JobLens again. That doesn't fit your way of using it, so you chose
+"keep in tray" (D37).
+
+### Done
+- **While the shortcut is on, closing hides JobLens to the tray**
+  (`app.keeps_tray`).
+- **A notification click opens JobLens** on Analyze or the Tracker. The
+  notification text now says "Click to open it".
+- The Settings → Quick analyze hint explains the tray behaviour.
+
+### Checked in the real app (from source, temp data folder, real Windows messages)
+- The shortcut was registered (Ctrl+Alt+J).
+- **The X button while idle:** the window hid, JobLens stayed in the tray,
+  and the notice "JobLens is in the tray" came.
+- **A real Ctrl+Alt+J** still opened the box.
+- **A notification click** (the `NIN_BALLOONUSERCLICK` message sent to the
+  tray icon's window) opened JobLens on `#/analyze`.
+- **Tray → Quit:** the app exited.
+
+304 tests pass (2 new: when closing keeps JobLens in the tray; a
+notification click opens the right screen and icon clicks still work).

@@ -407,7 +407,8 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
         </div>
         <p className="hint">
           Press the shortcut anywhere in Windows, even with JobLens in the tray: a small box opens with the link you copied. Analyze runs in the
-          background, and a notification (with a sound) tells you when the cover note is ready.
+          background, and a notification (with a sound) tells you when the cover note is ready. While the shortcut is on, closing the window
+          keeps JobLens in the tray so the shortcut keeps working; quit from the tray icon.
         </p>
         <ShortcutField saved={String(settings.QUICK_KEY ?? "Ctrl+Alt+J")} onSave={saveShortcut} />
       </section>

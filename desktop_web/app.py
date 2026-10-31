@@ -289,6 +289,14 @@ def _bring_back(window, tray) -> None:
     window.restore()  # in case it was minimized
 
 
+def keeps_tray(api, autostart_on) -> bool:
+    """1.0.3: closing the window keeps JobLens in the tray (instead of quitting)
+    when Start with Windows is on, or while the quick-analyze shortcut is
+    registered: the shortcut only works while JobLens runs."""
+    hotkey = getattr(api, "_hotkey", None)
+    return bool(autostart_on()) or bool(hotkey and hotkey.key)
+
+
 def _start_tray(window, api, holder):
     """13a: the tray icon, fed the same events as the page. If it can't
     start, the app works as before (closing quits)."""
@@ -303,13 +311,15 @@ def _start_tray(window, api, holder):
     from desktop_web import autostart
     from job_agent import followup
 
-    def open_tracker():
+    def open_page(page: str):
         _bring_back(window, tray)
-        window.evaluate_js("window.location.hash = '#/tracker'")
+        window.evaluate_js(f"window.location.hash = '#/{page}'")  # page: our own fixed names
+
 
     tray = Tray(paths.resource_path("assets/joblens.png"), show=lambda: _bring_back(window, tray),
-                stop_run=api.stop_run, quit_app=quit_app, keep_in_tray=autostart.enabled,
-                follow_ups=lambda: len(followup.due_jobs()), open_tracker=open_tracker)
+                stop_run=api.stop_run, quit_app=quit_app, keep_in_tray=lambda: keeps_tray(api, autostart.enabled),
+                follow_ups=lambda: len(followup.due_jobs()), open_tracker=lambda: open_page("tracker"),
+                open_page=open_page)
     try:
         tray.start()
     except Exception as e:
