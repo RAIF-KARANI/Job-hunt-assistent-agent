@@ -38,6 +38,10 @@ export interface JobRow {
   status: JobStatus;
   created_at: string; // UTC "YYYY-MM-DD HH:MM:SS": when the agent analyzed it
   updated_at: string; // last status change
+  followed_up_at: string | null; // 14e: you marked "I followed up"
+  snoozed_until: string | null;
+  /** 14e: Applied/Interviewing with no change for FOLLOW_UP_DAYS, not snoozed. */
+  follow_up: boolean;
 }
 
 export type JobStatus = "researched" | "cover_note_ready" | "applied" | "interviewing" | "offer" | "rejected";
@@ -167,6 +171,12 @@ export interface UnfinishedRun {
   company: string | null;
   next_step: StepNumber;
   done: DoneStep[];
+}
+
+/** "Start JobLens with Windows" (14e): only the installed app can. */
+export interface Autostart {
+  supported: boolean;
+  enabled: boolean;
 }
 
 /** Api.update_status() / check_for_updates() (13b). */
@@ -322,6 +332,10 @@ export interface PyApi {
   unfinished_run(): Promise<UnfinishedRun | null>;
   continue_run(runId: string): Promise<void>;
   discard_run(runId: string): Promise<void>;
+  followed_up(jobId: number): Promise<void>;
+  snooze_follow_up(jobId: number): Promise<void>;
+  autostart_status(): Promise<Autostart>;
+  set_autostart(on: boolean): Promise<Autostart>;
   update_status(): Promise<UpdateStatus>;
   check_for_updates(): Promise<UpdateStatus>;
   /** 13d: download + verify (size and SHA-256 from GitHub); runs nothing. */

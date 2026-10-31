@@ -81,6 +81,13 @@ Source: "..\build\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Fl
 Name: "{autoprograms}\{#TheAppName}"; Filename: "{app}\JobLens.exe"
 Name: "{autodesktop}\{#TheAppName}"; Filename: "{app}\JobLens.exe"; Tasks: desktopicon
 
+[Registry]
+; 14e: "Start JobLens with Windows" is turned on in Settings (desktop_web/autostart.py),
+; never by the installer. The uninstaller removes it (ValueType none: nothing is written).
+#ifndef TestBuild
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "JobLens"; Flags: uninsdeletevalue
+#endif
+
 [Run]
 ; Before the app can start: the WebView2 Runtime, silently (per user, no admin prompt).
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Installing Microsoft Edge WebView2 Runtime..."; Flags: waituntilterminated; Check: NeedsWebView2

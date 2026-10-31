@@ -39,7 +39,7 @@ from urllib.parse import urlparse
 
 import webview
 
-from job_agent import __version__, paths, runlog, settings, tracker
+from job_agent import __version__, followup, paths, runlog, settings, tracker
 from job_agent.llm import llm_status
 
 from desktop_web.runner import AgentRunner, Event
@@ -58,6 +58,7 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "RESUMES_DEFAULT": None,                  # 14b: file names joined by "|"; "" = all
     "RESUMES_ASK": ("true", "false"),         # 14b: pick the resumes for each job
     "FIT_DETAIL": ("short", "detailed"),      # 14c: talking points + verdict length
+    "FOLLOW_UP_DAYS": followup.DAY_CHOICES,   # 14e
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 
@@ -206,7 +207,8 @@ class Api:
         return list(tracker.STATUSES)
 
     def list_jobs(self) -> list:
-        return to_json(tracker.list_jobs())
+        days = followup.days_setting()
+        return [{**to_json(dict(row)), "follow_up": followup.is_due(row, days)} for row in tracker.list_jobs()]
 
     def get_job(self, job_id: int) -> dict:
         job = tracker.get_job(int(job_id))
@@ -219,6 +221,13 @@ class Api:
 
     def set_status(self, job_id: int, status: str) -> None:
         tracker.update_status(int(job_id), status)  # rejects unknown statuses
+
+    def followed_up(self, job_id: int) -> None:
+        """14e: you sent the follow-up; the next reminder is FOLLOW_UP_DAYS away."""
+        followup.mark_followed_up(int(job_id))
+
+    def snooze_follow_up(self, job_id: int) -> None:
+        followup.snooze(int(job_id))
 
     def open_link(self, url: str) -> None:
         """Open a web link in your browser, never inside the app window.
@@ -506,6 +515,16 @@ class Api:
             clean[key] = value
         settings.save_settings(clean)
         return self.get_settings()
+
+    def autostart_status(self) -> dict:
+        """14e: "Start JobLens with Windows". Read from the registry each time."""
+        from desktop_web import autostart
+        return {"supported": autostart.supported(), "enabled": autostart.enabled()}
+
+    def set_autostart(self, on: bool) -> dict:
+        from desktop_web import autostart
+        autostart.set_enabled(bool(on))
+        return self.autostart_status()
 
     def set_api_key(self, key: str) -> dict:
         """Write-only: the page can set or clear the key, never read it back."""

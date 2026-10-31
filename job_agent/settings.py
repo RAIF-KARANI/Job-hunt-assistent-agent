@@ -30,6 +30,7 @@ DEFAULTS = {
     "TRACING": "off",
     "UPDATE_CHECK": "true",   # look for a newer JobLens once a day (13b)
     "FIT_DETAIL": "short",    # 14c: measured ~20% faster step 2 than before
+    "FOLLOW_UP_DAYS": "7",    # 14e: remind after a week in Applied/Interviewing; "off" = never
 }
 
 # Suggested model per provider for the Setup screen.

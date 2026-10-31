@@ -60,6 +60,13 @@ CREATE TABLE IF NOT EXISTS cover_notes (
 );
 """
 
+# Columns added after the first release: (name, type). init_db() adds the
+# missing ones to an existing jobs.db, so nobody loses their tracker.
+MIGRATIONS = (
+    ("followed_up_at", "TEXT"),   # 14e: you marked "I followed up"
+    ("snoozed_until", "TEXT"),    # 14e: "remind me later"
+)
+
 
 @contextmanager
 def _db(path: Path | None = None):
@@ -81,6 +88,10 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # fresh install: nothing exists yet
     with _db() as conn:
         conn.executescript(SCHEMA)
+        have = {row["name"] for row in conn.execute("PRAGMA table_info(jobs)")}
+        for name, kind in MIGRATIONS:
+            if name not in have:
+                conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {kind}")  # names are ours, not user input
 
 
 def save_job(
@@ -150,7 +161,8 @@ def list_jobs() -> list[sqlite3.Row]:
     init_db()
     with _db() as conn:
         return conn.execute(
-            """SELECT id, title, company, fit_score, best_resume, status, created_at, updated_at
+            """SELECT id, title, company, fit_score, best_resume, status, created_at, updated_at,
+                      followed_up_at, snoozed_until
                FROM jobs ORDER BY fit_score DESC, updated_at DESC"""
         ).fetchall()
 

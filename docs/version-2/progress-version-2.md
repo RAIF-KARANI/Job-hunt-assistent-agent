@@ -1324,3 +1324,51 @@ step times to the run log, so those steps show as done without a time.
 back after a restart, Discard, only the latest run, finished runs not
 offered). 238 tests pass and the typecheck is clean. Your real `jobs.db`
 was unchanged.
+
+## 14e — Follow-up reminders and Start with Windows ✅ (31 Oct 2026, D31)
+
+### What was done
+- **Follow-up reminders.** A job in Applied or Interviewing with no change
+  for a week (Settings → Reminders: off / 3 / 5 / 7 / 14 days) gets:
+  - a "Follow up?" badge on its card and in the list
+  - a notice at the top of the Tracker, e.g. "2 applications have had no news
+    for a while", with **Show them**, which lists only those jobs
+  - in its details: **I followed up** (reminds again a week later) or
+    **Remind me in 3 days**
+  - a "Follow up?" chip in the List's status filter
+- **Tray:**
+  - one notification a day while the window is closed ("Time to follow up")
+  - a "Follow up on N jobs" line in the menu, which opens the Tracker
+- **Start JobLens with Windows, in the tray** (Settings → Reminders):
+  - JobLens starts hidden at sign-in
+  - closing the window then keeps it in the tray
+  - only in the installed app; the uninstaller removes it
+- Old trackers get the two new columns automatically.
+
+### Checked in the real window (copy of your data; in the copy Revolut applied 9 days ago, LamdaX interviewing 12 days ago, Lenovo applied 2 days ago)
+- Board: the notice said "2 applications have had no news for a while".
+  Revolut and LamdaX had the badge; Lenovo didn't.
+- "Show them" opened the List with just those two ("2 of 4 jobs · due a
+  follow-up").
+- Revolut's details: "Applied with no news for 9 days" → **I followed up**.
+  `followed_up_at` was saved and the badge went away.
+- LamdaX: **Remind me in 3 days** set `snoozed_until` 3 days ahead. The
+  notice and badges were then gone.
+- Settings: the Reminders card saved "After 3 days" to `.env`. "Start with
+  Windows" is disabled in developer mode ("Works in the installed JobLens
+  only").
+- `--tray`, run as its own process:
+  - the window started hidden
+  - after 20 s the reminder was sent and today's date written
+  - a second start brought the window back
+- Fixed on the way: after "Show them", going back to the Board hid the
+  notice.
+
+Not checked by hand:
+- the real Windows Run key: only the installed app writes it. A test writes
+  and removes the same value under a test key.
+- what the notification itself looks like: no desktop screenshots, for
+  privacy.
+
+14 tests added (`tests/test_followup.py`). 252 tests pass and the typecheck
+is clean. Your real `jobs.db` was unchanged.

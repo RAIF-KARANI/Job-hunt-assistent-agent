@@ -591,3 +591,53 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* ---- follow-up reminders (14e) ---- */
+
+.follow-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--warn-line);
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.follow-notice {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-line);
+  color: var(--warn-ink);
+}
+
+.follow-up {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--warn-line);
+  background: var(--warn-soft);
+}
+
+.follow-up h3 {
+  margin: 0 0 2px;
+  color: var(--warn-ink);
+}
+
+.follow-up p {
+  margin: 0;
+}
+
+.follow-up-actions {
+  display: flex;
+  gap: var(--space-2);
+}

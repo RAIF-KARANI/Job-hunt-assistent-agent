@@ -5,14 +5,17 @@
 import { useEffect, useRef, useState } from "react";
 import { prefill } from "../analyze/runStore";
 import { errorMessage, getApi } from "../bridge/bridge";
-import type { JobDetail, JobStatus } from "../bridge/types";
+import type { JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
-import { ago, fitLevel, parseUtc, STATUSES } from "./status";
+import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
 
 interface Props {
   jobId: number;
   status: JobStatus | undefined; // live from the list, so a drag elsewhere shows here
+  /** The job's row in the list (14e: is a follow-up due?). */
+  row: JobRow | undefined;
   onMove(id: number, to: JobStatus): void;
+  onFollowUp(id: number, action: "done" | "snooze"): Promise<void>;
   onClose(): void;
 }
 
@@ -32,12 +35,22 @@ async function copy(text: string): Promise<void> {
 
 const isWebLink = (url: string) => /^https?:\/\//i.test(url);
 
-export function JobSheet({ jobId, status, onMove, onClose }: Props) {
+export function JobSheet({ jobId, status, row, onMove, onFollowUp, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [job, setJob] = useState<JobDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
+  const [following, setFollowing] = useState(false);
+
+  const followUp = async (action: "done" | "snooze") => {
+    setFollowing(true);
+    try {
+      await onFollowUp(jobId, action);
+    } finally {
+      setFollowing(false);
+    }
+  };
 
   useEffect(() => {
     const el = dialog.current;
@@ -129,6 +142,26 @@ export function JobSheet({ jobId, status, onMove, onClose }: Props) {
               <p className="hint" role="status">
                 {draftProblem}
               </p>
+            )}
+
+            {row?.follow_up && (
+              <section className="follow-up" aria-labelledby="follow-title">
+                <div>
+                  <h3 id="follow-title">Time to follow up?</h3>
+                  <p className="hint">
+                    {statusLabel(row.status)} with no news for {quietDays(row)} days. A short, polite email asking about next steps often gets an
+                    answer.
+                  </p>
+                </div>
+                <div className="follow-up-actions">
+                  <button type="button" className="btn btn-primary btn-sm" disabled={following} onClick={() => void followUp("done")}>
+                    I followed up
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-sm" disabled={following} onClick={() => void followUp("snooze")}>
+                    Remind me in 3 days
+                  </button>
+                </div>
+              </section>
             )}
 
             <section className="sheet-section" aria-labelledby="fit-title">

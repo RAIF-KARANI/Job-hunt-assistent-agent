@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
-import type { LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
+import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
 import { LevelPicker } from "./LevelPicker";
 import { ModelPicker } from "./ModelPicker";
 import { ResumeList } from "./ResumeList";
@@ -15,6 +15,13 @@ const THEMES: { id: Theme; label: string }[] = [
   { id: "system", label: "Like Windows" },
   { id: "dark", label: "Dark" },
   { id: "light", label: "Light" },
+];
+const FOLLOW_UP_DAYS = [
+  { id: "off", label: "Off" },
+  { id: "3", label: "After 3 days" },
+  { id: "5", label: "After 5 days" },
+  { id: "7", label: "After a week" },
+  { id: "14", label: "After 2 weeks" },
 ];
 const FIT_DETAIL = [
   { id: "short", label: "Short" },
@@ -49,6 +56,7 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const [check, setCheck] = useState<SystemCheck | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autostart, setAutostart] = useState<Autostart | null>(null);
 
   const dirty = provider !== settings.LLM_PROVIDER || model.trim() !== settings.LLM_MODEL || key.trim() !== "";
 
@@ -59,6 +67,24 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
       .then((s) => setLocal(s.running ? s.models : null))
       .catch(() => setLocal(null));
   }, []);
+
+  useEffect(() => {
+    getApi()
+      .then((api) => api.autostart_status())
+      .then(setAutostart)
+      .catch(() => setAutostart(null));
+  }, []);
+
+  const toggleAutostart = async (on: boolean) => {
+    setError(null);
+    try {
+      setAutostart(await (await getApi()).set_autostart(on));
+      setSaved("reminders");
+      window.setTimeout(() => setSaved((s) => (s === "reminders" ? null : s)), 2500);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  };
 
   useEffect(() => {
     // Which 3D level suits this PC with the saved model (a few seconds).
@@ -312,6 +338,51 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
             <option value="langsmith">LangSmith (cloud: uploads your resume text)</option>
           </select>
           <span className="hint">Applies after restarting JobLens. The run log behind Evals is always on.</span>
+        </label>
+      </section>
+
+      <section className="card settings-card" aria-labelledby="reminders-title">
+        <div className="section-head">
+          <h2 id="reminders-title">Reminders</h2>
+          {saved === "reminders" && (
+            <span className="saved" role="status">
+              Saved
+            </span>
+          )}
+        </div>
+        <label className="field narrow">
+          <span>Remind me to follow up</span>
+          <select
+            className="input"
+            value={String(settings.FOLLOW_UP_DAYS ?? "7")}
+            onChange={(e) => void saveNow({ FOLLOW_UP_DAYS: e.target.value }, "reminders")}
+          >
+            {FOLLOW_UP_DAYS.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+          <span className="hint">
+            For jobs in Applied or Interviewing with no change since. They get a “Follow up?” badge in the Tracker, and one tray notification a
+            day while the window is closed.
+          </span>
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={autostart?.enabled ?? false}
+            disabled={!autostart?.supported}
+            onChange={(e) => void toggleAutostart(e.target.checked)}
+          />
+          <span>
+            Start JobLens with Windows, in the tray
+            <span className="hint">
+              {autostart?.supported === false
+                ? "Works in the installed JobLens only."
+                : "It opens hidden when you sign in, so reminders reach you. Closing the window then keeps it in the tray; quit from the tray icon."}
+            </span>
+          </span>
         </label>
       </section>
 

@@ -5,6 +5,9 @@ The tray icon (13a, D24): JobLens keeps working while its window is closed.
     closing it when nothing is going on        -> the app quits, as before
     a cover note waits for you (window hidden) -> a Windows notification
     tray menu: Open JobLens, the status, Stop the run, Quit
+    14e: "Start with Windows" on -> JobLens lives in the tray: closing the
+         window always hides it; jobs due a follow-up get one notification
+         a day and a line in the menu
 
 pystray runs its own Windows message loop on its own thread, next to
 pywebview's (which owns the main thread). It is LGPL-3.0, so it ships as
@@ -57,9 +60,10 @@ class RunState:
         return self.busy or self.waiting is not None
 
 
-def close_action(state: RunState) -> str:
-    """The window's close button: "hide" (keep working in the tray) or "quit"."""
-    return "hide" if state.working else "quit"
+def close_action(state: RunState, keep_in_tray: bool = False) -> str:
+    """The window's close button: "hide" (keep working in the tray) or "quit".
+    `keep_in_tray`: Start with Windows is on (14e), so JobLens stays."""
+    return "hide" if state.working or keep_in_tray else "quit"
 
 
 STEP_NAMES = {1: "reading the posting", 2: "comparing your resumes", 3: "researching the company",
@@ -93,6 +97,18 @@ def notification(event: Event, state: RunState) -> tuple[str, str] | None:
     return None
 
 
+def follow_up_text(count: int) -> str:
+    return f"Follow up on {count} job{'s' if count != 1 else ''}"
+
+
+def follow_up_notice(count: int, last_day: str | None, today: str) -> tuple[str, str] | None:
+    """14e: at most one reminder a day, and only when there's something to do."""
+    if count <= 0 or last_day == today:
+        return None
+    jobs = "1 application has" if count == 1 else f"{count} applications have"
+    return "Time to follow up", f"{jobs} had no news for a while. Open the Tracker to send a short follow-up."
+
+
 # ---------------------------------------------------------------------------
 # The icon itself
 # ---------------------------------------------------------------------------
@@ -103,10 +119,14 @@ class Tray:
     show(), hide(), stop_run(), quit()."""
 
     def __init__(self, icon_path, show: Callable[[], None], stop_run: Callable[[], object],
-                 quit_app: Callable[[], None]):
+                 quit_app: Callable[[], None], keep_in_tray: Callable[[], bool] = lambda: False,
+                 follow_ups: Callable[[], int] = lambda: 0, open_tracker: Callable[[], None] | None = None):
         self.state = RunState()
         self.hidden = False
         self._show, self._stop_run, self._quit = show, stop_run, quit_app
+        self._keep_in_tray, self._open_tracker = keep_in_tray, open_tracker or show
+        self.follow_ups = 0  # jobs due a follow-up; set by count_follow_ups()
+        self._count = follow_ups
         self._told_about_tray = False
         self._icon = None
         self._icon_path = icon_path
@@ -119,6 +139,8 @@ class Tray:
         menu = pystray.Menu(
             pystray.MenuItem("Open JobLens", lambda: self.open(), default=True),  # also a click on the icon
             pystray.MenuItem(lambda _: status_text(self.state), None, enabled=False),
+            pystray.MenuItem(lambda _: follow_up_text(self.follow_ups), lambda: self._open_tracker_now(),
+                             visible=lambda _: self.follow_ups > 0),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Stop the run", lambda: self._stop_run(), visible=lambda _: self.state.busy),
             pystray.MenuItem(lambda _: "Quit JobLens (stops the run)" if self.state.working else "Quit JobLens",
@@ -138,18 +160,39 @@ class Tray:
         self.hidden = False
         self._show()
 
+    def _open_tracker_now(self) -> None:
+        self.hidden = False
+        self._open_tracker()
+
     def window_closing(self, hide: Callable[[], None]) -> bool:
         """pywebview's `closing` handler. Returns False to keep the app running."""
-        if self._icon is None or close_action(self.state) == "quit":
+        try:
+            keep = self._keep_in_tray()
+        except Exception:
+            keep = False
+        if self._icon is None or close_action(self.state, keep) == "quit":
             return True  # no tray icon to come back from: never hide the window
         hide()
         self.hidden = True
         if not self._told_about_tray:  # once per session: after that you know
             self._told_about_tray = True
-            self.notify("JobLens is still working",
-                        "Closing the window doesn't stop the agent. It's in the tray; you'll be told when it needs you.")
+            if self.state.working:
+                self.notify("JobLens is still working",
+                            "Closing the window doesn't stop the agent. It's in the tray; you'll be told when it needs you.")
+            else:
+                self.notify("JobLens is in the tray",
+                            "It stays here for your follow-up reminders. Quit it from the tray icon.")
         self._refresh()
         return False
+
+    def count_follow_ups(self) -> int:
+        """Ask the tracker again (app.py's reminder thread, about every half hour)."""
+        try:
+            self.follow_ups = int(self._count())
+        except Exception:  # a reminder is never worth a crash
+            pass
+        self._refresh()
+        return self.follow_ups
 
     # -- events (the same ones the page gets) --
     def on_event(self, event: Event) -> None:

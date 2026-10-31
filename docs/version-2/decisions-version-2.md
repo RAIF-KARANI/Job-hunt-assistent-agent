@@ -510,5 +510,34 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
   - deletes its checkpoint
   - leaves the run in Evals as it was (still "stopped" or "interrupted")
 
+## D31 — Follow-up reminders and Start with Windows ✅ (31 Oct 2026, step 14e)
+- **When a job is due a follow-up:**
+  - its status is **Applied or Interviewing**
+  - and it has had no change for **FOLLOW_UP_DAYS** (default 7; Settings →
+    Reminders: off, 3, 5, 7 or 14 days). The clock starts at the last
+    status change or your last "I followed up".
+  - and it isn't snoozed
+- **What you see:**
+  - a "Follow up?" badge on the card and in the list
+  - a notice at the top of the Tracker, whose "Show them" lists only those jobs
+  - in the job's details: **I followed up** (the clock starts again) or
+    **Remind me in 3 days**
+- **The tray notification:** at most **one a day**, and only while the
+  window is closed. The day is remembered in `follow_up_notice.txt`, so a
+  restart doesn't repeat it. JobLens checks every half hour.
+- **Start JobLens with Windows** is off by default and lives in the
+  registry (`HKCU\...\Run\JobLens = "JobLens.exe" --tray`), not in `.env`.
+  Turning it off in Task Manager shows as off in Settings too.
+  - JobLens then starts **hidden in the tray**.
+  - Closing the window **keeps it in the tray** even when idle; quit from
+    the tray icon. Without the setting, closing an idle JobLens quits, as
+    before.
+  - Only the installed app can turn it on. In developer mode the
+    checkbox is disabled.
+  - The uninstaller removes the value.
+- The rule is plain dates in `job_agent/followup.py`, with no AI. Old
+  `jobs.db` files get the two new columns (`followed_up_at`,
+  `snoozed_until`) on first use.
+
 ## Open questions ❓
 - (none)

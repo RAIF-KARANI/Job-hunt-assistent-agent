@@ -87,7 +87,10 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
                   <span className="fit-bar" aria-hidden="true">
                     <span className={`fit-bar-fill fit-${fitLevel(job.fit_score)}`} style={{ width: `${job.fit_score}%` }} />
                   </span>
-                  <span className="job-card-note">{cardNote(job)}</span>
+                  <span className="job-card-note">
+                    {cardNote(job)}
+                    {job.follow_up && <span className="follow-badge">Follow up?</span>}
+                  </span>
                 </button>
               ))}
               {cards.length === 0 && <p className="column-empty">{dragging !== null ? "Drop here" : "No jobs"}</p>}

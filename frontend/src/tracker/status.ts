@@ -45,6 +45,12 @@ export function cardNote(job: JobRow): string {
   }
 }
 
+/** 14e: days since the follow-up clock started (status change or "I followed up"). */
+export function quietDays(job: JobRow, now = Date.now()): number {
+  const since = Math.max(...[job.updated_at, job.followed_up_at].filter((v): v is string => !!v).map((v) => parseUtc(v).getTime()));
+  return Math.floor((now - since) / 86_400_000);
+}
+
 export function matches(job: JobRow, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;

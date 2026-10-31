@@ -116,6 +116,7 @@ def main(argv=None) -> int:
     parser.add_argument("--smoke", type=Path, metavar="OUT", help="open, check, close; write OUT json")
     parser.add_argument("--screenshot", type=Path, help="with --smoke: save a PNG of the window")
     parser.add_argument("--self-test", type=Path, metavar="REPORT", help="check the app, no window")
+    parser.add_argument("--tray", action="store_true", help="start hidden in the tray (Start with Windows, 14e)")
     args = parser.parse_args(argv)
 
     if args.self_test:
@@ -157,7 +158,7 @@ def main(argv=None) -> int:
     api = Api(send=lambda event: holder["send"](event))
     window = webview.create_window("JobLens", url, js_api=api, width=1360, height=880,
                                    min_size=(720, 560), background_color=_background(),
-                                   on_top=bool(args.smoke))
+                                   on_top=bool(args.smoke), hidden=args.tray and not args.smoke)
     holder["send"] = window_sender(window)
     api._attach(window)  # native dialogs (resume PDFs) need the window
 
@@ -166,6 +167,13 @@ def main(argv=None) -> int:
         return 0
 
     tray = _start_tray(window, api, holder)
+    if args.tray:
+        if tray:
+            tray.hidden = True
+        else:  # no tray icon to come back from: never stay hidden
+            threading.Timer(1.0, window.show).start()
+    if tray:
+        _follow_up_reminders(tray)
     instance.listen(on_show=lambda: _bring_back(window, tray))
     _check_for_updates_later(window, api)
     # 13d: the installer takes over -> close (never during a run: refused before)
@@ -201,6 +209,32 @@ def _check_for_updates_later(window, api) -> None:
     window.events.loaded += on_loaded
 
 
+def _follow_up_reminders(tray) -> None:
+    """14e: count the jobs due a follow-up now and every half hour; once a
+    day, if the window is hidden, a notification. The day is remembered in
+    the data folder, so restarting JobLens doesn't repeat it."""
+    from desktop_web.tray import follow_up_notice
+
+    marker = paths.APP_HOME / "follow_up_notice.txt"
+
+    def loop():
+        time.sleep(20)  # let startup (and the page) go first
+        while True:
+            try:
+                count = tray.count_follow_ups()
+                last = marker.read_text(encoding="utf-8").strip() if marker.exists() else None
+                today = time.strftime("%Y-%m-%d")
+                note = follow_up_notice(count, last, today) if tray.hidden else None
+                if note:
+                    tray.notify(*note)
+                    marker.write_text(today, encoding="utf-8")
+            except Exception as e:
+                print(f"! follow-up reminder: {e}")
+            time.sleep(30 * 60)
+
+    threading.Thread(target=loop, name="joblens-follow-ups", daemon=True).start()
+
+
 def _bring_back(window, tray) -> None:
     if tray:
         tray.hidden = False
@@ -219,8 +253,16 @@ def _start_tray(window, api, holder):
         quitting["now"] = True
         window.destroy()
 
+    from desktop_web import autostart
+    from job_agent import followup
+
+    def open_tracker():
+        _bring_back(window, tray)
+        window.evaluate_js("window.location.hash = '#/tracker'")
+
     tray = Tray(paths.resource_path("assets/joblens.png"), show=lambda: _bring_back(window, tray),
-                stop_run=api.stop_run, quit_app=quit_app)
+                stop_run=api.stop_run, quit_app=quit_app, keep_in_tray=autostart.enabled,
+                follow_ups=lambda: len(followup.due_jobs()), open_tracker=open_tracker)
     try:
         tray.start()
     except Exception as e:

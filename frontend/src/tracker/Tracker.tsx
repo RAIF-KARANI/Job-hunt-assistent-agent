@@ -31,11 +31,13 @@ function savedStatuses(): JobStatus[] {
 }
 
 export function Tracker() {
-  const { jobs, error, move } = useJobs();
+  const { jobs, error, move, followUp } = useJobs();
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>(savedView);
   const [statuses, setStatuses] = useState<JobStatus[]>(savedStatuses); // empty = all
   const [openId, setOpenId] = useState<number | null>(null);
+  const [followOnly, setFollowOnly] = useState(false); // 14e: only the jobs due a follow-up
+
   const [lastMove, setLastMove] = useState<Move | null>(null);
   const undoTimer = useRef<number | undefined>(undefined);
 
@@ -73,13 +75,25 @@ export function Tracker() {
   }, [statuses]);
 
   const searched = jobs?.filter((j) => matches(j, query)) ?? [];
+  const dueCount = jobs?.filter((j) => j.follow_up).length ?? 0;
   // The status filter is for the List; the Board already sorts by status.
-  const shown = view === "list" && statuses.length ? searched.filter((j) => statuses.includes(j.status)) : searched;
+  const byStatus = view === "list" && statuses.length ? searched.filter((j) => statuses.includes(j.status)) : searched;
+  const shown = view === "list" && followOnly ? byStatus.filter((j) => j.follow_up) : byStatus;
   const toggleStatus = (s: JobStatus) => setStatuses((old) => (old.includes(s) ? old.filter((x) => x !== s) : [...old, s]));
   const showStatus = (s: JobStatus) => {
     setStatuses([s]);
+    setFollowOnly(false);
     setView("list");
   };
+  const showFollowUps = () => {
+    setStatuses([]);
+    setFollowOnly(true);
+    setView("list");
+  };
+
+  useEffect(() => {
+    if (followOnly && dueCount === 0) setFollowOnly(false); // the last one was handled
+  }, [followOnly, dueCount]);
 
   return (
     <div className="page tracker">
@@ -117,6 +131,17 @@ export function Tracker() {
         </p>
       )}
 
+      {dueCount > 0 && !(view === "list" && followOnly) && (
+        <p className="notice follow-notice" role="status">
+          <span>
+            {dueCount === 1 ? "1 application has" : `${dueCount} applications have`} had no news for a while. A short follow-up email can help.
+          </span>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={showFollowUps}>
+            Show {dueCount === 1 ? "it" : "them"}
+          </button>
+        </p>
+      )}
+
       {jobs === null ? (
         !error && <p className="hint">Loading your jobs...</p>
       ) : jobs.length === 0 ? (
@@ -130,9 +155,22 @@ export function Tracker() {
         <>
           {view === "list" && (
             <div className="status-filter" role="group" aria-label="Show only these statuses">
-              <button type="button" className="chip-toggle" aria-pressed={statuses.length === 0} onClick={() => setStatuses([])}>
+              <button
+                type="button"
+                className="chip-toggle"
+                aria-pressed={statuses.length === 0 && !followOnly}
+                onClick={() => {
+                  setStatuses([]);
+                  setFollowOnly(false);
+                }}
+              >
                 All <span className="chip-count">{searched.length}</span>
               </button>
+              {dueCount > 0 && (
+                <button type="button" className="chip-toggle" aria-pressed={followOnly} onClick={() => setFollowOnly((on) => !on)}>
+                  Follow up? <span className="chip-count">{searched.filter((j) => j.follow_up).length}</span>
+                </button>
+              )}
               {STATUSES.map((s) => {
                 const n = searched.filter((j) => j.status === s.id).length;
                 return (
@@ -149,7 +187,8 @@ export function Tracker() {
               ? `${jobs.length} jobs`
               : `${shown.length} of ${jobs.length} jobs` +
                 (query ? ` match “${query.trim()}”` : "") +
-                (view === "list" && statuses.length ? ` · ${statuses.map(statusLabel).join(", ")}` : "")}
+                (view === "list" && statuses.length ? ` · ${statuses.map(statusLabel).join(", ")}` : "") +
+                (view === "list" && followOnly ? " · due a follow-up" : "")}
           </p>
           {view === "board" ? (
             <Board jobs={shown} onOpen={setOpenId} onMove={changeStatus} onShowStatus={showStatus} />
@@ -158,7 +197,14 @@ export function Tracker() {
           ) : (
             <p className="chart-empty">
               No jobs with this status{query ? " that match your search" : ""}.{" "}
-              <button type="button" className="link-button" onClick={() => setStatuses([])}>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setStatuses([]);
+                  setFollowOnly(false);
+                }}
+              >
                 Show all
               </button>
             </p>
@@ -183,7 +229,9 @@ export function Tracker() {
         <JobSheet
           jobId={openId}
           status={jobs?.find((j) => j.id === openId)?.status}
+          row={jobs?.find((j) => j.id === openId)}
           onMove={changeStatus}
+          onFollowUp={followUp}
           onClose={() => setOpenId(null)}
         />
       )}

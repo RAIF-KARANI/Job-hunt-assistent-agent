@@ -89,6 +89,7 @@ export function JobList({ jobs, onOpen, onMove }: Props) {
               </td>
               <td className="cell-muted" title={`${job.updated_at} UTC`}>
                 {ago(job.updated_at)}
+                {job.follow_up && <span className="follow-badge">Follow up?</span>}
               </td>
             </tr>
           ))}
