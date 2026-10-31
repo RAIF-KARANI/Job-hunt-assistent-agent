@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
 import { LevelPicker } from "./LevelPicker";
+import { ModelPicker } from "./ModelPicker";
 import { ResumeList } from "./ResumeList";
 import { UpdatesCard } from "./UpdatesCard";
 
@@ -39,7 +40,8 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const [key, setKey] = useState("");
   const [status, setStatus] = useState<LlmStatus | "checking" | null>(null);
   const [saving, setSaving] = useState(false);
-  const [local, setLocal] = useState<string[]>([]);
+  // Installed Ollama models: undefined = still asking, null = Ollama didn't answer.
+  const [local, setLocal] = useState<string[] | null | undefined>(undefined);
   const [check, setCheck] = useState<SystemCheck | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,11 +49,11 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const dirty = provider !== settings.LLM_PROVIDER || model.trim() !== settings.LLM_MODEL || key.trim() !== "";
 
   useEffect(() => {
-    // Installed local models, for suggestions in the model box.
+    // Installed local models, for the model dropdown (14a).
     getApi()
       .then((api) => api.ollama_status())
-      .then((s) => setLocal(s.models))
-      .catch(() => setLocal([]));
+      .then((s) => setLocal(s.running ? s.models : null))
+      .catch(() => setLocal(null));
   }, []);
 
   useEffect(() => {
@@ -156,17 +158,16 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
               : "Free and private: nothing leaves this PC. Needs Ollama and about 8–16 GB of RAM."}
           </p>
 
-          <label className="field">
+          <div className="field">
             <span>Model</span>
-            <input className="input mono" value={model} onChange={(e) => setModel(e.target.value)} list={cloud ? undefined : "local-models"} spellCheck={false} />
-            {!cloud && (
-              <datalist id="local-models">
-                {local.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
+            {!cloud && local === undefined ? (
+              <select className="input mono" disabled aria-label="Model">
+                <option>{model} (checking Ollama…)</option>
+              </select>
+            ) : (
+              <ModelPicker cloud={cloud} value={model} installed={local ?? null} onChange={setModel} />
             )}
-          </label>
+          </div>
 
           {cloud && (
             <label className="field">

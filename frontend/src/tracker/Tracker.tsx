@@ -6,11 +6,12 @@ import type { JobStatus } from "../bridge/types";
 import { Board } from "./Board";
 import { JobList } from "./JobList";
 import { JobSheet } from "./JobSheet";
-import { matches, statusLabel } from "./status";
+import { matches, STATUSES, statusLabel } from "./status";
 import { useJobs, type Move } from "./useJobs";
 
 type View = "board" | "list";
 const VIEW_KEY = "joblens.tracker.view";
+const STATUS_KEY = "joblens.tracker.statuses"; // 14a: the List's status filter
 
 function savedView(): View {
   try {
@@ -20,10 +21,20 @@ function savedView(): View {
   }
 }
 
+function savedStatuses(): JobStatus[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STATUS_KEY) ?? "[]");
+    return Array.isArray(saved) ? saved.filter((s) => STATUSES.some((x) => x.id === s)) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function Tracker() {
   const { jobs, error, move } = useJobs();
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>(savedView);
+  const [statuses, setStatuses] = useState<JobStatus[]>(savedStatuses); // empty = all
   const [openId, setOpenId] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState<Move | null>(null);
   const undoTimer = useRef<number | undefined>(undefined);
@@ -53,7 +64,22 @@ export function Tracker() {
     await move(lastMove.job.id, lastMove.from);
   };
 
-  const shown = jobs?.filter((j) => matches(j, query)) ?? [];
+  useEffect(() => {
+    try {
+      localStorage.setItem(STATUS_KEY, JSON.stringify(statuses));
+    } catch {
+      /* not remembered, still works */
+    }
+  }, [statuses]);
+
+  const searched = jobs?.filter((j) => matches(j, query)) ?? [];
+  // The status filter is for the List; the Board already sorts by status.
+  const shown = view === "list" && statuses.length ? searched.filter((j) => statuses.includes(j.status)) : searched;
+  const toggleStatus = (s: JobStatus) => setStatuses((old) => (old.includes(s) ? old.filter((x) => x !== s) : [...old, s]));
+  const showStatus = (s: JobStatus) => {
+    setStatuses([s]);
+    setView("list");
+  };
 
   return (
     <div className="page tracker">
@@ -102,13 +128,40 @@ export function Tracker() {
         </section>
       ) : (
         <>
+          {view === "list" && (
+            <div className="status-filter" role="group" aria-label="Show only these statuses">
+              <button type="button" className="chip-toggle" aria-pressed={statuses.length === 0} onClick={() => setStatuses([])}>
+                All <span className="chip-count">{searched.length}</span>
+              </button>
+              {STATUSES.map((s) => {
+                const n = searched.filter((j) => j.status === s.id).length;
+                return (
+                  <button key={s.id} type="button" className="chip-toggle" aria-pressed={statuses.includes(s.id)} onClick={() => toggleStatus(s.id)}>
+                    <span className="dot" style={{ background: s.color }} aria-hidden="true" />
+                    {s.label} <span className="chip-count">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <p className="hint count" aria-live="polite">
-            {query ? `${shown.length} of ${jobs.length} jobs match “${query.trim()}”` : `${jobs.length} jobs`}
+            {shown.length === jobs.length
+              ? `${jobs.length} jobs`
+              : `${shown.length} of ${jobs.length} jobs` +
+                (query ? ` match “${query.trim()}”` : "") +
+                (view === "list" && statuses.length ? ` · ${statuses.map(statusLabel).join(", ")}` : "")}
           </p>
           {view === "board" ? (
-            <Board jobs={shown} onOpen={setOpenId} onMove={changeStatus} />
-          ) : (
+            <Board jobs={shown} onOpen={setOpenId} onMove={changeStatus} onShowStatus={showStatus} />
+          ) : shown.length ? (
             <JobList jobs={shown} onOpen={setOpenId} onMove={changeStatus} />
+          ) : (
+            <p className="chart-empty">
+              No jobs with this status{query ? " that match your search" : ""}.{" "}
+              <button type="button" className="link-button" onClick={() => setStatuses([])}>
+                Show all
+              </button>
+            </p>
           )}
         </>
       )}

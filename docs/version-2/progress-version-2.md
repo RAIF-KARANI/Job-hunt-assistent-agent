@@ -1157,3 +1157,45 @@ commit that was merged:
    - no resume file names, job links or Windows user paths in any commit
      (those only ever lived in scratch test scripts)
    - no data folder tracked
+
+---
+
+## Phase 14 plan agreed (31 Oct 2026, D28)
+We discussed Phase 14. Its nine steps (14a–14i) are in the plan, your
+choices in D28. They all go into v1.0.0 together with the new UI.
+
+## 14a — Quick wins ✅ (31 Oct 2026)
+
+### What was done
+- **The model as a dropdown** (`frontend/src/settings/ModelPicker.tsx`):
+  - your installed Ollama chat models (embedding models such as
+    `qwen3-embedding` left out: they can't chat), or Claude Haiku / Sonnet
+    / Opus 5.5, plus "Other…" for typing a name
+  - a saved model that isn't installed shows "(not installed)" with a hint,
+    instead of hiding the problem (your friend's case)
+  - if Ollama doesn't answer, a text box and a hint
+  - the setup wizard's Claude step uses the same list
+- **Tracker List status filter:**
+  - chips with counts, several at once, "All" clears them
+  - remembered on this PC
+  - "N of M jobs · Cover note ready"
+  - "No jobs with this status. Show all"
+- **Board:** a column's title is a button → the List, filtered to that status.
+
+### Checked in the real window (copy of your database and resumes)
+- **Board → "Cover note ready":** the List opened with the 4 jobs that have
+  that status in the database ("4 of 7 jobs · Cover note ready"); adding
+  "Researched" → all 7; a status with no jobs → the empty message; the
+  filter survived a reload; "All" → 7.
+- **The dropdown:**
+  - it listed `llama3.2`, `qwen3:14b` and `qwen3:8b` (not `qwen3-embedding`)
+  - choosing `qwen3:14b` and saving → saved, and the check said it's installed
+  - a saved `qwen3:4b` (not installed) → "qwen3:4b (not installed)" + the hint
+  - Claude → its 3 models; "Other…" → a text box
+- Your real `jobs.db` unchanged. 216 tests, typecheck clean.
+
+### Problem hit
+In the first window run, the "not installed" check read **Claude Haiku**.
+Three runs after that were all correct ("qwen3:4b (not installed)" + the
+hint). Most likely the test read the page during its reload; I couldn't
+make it happen again, so that cause isn't proven.

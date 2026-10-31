@@ -10,6 +10,7 @@ import { errorMessage, getApi } from "../bridge/bridge";
 import type { LlmStatus, Settings, Ui3D } from "../bridge/types";
 import { advise, LevelPicker } from "../settings/LevelPicker";
 import { LocalModelSetup } from "../settings/LocalModelSetup";
+import { ModelPicker } from "../settings/ModelPicker";
 import { ResumeList } from "../settings/ResumeList";
 
 type Step = "welcome" | "choice" | "local" | "api" | "resumes" | "look" | "done";
@@ -150,11 +151,10 @@ export function SetupWizard({ onFinish, onSkip }: Props) {
                   Create one at <a href="https://console.anthropic.com/settings/keys">console.anthropic.com</a> (Settings → API keys) and paste it here.
                 </span>
               </label>
-              <label className="field">
+              <div className="field">
                 <span>Model</span>
-                <input className="input mono" value={apiModel} onChange={(e) => setApiModel(e.target.value)} spellCheck={false} />
-                <span className="hint">Claude Haiku is fast and costs about $0.01 per job.</span>
-              </label>
+                <ModelPicker cloud value={apiModel} installed={null} onChange={setApiModel} />
+              </div>
               <div className="row-actions">
                 <button type="button" className="btn btn-secondary" disabled={!key.trim() || keyCheck === "checking"} onClick={() => void testKey()}>
                   {keyCheck === "checking" ? "Testing…" : "Test key"}

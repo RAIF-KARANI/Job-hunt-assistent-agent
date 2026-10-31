@@ -521,3 +521,7 @@
 .install-update .check-status {
   margin: 0;
 }
+
+.hint.warn-ink {
+  color: var(--warn-ink);
+}

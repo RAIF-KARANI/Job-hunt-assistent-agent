@@ -10,11 +10,13 @@ interface Props {
   jobs: JobRow[];
   onOpen(id: number): void;
   onMove(id: number, to: JobStatus): void;
+  /** A column's title was clicked: show that status as a filtered list. */
+  onShowStatus(status: JobStatus): void;
 }
 
 const DRAG_TYPE = "application/x-joblens-job";
 
-export function Board({ jobs, onOpen, onMove }: Props) {
+export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [over, setOver] = useState<JobStatus | null>(null);
 
@@ -49,7 +51,12 @@ export function Board({ jobs, onOpen, onMove }: Props) {
             >
               <header className="column-head">
                 <span className="dot" style={{ background: status.color }} />
-                <h2 id={`col-${status.id}`}>{status.label}</h2>
+                <h2 id={`col-${status.id}`}>
+                  {/* 14a: the title opens the List, filtered to this status. */}
+                  <button type="button" className="column-title" onClick={() => onShowStatus(status.id)} title={`Show the ${status.label.toLowerCase()} jobs as a list`}>
+                    {status.label}
+                  </button>
+                </h2>
                 <span className="column-count">{cards.length}</span>
               </header>
               {cards.map((job) => (

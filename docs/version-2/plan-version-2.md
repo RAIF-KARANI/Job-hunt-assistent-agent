@@ -51,24 +51,26 @@ tests plus a few Playwright checks against the front end served locally.
 
 Needs the repo to be **public** so the app can read the Releases (D11).
 
-## Phase 14 — New features ⏳
-To be listed (Q1). Candidates from the base version:
-- Write the verdict after the judge (known limitation)
-- Follow-up reminders for jobs applied more than 7 days ago (pairs with the tray)
-- Eval suite: compare models on saved jobs
-- Shorter LLM outputs for speed
+## Phase 14 — New features 🚧 (agreed 31 Oct 2026, D28)
+These go into **v1.0.0** together with the new UI (D25). Decided in the
+Phase 14 discussion; each step is done when its tests pass and it works in
+the real window.
 
-Candidates from the first real use (30 Oct), each with the question to
-answer before building it:
-- **Choose which resumes to compare for a run.** Step 2 makes one call per
-  resume; with 4 resumes it took 3–8 min. *Question: a checklist on the
-  Analyze screen each time, or a default set in Settings (e.g. "UAE
-  resumes only for UAE jobs")?*
-- **Shorter answers in the fit analysis** (every step faster, ~30–50 %).
-  Each resume comparison wrote ~1,150 tokens. *Question: how much
-  explanation do you want to keep? The evidence check needs the resume
-  quotes, so those stay; the long verdict text could shrink.*
-- **"Continue where you left off"** after the app was closed mid-run. The
-  checkpoints already keep the finished steps; today a restart begins
-  again from step 1. *Question: offer it automatically on the next start,
-  or only from the interrupted run in Evals / Analyze?*
+| Step | What | Done when |
+|---|---|---|
+| 14a ✅ | **Quick wins:** <br>• Settings → model is a **dropdown** of your installed Ollama models (and the known Claude models), with "Other…" to type one <br>• Tracker **List: status filter** (chips with counts, several at once, remembered) <br>• Board: **click a column's title** → the List, filtered to that status | the dropdown only offers installed models; filter and column click work |
+| 14b | **Which resumes to compare:** a **default set** in Settings → Resumes (all at first) + a switch **"Ask me for each job"**. On Analyze: "Comparing with 2 of 4 resumes · change" (switch off) or the chips pre-ticked with the defaults (switch on) | step 2 only scores the chosen resumes; the choice survives a restart |
+| 14c | **Short or detailed fit answer** (a setting; *short* keeps every resume quote, which the evidence check needs, and trims the verdict and talking points) + **the verdict written after the judge** (fixes "the verdict mentions a claim the judge rejected") | measured before/after on the same job; the verdict never cites a rejected claim |
+| 14d | **Continue where you left off:** after an interrupted or stopped run, Analyze offers **Continue / Discard**; Continue picks up after the last finished step (from the checkpoint) | a closed run continues without redoing finished steps |
+| 14e | **Follow-up reminders:** jobs in **Applied or Interviewing** for **7 days** (a setting) get a "Follow up?" badge and one tray notification a day; mark as followed up, or snooze. Plus **"Start JobLens with Windows (in the tray)"** | reminders appear on time, once; snooze and done work |
+| 14f | **Quick analyze:** a global shortcut **`Ctrl+Alt+J`** (changeable) opens a small always-on-top box (link + Analyze); the run goes to the background; a **notification with sound** when the draft is ready | works with the main window hidden in the tray |
+| 14g | **Resume-improvement prompt**, on demand only: a "Generate resume prompt" button after each run and in the job's details. Built from the analysis with **no AI call**. Your resume isn't in it: you paste yours into the other AI with it. Rules in the prompt: rephrase only real experience, never invent any. Shows **keyword coverage** (e.g. 9 of 14 requirements), not an "ATS score". At **≥ 95 % coverage and no gaps** it says your resume already fits, with a small "Generate anyway" | the prompt is correct for a job; no LLM call is made |
+| 14h | **Your notes per job:** notes, an interview date, a contact, in the job's details | saved in the tracker, shown on the card |
+| 14i | **Export:** the tracker to **CSV**; a cover note to **.txt, .docx and .pdf** | the files open in Excel / Word / a PDF viewer |
+| then | **v1.0.0:** merge `version-2` → `main` after the D3 checks, release; 0.3.2 users get it through Settings → Updates | |
+
+Not doing: a **"nearly identical resumes" hint** (dropped by you: resumes
+for different countries are meant to differ, and you know which fits).
+**Compare models on saved jobs** stays a developer idea (`compare_models.py`).
+**A Windows Widgets-board widget**: not realistic for this app (needs a
+packaged Store-style app); the 14f shortcut window gives the same thing.

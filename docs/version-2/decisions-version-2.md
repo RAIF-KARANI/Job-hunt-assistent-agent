@@ -454,5 +454,28 @@ running the real installer.
   Updates: "Download and install v… (58 MB)" → progress → "✓ Downloaded and
   verified" → "Install now".
 
+## D28 — Phase 14: the features for v1.0.0 ✅ (31 Oct 2026, discussed with you)
+Closes Q1. The steps are in the plan (14a–14i). Your choices:
+- **Resumes:** a default set plus "ask me for each job". Not a checklist
+  every time (too much).
+- **Fit answer:** short or detailed, your choice.
+- **Reminders:** Applied **and** Interviewing, after 7 days.
+- **Shortcut:** `Ctrl+Alt+J`.
+- **Resume prompt:**
+  - your resume is **not** in the prompt; you give it to the other AI yourself
+  - generated **only when you press the button** (no compute spent otherwise)
+  - not offered as needed when the resume already covers the job
+    (≥ 95 % coverage, no gaps)
+
+  My additions you agreed to:
+  - built with **no AI call** (a template filled from the analysis)
+  - "keyword coverage", not an "ATS score" (there's no standard ATS score)
+  - "rephrase only real experience, never invent"
+- **Kept from my extras:** verdict after the judge (A), notes per job (B),
+  export (C) **with PDF**.
+- **Dropped:** the near-duplicate-resume hint (D). Your reason: resumes for
+  two countries are meant to differ in structure, and the user knows which
+  one fits.
+
 ## Open questions ❓
-- Q1: Which new features go into v2? (we'll discuss them later)
+- (none)
