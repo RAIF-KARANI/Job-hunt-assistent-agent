@@ -1225,7 +1225,7 @@ make it happen again, so that cause isn't proven.
 - A real run with **1** resume ticked:
   - the log said "comparing 1 of 4 resumes" and scored only that one
   - **step 2 took 30.5 s**, against about 3 min 25 s with all 4 on your PC
-  - the step said "best: Raif_Karani_AI_Engineer · fit 75"
+  - the step said "best: AI_Engineer · fit 75"
   - then I stopped the run
 - 222 tests, typecheck clean.
 
@@ -1422,7 +1422,7 @@ hotkey) and the typecheck is clean. Your real data was unchanged.
 - **Where:** a **Resume prompt** button in a job's details, and **Generate
   resume prompt** after a run. Only when you ask.
 - **The dialog:**
-  - **Keyword coverage**, e.g. "Raif_Karani_AI_Engineer shows 5 of 7
+  - **Keyword coverage**, e.g. "AI_Engineer shows 5 of 7
     required skills (71%)", with a bar
   - the skills not shown yet
   - the prompt with **Copy prompt**
@@ -1525,3 +1525,42 @@ refusal of other paths is tested.
 
 292 tests pass (10 new in `tests/test_export.py`) and the typecheck is
 clean. Your real data was unchanged.
+
+---
+
+## v1.0.0 prepared, `version-2` → `main` ✅ (31 Oct 2026, D3 + D25)
+Phase 14 is done (14a–14i), so version 2 is complete. The version is now
+**1.0.0** (`job_agent/__init__.py`), and the README describes the
+Phase 13–14 features, the new settings and the 292 tests.
+
+GitHub Actions minutes are used up, so every check ran here (D3):
+1. **Tests:** 292 passed, with SyntaxWarnings as errors.
+2. **Front end from a clean `npm ci`:** 0 vulnerabilities, typecheck clean,
+   production build, no dev mock in the bundle.
+3. **The app from source, on your real profile:** page ready, version 1.0.0,
+   5 sidebar links, the Dashboard looked right (7 jobs, the galaxy).
+4. **Packaging, `build_installer.py --test-install`:**
+   - the WebView2 bootstrapper is signed by Microsoft
+   - the frozen app's self-test passed: the new Word/PDF export check
+     ("pdf 41 KB with font JobLensArial"), a real web search and a real
+     Ollama call
+   - the window test showed 1.0.0
+   - the test build installed, its installed copy passed both tests, and
+     it uninstalled clean
+   - your real JobLens (0.3.2) was untouched
+5. **The release build**, `build_installer.py`:
+   - its self-test and window test passed
+   - `JobLens-Setup-1.0.0.exe`: 59 MB, SHA-256 `f2e1e51f…1459`
+   - portable zip: 72 MB, SHA-256 `c1e3e73f…4e0b`
+   - no `.env`, databases, PDFs, personal names or dev data in the app folder
+6. **Merge safety:**
+   - `main` is an ancestor of `version-2` (fast-forward)
+   - in the 62 changed files, no secrets, tokens, emails or user paths
+   - your resume file names had crept into two progress entries; they are
+     now "AI_Engineer". They stay in the history of two earlier commits
+     (no rewrite, D4): only your name, already public as the app's
+     publisher.
+
+**Next:** you publish the release with `gh release create` (my permission
+check blocks public pages). After that: check the release, and that 0.3.2's
+own updater offers 1.0.0.

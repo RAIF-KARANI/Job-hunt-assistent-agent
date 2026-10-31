@@ -27,8 +27,9 @@ version (v0.3.0, phases 0–11) live in [docs/base-version/](docs/base-version/)
 | [handover.md](docs/base-version/handover.md) | How to run, change, build, release and continue the project |
 | [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Licenses of the components bundled in the app |
 
-Version 2 (the new web UI in a native window, then tray and auto-update;
-released as v1.0.0) has its own plan, decisions and journal in
+Version 2 (released as **v1.0.0**: the new web UI in a native window, the
+tray, auto-update, and the Phase 14 features) has its own plan, decisions
+and journal in
 [docs/version-2/](docs/version-2/): [plan](docs/version-2/plan-version-2.md),
 [decisions](docs/version-2/decisions-version-2.md),
 [progress](docs/version-2/progress-version-2.md).
@@ -111,21 +112,45 @@ A native window (Microsoft Edge WebView2) showing a web UI built with React,
 with five screens:
 - **Dashboard:** key numbers, a **3D "job galaxy"** (closer to the center =
   better fit), time per step, safety nets, where your applications are.
-- **Analyze:** paste a link, watch the five steps live, then edit and
-  approve, rewrite or reject the cover note.
+- **Analyze:** paste a link, pick which resumes to compare (or use your
+  defaults), watch the five steps live, then edit and approve, rewrite or
+  reject the cover note. **Stop** a run, and **Continue** a run that was
+  stopped or cut off by closing the app; finished steps aren't redone.
 - **Tracker:** a board (drag a job to change its status, with undo) and a
-  list, with each job's details and its cover note.
+  list with a status filter. Each job's details have the fit with its
+  evidence, the cover note (**save as Word, PDF or text**), the company
+  research, and **your notes**: interview date, contact, notes. **Export
+  CSV** for Excel.
+- **Follow-up reminders:** a job in Applied or Interviewing with no news for
+  a week gets a "Follow up?" badge, and one tray notification a day.
+- **Resume prompt:** how many of the job's required skills your resume
+  visibly shows (keyword coverage), and a prompt to paste into another AI
+  with your resume. It's built without an AI call, and it tells the AI never
+  to invent experience.
 - **Evals:** how well the agent did: evidence pass rate, your ratings,
   safety-net checks, time and tokens per step, models compared, recent
   runs (with Langfuse / LangSmith trace links when tracing is on).
-- **Settings:** model, API key, resumes, theme, 3D level, options.
+- **Settings:** model (a list of your installed models), API key, resumes,
+  theme, 3D level, short or detailed fit answer, reminders, the
+  quick-analyze shortcut, updates.
+
+**In the background:**
+- **Tray icon:** closing the window during a run keeps it working in the
+  tray, with a notification when the cover note is ready. Optionally,
+  **JobLens starts with Windows**, hidden in the tray.
+- **Quick analyze:** press **Ctrl+Alt+J** anywhere, paste a link, press
+  Enter. The run goes on in the background, and a notification (with a
+  sound) tells you when the draft is ready.
+- **Updates:** once a day it checks GitHub Releases. Settings → Updates
+  downloads the new installer, verifies its SHA-256, and installs it.
 
 **Install (users):** download `JobLens-Setup-<version>.exe` from the
 GitHub Releases page and run it. No admin rights needed, no Docker, no
 Python. If the PC lacks Microsoft's WebView2 Runtime (Windows 11 has it),
 the installer adds it. Windows SmartScreen may say "unknown publisher"
-(the app isn't code-signed): **More info → Run anyway**. (Release v0.3.0 is
-still the older Qt app; version 2 ships as v1.0.0.)
+(the app isn't code-signed): **More info → Run anyway**. From v0.3.2 on, the
+app updates itself (Settings → Updates); older versions install v1.0.0 by
+hand once. (Release v0.3.0 is the older Qt app.)
 
 **First launch** opens a **Setup Wizard**:
 1. *Run the AI on this PC* (free, private) or *use the Claude API* (key).
@@ -197,6 +222,10 @@ paste** the job description. Type `END` on its own line when you're done.
 | `UI_3D` | `animated` | desktop app's Dashboard: `animated`, `still` or `off` (flat map) |
 | `UI_THEME` | `system` | desktop app: `system` (follow Windows), `dark`, `light` |
 | `UPDATE_CHECK` | `true` | desktop app: look for a newer release on GitHub at most once a day (sends only the app version) |
+| `FIT_DETAIL` | `short` | `short` (up to 3 talking points, faster) or `detailed` (up to 5, longer verdict) |
+| `RESUMES_DEFAULT` / `RESUMES_ASK` | all / `false` | desktop app: which resumes to compare by default; ask for each job |
+| `FOLLOW_UP_DAYS` | `7` | desktop app: follow-up reminder after this many days in Applied/Interviewing; `off` |
+| `QUICK_KEY` | `Ctrl+Alt+J` | desktop app: the quick-analyze shortcut; `off` |
 
 To use a cloud model, `pip install` its LangChain package (see
 `requirements.txt`) and add its API key to `.env`. No code changes needed.
@@ -207,11 +236,13 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 136 tests cover:
+The 292 tests cover:
 - the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
-- the run log, quality checks and monitoring numbers
+- the fit verdict, the run log, quality checks and monitoring numbers
 - the PC check, the 3D recommendation and Ollama setup
-- the desktop app's bridge: agent runs with pause/resume, progress events, every call the screens make
+- the desktop app's bridge: agent runs with pause/resume, Stop and Continue, progress events, every call the screens make
+- the tray, the update check and verified install, follow-up reminders, Start with Windows, the quick-analyze shortcut (one test registers a real hotkey)
+- the resume prompt and keyword coverage, your notes per job, CSV / Word / PDF export
 
 They use temporary databases and need no LLM, so they run in seconds. The
 UI itself is checked in the real window with driver scripts (see the
@@ -264,8 +295,12 @@ job_agent/
   runlog.py           built-in run log, quality checks, feedback (local SQLite)
   system_check.py     PC check + model recommendations
   ollama_setup.py     detect / install Ollama, download models
+  followup.py         follow-up reminder rule (dates only)
+  resume_prompt.py    keyword coverage + the resume-improvement prompt (no LLM)
+  export.py           tracker -> CSV, cover note -> .txt / .docx / .pdf
 desktop_web/          the desktop app: window (app.py), JS <-> Python bridge (bridge.py),
-                      agent runner (runner.py), self-test; `python -m desktop_web`
+                      agent runner (runner.py), tray, updates, autostart, hotkey +
+                      quick box (quick.py), self-test; `python -m desktop_web`
 frontend/             the UI: React + TypeScript + Vite (+ three.js for the galaxy)
 joblens.spec          PyInstaller recipe for JobLens.exe
 installer/joblens.iss Inno Setup script for JobLens-Setup.exe (+ uninstaller)
