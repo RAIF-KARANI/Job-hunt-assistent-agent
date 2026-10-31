@@ -1685,7 +1685,8 @@ after trying several times.
   WebView2 helper processes).
 - A regression test fails without the fix and passes with it.
 
-## Release v1.0.2 (31 Oct 2026)
+## Release v1.0.2 ✅ (31 Oct 2026)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.2
 - **Contents:** the fix above. JobLens exits when you close it.
 - **Checked before publishing (D3):**
   - 302 tests (SyntaxWarnings as errors)
@@ -1699,5 +1700,10 @@ after trying several times.
 - **Files:**
   - `JobLens-Setup-1.0.2.exe`: SHA-256 `8ac66718…27d8`
   - portable zip: SHA-256 `0d4e2d80…f5a4`
-- `main` fast-forwarded to the release commit; you publish it with
+- `main` fast-forwarded to the release commit; you published it with
   `gh release create`.
+- **Checked after publishing:**
+  - Latest; not a draft or pre-release; tag → `e7834d1`
+  - GitHub's SHA-256 of both uploads matches the notes
+  - the updater, asked as 1.0.0 and as 1.0.1 (real API), offers v1.0.2 with
+    the right checksum
