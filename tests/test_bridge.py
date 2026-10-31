@@ -273,6 +273,7 @@ def progress_graph():
         print("  -> AI Engineer @ Acme (Remote)")
         _step(2, "Comparing your resumes with the job...")
         print("  - scoring 'cv_ai'...")
+        print("  - writing the verdict...")
         print("   86/100  cv_ai   [skills 34/40]")
         print("  -> best: cv_ai")
         print("  -> Strong match overall; the only gap is Kubernetes.")   # the verdict
@@ -301,6 +302,7 @@ def test_progress_lines_become_step_events():
         {"type": "step_detail", "step": 1, "text": "AI Engineer @ Acme (Remote)", "warn": False},
         {"type": "step", "step": 2, "text": "Comparing your resumes with the job"},
         {"type": "step_detail", "step": 2, "text": "Scoring cv_ai", "warn": False},
+        {"type": "step_detail", "step": 2, "text": "Writing the verdict", "warn": False},
         {"type": "step_detail", "step": 2, "text": "best: cv_ai · fit 86", "warn": False},
         {"type": "step", "step": 3, "text": "Researching the company (agent picks its own searches)"},
         {"type": "step_detail", "step": 3, "text": "research failed (timeout) - continuing without it",

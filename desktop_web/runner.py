@@ -272,6 +272,8 @@ class AgentRunner:
             return None
         if m := SCORING_LINE.match(line):
             return {"type": "step_detail", "step": self._step, "text": f"Scoring {m.group(1)}", "warn": False}
+        if line == "- writing the verdict...":  # 14c: after the judge
+            return {"type": "step_detail", "step": self._step, "text": "Writing the verdict", "warn": False}
         if m := SCORE_LINE.match(line):
             self._scores[m.group(2)] = int(m.group(1))
             return None

@@ -1228,3 +1228,55 @@ make it happen again, so that cause isn't proven.
   - the step said "best: Raif_Karani_AI_Engineer · fit 75"
   - then I stopped the run
 - 222 tests, typecheck clean.
+
+## 14c — Short or detailed fit answer, verdict after the judge ✅ (31 Oct 2026, D29)
+
+### What was done
+- **The verdict is written last.**
+  - The per-resume AI call now writes only facts: matches with quotes, gaps,
+    talking points.
+  - After the quote check and the judge, one small call writes the verdict
+    for the best resume, from what survived.
+  - A verdict under 8 words is replaced by one built in code.
+  - Step 2 on the timeline shows "Writing the verdict".
+- **Settings → Options → Fit answer: Short (default) / Detailed.**
+  - Short: up to 3 talking points.
+  - Detailed: up to 5.
+  - The matches and the score formula are the same in both.
+- Jobs saved before 14c keep their old verdict.
+
+### Measured (2 saved jobs × 2 resumes, judge on, qwen3:8b, 2 runs each)
+| | Revolut job | LamdaX job | AI output per job |
+|---|---|---|---|
+| Before | 100 s, 92 s | 72 s, 71 s | ~3,500 / ~2,500 tokens |
+| Short | 73–74 s | 52–54 s | ~2,500 / ~1,700 |
+| Detailed | 73–75 s | 65–70 s | ~2,500 / ~2,300 |
+
+- **Before:**
+  - A LamdaX verdict called the resume "a strong match… with relevant
+    project evidence" right after the judge rejected two claims.
+  - A Revolut verdict brought up the location, which isn't among the facts.
+- **After:**
+  - Every verdict names the proven skills and the main gap, e.g. "Worth a
+    try: experience scripting or programming and solid problem-solving skills
+    are proven; passion for IT systems and full-time availability are the
+    main gaps…".
+  - No verdict cited a claim the judge rejected.
+- **Fixed along the way:**
+  - The first verdict prompt gave one answer of just "apply". The code
+    fallback now covers that.
+  - My example sentence started with "Apply", so every verdict said
+    "Apply", even at fit 41. It now offers "Apply / Worth a try / Not yet".
+- **Same as before:** fit scores still vary a little between runs of the
+  same job (one run: 63 vs 78).
+
+### Checked in the real window
+The Fit answer switch shows "Short" at first. "Detailed" saved and was still
+chosen after a reload, and switching back saved "short". 230 tests pass and
+the front end builds.
+
+### Found, not fixed (needs your OK)
+The resume quote check rejects an exact quote that ends a resume sentence:
+"Shipped Docker images" vs "Shipped Docker images." fails, because the full
+stop stays on the last word. This can lower fit scores. The fix is small,
+but it changes scores, so it should be its own step.

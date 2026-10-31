@@ -477,5 +477,21 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
   two countries are meant to differ in structure, and the user knows which
   one fits.
 
+## D29 — The verdict is written last; "Short" is the default ✅ (31 Oct 2026, step 14c)
+- **The verdict moved out of the per-resume AI call.**
+  - It used to be written before the quote check and the judge, so it could
+    praise a claim they then rejected. That happened in the "before" run.
+  - Now one small extra call writes it, for the best resume only. It sees
+    only the proven skills and the gaps.
+  - A verdict under 8 words is replaced by one built in code from the same
+    facts. That covers the bare "apply" seen in testing.
+- **Default "Short":**
+  - step 2 is about 20% faster than before
+  - about 25% less AI output
+  - the matches, the quotes and the score formula are untouched
+- **"Detailed" keeps up to 5 talking points.** qwen3:8b mostly ignores the
+  "2–3 sentences" request for the verdict, so Settings doesn't promise a
+  longer verdict.
+
 ## Open questions ❓
 - (none)

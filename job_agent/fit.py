@@ -24,6 +24,8 @@ from job_agent.llm import structured_llm
 from job_agent.models import (
     EvidenceReview,
     FitAnalysis,
+    FitFacts,
+    FitVerdict,
     JobPosting,
     ResumeMatch,
     SkillJudgment,
@@ -37,6 +39,26 @@ Rules:
 - For each match, quote a short phrase copied word-for-word from the RESUME.
 - Anything required but not in the resume goes in missing_skills.
 - Do not invent experience. If unsure, treat it as missing."""
+
+# 14c: how much the agent writes besides the facts. "short" never trims the
+# matches and their quotes (the evidence checks and the score need them);
+# it trims the talking points and the verdict.
+DETAIL_LEVELS = ("short", "detailed")
+TALKING_POINTS = {
+    "short": "- talking_points: at most 3, each under 15 words.",
+    "detailed": "- talking_points: 3-5, each a full sentence.",
+}
+VERDICT_LENGTH = {
+    "short": "One sentence.",
+    "detailed": "Two or three sentences: whether to apply, the strongest proof, "
+    "and the gap worth addressing in the application.",
+}
+
+
+def detail_level() -> str:
+    """The FIT_DETAIL setting; anything unknown counts as "short"."""
+    level = os.getenv("FIT_DETAIL", "short").strip().lower()
+    return level if level in DETAIL_LEVELS else "short"
 
 # A quote counts as verified if this share of its words appear in the resume.
 # 1.0 would demand a perfect copy; small models often change a word or two.
@@ -59,8 +81,8 @@ def is_evidence_in_resume(evidence: str, resume_text: str) -> bool:
 
 
 def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
-    """One LLM call: how well does this single resume fit this job?"""
-    llm = structured_llm(FitAnalysis)
+    """One LLM call: how well does this single resume fit this job? (Facts only.)"""
+    llm = structured_llm(FitFacts)
 
     # Send the structured job (from Phase 1) as JSON, not the raw page:
     # it's shorter and already cleaned up, so the model focuses better.
@@ -69,9 +91,9 @@ def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
         f"=== JOB POSTING ===\n{job.model_dump_json(indent=2)}\n\n"
         f"=== RESUME ===\n{resume_text}\n=== END RESUME ==="
     )
-    return llm.invoke(
-        [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=prompt)]
-    )
+    system = f"{SYSTEM_PROMPT}\n{TALKING_POINTS[detail_level()]}"
+    facts = llm.invoke([SystemMessage(content=system), HumanMessage(content=prompt)])
+    return FitAnalysis(**facts.model_dump())
 
 
 def verify_analysis(analysis: FitAnalysis, resume_text: str) -> ResumeMatch:
@@ -214,4 +236,58 @@ def pick_best_resume(
         matches,
         key=lambda m: (m.fit_score, len(m.analysis.matching_skills)),
     )
+    print("  - writing the verdict...")
+    analysis = best.analysis.model_copy(update={"verdict": write_verdict(job, best)})
+    best = best.model_copy(update={"analysis": analysis})
+    matches = [best if m.resume_name == best.resume_name else m for m in matches]
     return best, matches
+
+
+# ---------------------------------------------------------------------------
+# 14c: the verdict, written LAST
+# It sees only what survived the quote check and the judge, so it can't
+# praise a claim that was rejected. One small call, for the best resume only.
+# ---------------------------------------------------------------------------
+
+VERDICT_PROMPT = """You advise a job seeker. Using ONLY the checked facts below,
+say whether they should apply and why. Every skill you call a strength must be
+in PROVEN; anything in GAPS is not a strength. Be honest and specific: name
+the skills and gaps, don't just say "relevant skills" or "some gaps".
+Start with one of: "Apply", "Worth a try" or "Not yet". Below a fit score of
+50, "Apply" is rarely right.
+Shape (fill in from the facts): "<Apply | Worth a try | Not yet>: <proven skill>
+and <proven skill> are proven; <gap> is the main gap, so <what to do about it>.\""""
+
+# Shorter than this, the model skipped the "why" ("apply" happened in testing).
+MIN_VERDICT_WORDS = 8
+
+
+def verdict_from_facts(match: ResumeMatch) -> str:
+    """The fallback verdict, built by code from the same checked facts."""
+    fit = match.analysis
+    # Requirements are often whole sentences from the posting: keep a few words.
+    short = lambda text: text if len(text.split()) <= 5 else " ".join(text.split()[:5]) + "..."  # noqa: E731
+    proven = "; ".join(short(m.requirement) for m in fit.matching_skills[:2]) or "none of the requirements"
+    gaps = "; ".join(short(g) for g in fit.missing_skills[:2]) or "none"
+    advice = "Worth applying" if match.fit_score >= 60 else "A stretch"
+    return f"{advice} (fit {match.fit_score}): proven: {proven}. Main gaps: {gaps}."
+
+
+def write_verdict(job: JobPosting, match: ResumeMatch) -> str:
+    fit = match.analysis
+    proven = "\n".join(f"- {m.requirement}" for m in fit.matching_skills) or "- (none)"
+    gaps = "\n".join(f"- {g}" for g in fit.missing_skills) or "- (none)"
+    prompt = (
+        f"=== JOB ===\n{job.title} at {job.company}\n{job.summary}\n\n"
+        f"=== PROVEN (checked against the resume) ===\n{proven}\n\n"
+        f"=== GAPS ===\n{gaps}\n\n"
+        f"Fit score: {match.fit_score}/100"
+    )
+    system = f"{VERDICT_PROMPT}\nLength: {VERDICT_LENGTH[detail_level()]}"
+    answer = structured_llm(FitVerdict).invoke(
+        [SystemMessage(content=system), HumanMessage(content=prompt)]
+    )
+    verdict = answer.verdict.strip()
+    if len(verdict.split()) < MIN_VERDICT_WORDS:
+        return verdict_from_facts(match)
+    return verdict

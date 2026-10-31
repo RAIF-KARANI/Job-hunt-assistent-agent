@@ -16,6 +16,10 @@ const THEMES: { id: Theme; label: string }[] = [
   { id: "dark", label: "Dark" },
   { id: "light", label: "Light" },
 ];
+const FIT_DETAIL = [
+  { id: "short", label: "Short" },
+  { id: "detailed", label: "Detailed" },
+];
 
 interface Props {
   settings: SettingsData;
@@ -280,6 +284,26 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
             <span className="hint">More accurate fit scores, about 30 s slower per job.</span>
           </span>
         </label>
+        <fieldset className="plain-fieldset">
+          <legend>Fit answer</legend>
+          <div className="segmented" role="radiogroup" aria-label="Fit answer">
+            {FIT_DETAIL.map((d) => (
+              <label key={d.id} className="segment">
+                <input
+                  type="radio"
+                  name="fit-detail"
+                  checked={(settings.FIT_DETAIL ?? "short") === d.id}
+                  onChange={() => void saveNow({ FIT_DETAIL: d.id }, "options")}
+                />
+                <span>{d.label}</span>
+              </label>
+            ))}
+          </div>
+          <p className="hint">
+            Short: up to 3 talking points, step 2 about 20% faster. Detailed: up to 5, and the verdict may be longer. Either way the
+            verdict names your proven skills and the main gap, and the score is worked out the same way.
+          </p>
+        </fieldset>
         <label className="field narrow">
           <span>Tracing (for developers)</span>
           <select className="input" value={String(settings.TRACING ?? "off")} onChange={(e) => void saveNow({ TRACING: e.target.value }, "options")}>

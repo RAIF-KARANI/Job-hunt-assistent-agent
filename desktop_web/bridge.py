@@ -57,6 +57,7 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "UPDATE_CHECK": ("true", "false"),        # 13b
     "RESUMES_DEFAULT": None,                  # 14b: file names joined by "|"; "" = all
     "RESUMES_ASK": ("true", "false"),         # 14b: pick the resumes for each job
+    "FIT_DETAIL": ("short", "detailed"),      # 14c: talking points + verdict length
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 

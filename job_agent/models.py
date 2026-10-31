@@ -54,12 +54,15 @@ class SkillMatch(BaseModel):
     )
 
 
-class FitAnalysis(BaseModel):
-    """How well ONE resume matches ONE job. Produced by the LLM in Phase 2."""
+class FitFacts(BaseModel):
+    """What the LLM writes per resume in Phase 2: facts only, no verdict.
 
-    # Field order matters: the model writes fields top to bottom, so asking for
-    # evidence (skills, gaps) BEFORE the verdict makes the verdict better grounded.
-    #
+    14c: the verdict used to be the last field here, so it was written BEFORE
+    code and the judge checked the claims, and could praise a claim the judge
+    then rejected. Now it's written afterwards (FitVerdict), for the best
+    resume only, from the facts that survived.
+    """
+
     # Phase 8a: there is deliberately NO fit_score field any more. The LLM
     # used to invent a 0-100 number (qwen3:14b once gave 4/100 to a resume
     # with 4 proven matches). Now the LLM only lists FACTS (proven matches,
@@ -74,11 +77,25 @@ class FitAnalysis(BaseModel):
         "anywhere in the resume, one per item"
     )
     talking_points: list[str] = Field(
-        description="3-5 short, specific achievements or projects FROM THE RESUME "
+        description="Short, specific achievements or projects FROM THE RESUME "
         "(with numbers if the resume has them) worth highlighting for THIS job"
     )
+
+
+class FitAnalysis(FitFacts):
+    """How well ONE resume matches ONE job: the facts plus the verdict."""
+
+    # Rows saved before 14c have the LLM's old verdict; "" for resumes that
+    # weren't the best one (only the best gets a verdict).
+    verdict: str = ""
+
+
+class FitVerdict(BaseModel):
+    """The verdict, written after every check (14c)."""
+
     verdict: str = Field(
-        description="One honest sentence: should the candidate apply, and why?"
+        description="Full sentence(s): apply or not, then WHY, naming specific "
+        "proven skills and specific gaps from the facts. Never a single word."
     )
 
 
