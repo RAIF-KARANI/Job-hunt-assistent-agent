@@ -138,8 +138,9 @@ with five screens:
   quick-analyze shortcut, updates.
 
 **In the background:**
-- **Tray icon:** closing the window during a run keeps it working in the
-  tray, with a notification when the cover note is ready. Optionally,
+- **Tray icon:** closing the window keeps JobLens in the tray during a run,
+  and always while the quick-analyze shortcut is on (quit from the tray
+  icon). Click a notification to open the screen it's about. Optionally,
   **JobLens starts with Windows**, hidden in the tray.
 - **Quick analyze:** press **Ctrl+Alt+J** anywhere, paste a link, press
   Enter. The run goes on in the background, and a notification (with a
@@ -239,7 +240,7 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 302 tests cover:
+The 304 tests cover:
 - the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
 - the fit verdict, the run log, quality checks and monitoring numbers
 - the PC check, the 3D recommendation and Ollama setup

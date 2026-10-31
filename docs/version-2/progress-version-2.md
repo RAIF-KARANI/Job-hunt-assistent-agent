@@ -1756,3 +1756,22 @@ you open JobLens again. That doesn't fit your way of using it, so you chose
 
 304 tests pass (2 new: when closing keeps JobLens in the tray; a
 notification click opens the right screen and icon clicks still work).
+
+## Release v1.0.3 (31 Oct 2026, D37)
+- **Contents:** D37 (the shortcut keeps JobLens in the tray; notification
+  clicks open it), on top of 1.0.2's fix.
+- **Checked before publishing (D3):**
+  - 304 tests
+  - a clean `npm ci`: 0 vulnerabilities, typecheck clean
+  - `--test-install`: self-test PASS and window test 1.0.3, for the build
+    and its installed copy; it uninstalled clean
+  - the release build: self-test PASS
+  - **the built `JobLens.exe`** with a free shortcut: after closing, it
+    stayed running in the tray (its window hidden, not destroyed)
+  - **with the shortcut taken** (your running JobLens held Ctrl+Alt+J), it
+    quit on close, as designed
+  - no private files in the app folder
+- **Files:**
+  - `JobLens-Setup-1.0.3.exe`: SHA-256 `a3f055ec…773c`
+  - portable zip: SHA-256 `a45220af…e79d`
+- `main` fast-forwarded; you publish it with `gh release create`.
