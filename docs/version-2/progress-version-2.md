@@ -1561,6 +1561,24 @@ GitHub Actions minutes are used up, so every check ran here (D3):
      (no rewrite, D4): only your name, already public as the app's
      publisher.
 
-**Next:** you publish the release with `gh release create` (my permission
-check blocks public pages). After that: check the release, and that 0.3.2's
-own updater offers 1.0.0.
+You published it with `gh release create` (my permission check blocks
+public pages).
+
+## Release v1.0.0 ✅ (31 Oct 2026)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.0
+- **Contents:** version 2 complete:
+  - the new UI (Phase 12)
+  - tray and self-update (Phase 13)
+  - the Phase 14 features: quick analyze, follow-up reminders, Start with
+    Windows, resume prompt, notes per job, export, Continue, resume choice,
+    short/detailed fit
+- **Checked after publishing:**
+  - Latest (GitHub's "latest release" API answers v1.0.0); not a draft or
+    pre-release
+  - tag `v1.0.0` → `6f192be`, the commit `main` and `version-2` point at
+  - GitHub's SHA-256 of both uploads matches the notes (`f2e1e51f…1459`,
+    `c1e3e73f…4e0b`)
+  - JobLens's own updater, asked as 0.3.2 (real API), offers v1.0.0 with
+    `JobLens-Setup-1.0.0.exe` and the right checksum. So your and your
+    friend's 0.3.2 will get it through Settings → Updates.
+- The full commit id worked first time.
