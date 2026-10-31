@@ -588,3 +588,18 @@
   border-color: var(--accent);
   color: var(--text-muted);
 }
+
+/* ---- Langfuse keys (1.0.1) ---- */
+
+.langfuse-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.langfuse-fields .hint {
+  margin: 0;
+}

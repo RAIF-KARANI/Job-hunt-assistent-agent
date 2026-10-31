@@ -60,6 +60,8 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "FIT_DETAIL": ("short", "detailed"),      # 14c: talking points + verdict length
     "FOLLOW_UP_DAYS": followup.DAY_CHOICES,   # 14e
     "QUICK_KEY": None,                        # 14f: e.g. "Ctrl+Alt+J", or "off" (checked below)
+    "LANGFUSE_HOST": None,                    # 1.0.1: a web address (checked below)
+    "LANGFUSE_PUBLIC_KEY": None,              # 1.0.1: the secret key goes through set_langfuse_secret()
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 
@@ -95,18 +97,35 @@ def _resume_path(name: str) -> Path:
     return paths.DATA_DIR / name
 
 
-def _langfuse_project(host: str) -> str | None:
-    """The Langfuse project id (needed for session links), or None if
-    Langfuse isn't running or the keys are wrong."""
+def langfuse_check(host: str, public_key: str, secret_key: str) -> tuple[str, dict | None]:
+    """Ask Langfuse which project these keys belong to (1.0.1).
+
+    Returns (state, project): "running" with {"id", "name"}, or one of
+    "no keys", "keys rejected", "not reachable" with None. Until 1.0.1
+    every failure said "not reachable", even when Langfuse was up and only
+    the keys were missing (the installed app had none)."""
     import requests
 
+    if not public_key or not secret_key:
+        return "no keys", None
     try:
-        r = requests.get(f"{host}/api/public/projects", timeout=3,
-                         auth=(os.getenv("LANGFUSE_PUBLIC_KEY", ""), os.getenv("LANGFUSE_SECRET_KEY", "")))
+        r = requests.get(f"{host}/api/public/projects", timeout=3, auth=(public_key, secret_key))
+    except requests.RequestException:
+        return "not reachable", None
+    if r.status_code in (401, 403):
+        return "keys rejected", None
+    try:
         r.raise_for_status()
-        return (r.json().get("data") or [{}])[0].get("id")
+        project = (r.json().get("data") or [{}])[0]
+        return "running", {"id": project.get("id"), "name": project.get("name")}
     except (requests.RequestException, ValueError, AttributeError):
-        return None
+        return "not reachable", None
+
+
+def _langfuse_project(host: str) -> str | None:
+    """The Langfuse project id (for session links), or None."""
+    _, project = langfuse_check(host, os.getenv("LANGFUSE_PUBLIC_KEY", ""), os.getenv("LANGFUSE_SECRET_KEY", ""))
+    return project and project.get("id")
 
 
 def _records(df) -> list[dict]:
@@ -279,6 +298,23 @@ class Api:
         ext = Path(name).suffix
         return path if path.suffix.lower() == ext else path.with_name(path.name + ext)
 
+    def delete_job(self, job_id: int) -> dict:
+        """1.0.1 (a friend's idea): remove a job from the tracker, with its
+        analysis, cover notes and your notes. Refused while the agent works on it."""
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        runner = self._runner
+        if (runner.busy or runner.last_pause) and runner.history and \
+                any(e.get("url") == job["url"] for e in runner.history if e.get("type") in ("started", "continued")):
+            raise RuntimeError("The agent is working on this job right now. Finish or stop that run first.")
+        removed = tracker.delete_job(int(job_id))
+        from job_agent import cover_note  # its .md copies: "<job id>_<company-title>.md"
+        files = sorted(cover_note.NOTES_DIR.glob(f"{int(job_id)}_*.md")) if cover_note.NOTES_DIR.exists() else []
+        for path in files:
+            path.unlink(missing_ok=True)
+        return {**removed, "files": len(files)}
+
     def save_notes(self, job_id: int, values: dict) -> dict:
         """14h: your notes, interview date and contact. Returns them as saved."""
         tracker.save_notes(int(job_id), values)
@@ -354,13 +390,37 @@ class Api:
         # Old runs may have Langfuse traces even when tracing is now off.
         if mode == "langfuse" or os.getenv("LANGFUSE_PUBLIC_KEY"):
             host = os.getenv("LANGFUSE_HOST", "http://localhost:3000").rstrip("/")
-            project = _langfuse_project(host)
+            state, project = langfuse_check(host, os.getenv("LANGFUSE_PUBLIC_KEY", ""),
+                                            os.getenv("LANGFUSE_SECRET_KEY", ""))
             if project:
                 status["langfuse"] = "running" if mode == "langfuse" else "off"
-                status["langfuse_sessions"] = f"{host}/project/{project}/sessions/"
+                status["langfuse_sessions"] = f"{host}/project/{project['id']}/sessions/"
             elif mode == "langfuse":
-                status["langfuse"] = "not reachable"
+                status["langfuse"] = state  # "no keys" / "keys rejected" / "not reachable"
         return status
+
+    def test_langfuse(self, host: str | None = None, public_key: str | None = None,
+                      secret_key: str | None = None) -> dict:
+        """Settings' Test button (1.0.1). Empty fields use what's saved, so the
+        secret key never has to come back to the page."""
+        host = (host or os.getenv("LANGFUSE_HOST") or "http://localhost:3000").strip().rstrip("/")
+        state, project = langfuse_check(host, (public_key or os.getenv("LANGFUSE_PUBLIC_KEY", "")).strip(),
+                                        (secret_key or os.getenv("LANGFUSE_SECRET_KEY", "")).strip())
+        messages = {
+            "running": f"Connected to the Langfuse project “{(project or {}).get('name') or 'unnamed'}”.",
+            "no keys": "Add the public and the secret key (Langfuse → Settings → API Keys).",
+            "keys rejected": "Langfuse is running, but it rejected these keys. Copy them again from Langfuse → Settings → API Keys.",
+            "not reachable": f"Nothing answers at {host}. Start Langfuse: cd infra\\langfuse, then docker compose up -d.",
+        }
+        return {"ok": state == "running", "state": state, "message": messages[state]}
+
+    def set_langfuse_secret(self, key: str) -> dict:
+        """Write-only, like the Claude key: the page can set or clear it, never read it."""
+        key = (key or "").strip()
+        if any(ord(ch) < 32 for ch in key):
+            raise ValueError("The key can't contain line breaks.")
+        settings.save_settings({"LANGFUSE_SECRET_KEY": key})
+        return self.get_settings()
 
     # ---- resumes (12g) ------------------------------------------------------
 
@@ -571,6 +631,7 @@ class Api:
         values = settings.read_settings()
         out = {k: v for k, v in values.items() if k not in SECRET_SETTINGS}
         out["ANTHROPIC_API_KEY_SET"] = bool(values.get("ANTHROPIC_API_KEY"))
+        out["LANGFUSE_SECRET_KEY_SET"] = bool(values.get("LANGFUSE_SECRET_KEY"))
         return out
 
     def save_settings(self, updates: dict) -> dict:
@@ -585,6 +646,8 @@ class Api:
                 raise ValueError(f"{key} can't contain line breaks or control characters.")
             if allowed and value not in allowed:
                 raise ValueError(f"{key} must be one of {', '.join(allowed)}")
+            if key == "LANGFUSE_HOST" and value and not value.startswith(("http://", "https://")):
+                raise ValueError("The Langfuse address must start with http:// or https://")
             if key == "QUICK_KEY" and value.lower() != "off":
                 from desktop_web.hotkey import parse
                 value = parse(value)[2]  # raises with a readable message; "ctrl+alt+j" -> "Ctrl+Alt+J"

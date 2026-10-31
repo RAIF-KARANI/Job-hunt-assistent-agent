@@ -9,6 +9,7 @@ import { LevelPicker } from "./LevelPicker";
 import { ModelPicker } from "./ModelPicker";
 import { ResumeList } from "./ResumeList";
 import { ShortcutField } from "./ShortcutField";
+import { LangfuseFields } from "./LangfuseFields";
 import { UpdatesCard } from "./UpdatesCard";
 
 const DEFAULT_MODELS: Record<string, string> = { ollama: "qwen3:8b", anthropic: "claude-haiku-5-5" };
@@ -347,6 +348,7 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
           </select>
           <span className="hint">Applies after restarting JobLens. The run log behind Evals is always on.</span>
         </label>
+        {settings.TRACING === "langfuse" && <LangfuseFields settings={settings} onSettings={onSettings} />}
       </section>
 
       <section className="card settings-card" aria-labelledby="reminders-title">

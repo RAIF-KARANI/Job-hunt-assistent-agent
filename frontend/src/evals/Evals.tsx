@@ -30,14 +30,20 @@ const RESULT_TONE: Record<string, string> = {
 function TracingChips({ status }: { status: TracingStatus | null }) {
   const langfuse = status?.langfuse ?? "…";
   const langsmith = status?.langsmith ?? "…";
-  const tone = (s: string) => (s === "running" || s === "on" ? "ok" : s === "not reachable" || s === "no key" ? "warn" : "off");
+  const tone = (s: string) =>
+    s === "running" || s === "on" ? "ok" : ["not reachable", "no key", "no keys", "keys rejected"].includes(s) ? "warn" : "off";
+  const langfuseHint: Record<string, string> = {
+    "not reachable": "Start it with: cd infra\\langfuse && docker compose up -d",
+    "no keys": "Add its keys in Settings → Options → Tracing",
+    "keys rejected": "Langfuse rejected the keys: copy them again into Settings → Options → Tracing",
+  };
   return (
     <ul className="tracing" aria-label="Where run data is recorded">
       <li className="trace-chip ok">
         <span className="trace-dot" aria-hidden="true" />
         Run log · always on
       </li>
-      <li className={`trace-chip ${tone(langfuse)}`} title={langfuse === "not reachable" ? "Start it with: cd infra\\langfuse && docker compose up -d" : undefined}>
+      <li className={`trace-chip ${tone(langfuse)}`} title={langfuseHint[langfuse]}>
         <span className="trace-dot" aria-hidden="true" />
         Langfuse · {langfuse}
       </li>
@@ -60,7 +66,7 @@ function TraceLink({ run, status }: { run: EvalsData["recent"][number]; status: 
       </a>
     );
   }
-  if (run.tracing === "langfuse") return <span className="muted" title="Langfuse isn't running">Langfuse (off)</span>;
+  if (run.tracing === "langfuse") return <span className="muted" title="No connection to Langfuse right now (see the chip above)">Langfuse (off)</span>;
   return <span className="muted">off</span>;
 }
 

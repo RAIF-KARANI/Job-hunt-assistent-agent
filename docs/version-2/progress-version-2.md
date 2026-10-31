@@ -1582,3 +1582,48 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.0
     `JobLens-Setup-1.0.0.exe` and the right checksum. So your and your
     friend's 0.3.2 will get it through Settings → Updates.
 - The full commit id worked first time.
+
+## 1.0.1 fixes: Langfuse keys, delete a job ✅ (31 Oct 2026, D36)
+
+### Why
+**Tracing:** you set it to Langfuse, restarted, and Evals said "Langfuse ·
+not reachable".
+- Langfuse was running (all containers up, `localhost:3000` answered).
+- The installed app's `.env` had `TRACING=langfuse` but **no keys**, so
+  Langfuse answered 401. The same request with the repo's keys: 200.
+- Every failure said "not reachable", and the app had no place to enter
+  the keys. So no traces were sent at all.
+
+**Deleting a job:** your friend asked for a way to remove a company.
+
+### What was done
+- **Your installed app** got the three `LANGFUSE_*` lines from the repo
+  `.env` (it needs a restart).
+- **Settings → Tracing = Langfuse:**
+  - address, public key, secret key
+  - **Save keys** and **Test**
+  - the secret key is write-only
+- **Honest status** in Evals and Test: "no keys", "keys rejected" or "not
+  reachable", each with what to do.
+- **Delete this job…** in a job's details, with a confirmation. It removes
+  the job, its analysis, its approved cover notes (and their files) and
+  your notes. Evals keeps its numbers.
+
+### Checked in the real window (copy of your data, your real Langfuse)
+- **Before** (copy without keys, like your app): Evals said "Langfuse · no
+  keys", with "Add its keys in Settings → Options → Tracing".
+- **Test with no keys:** "Add the public and the secret key".
+- **Test with a wrong secret:** "Langfuse is running, but it rejected these
+  keys".
+- **Save keys with the real ones:** "Connected to the Langfuse project “Job
+  Hunt Assistant”". The secret field emptied ("Saved (type to replace)") and
+  all three were saved to the copy's `.env`.
+- **After a reload:** Evals said "Langfuse · running".
+- **Delete:**
+  - LamdaX → "Delete LamdaX? … its 1 approved cover note …", with Cancel
+    focused
+  - Delete: the toast "Deleted LamdaX · AI Engineer", the sheet closed
+  - 3 cards left, the database had 3 jobs, and its cover note file was gone
+
+301 tests pass (9 new in `tests/test_v101.py`, one older test updated to the
+new check) and the typecheck is clean. Your real tracker was unchanged.

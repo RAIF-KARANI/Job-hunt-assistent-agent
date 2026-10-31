@@ -102,6 +102,13 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
     autostart_status: async () => autostart,
+    delete_job: async (id) => {
+      const i = jobs.findIndex((j) => j.id === id);
+      const [job] = jobs.splice(i, 1);
+      return { company: job.company, title: job.title, cover_notes: 1, files: 1 };
+    },
+    test_langfuse: async () => ({ ok: false, state: "not reachable", message: "Nothing answers at http://localhost:3000." }),
+    set_langfuse_secret: async () => ({ ...settings, LANGFUSE_SECRET_KEY_SET: true }),
     export_tracker: async () => ({ path: "C:\Users\you\Documents\JobLens jobs 2026-10-31.csv", count: jobs.length }),
     export_cover_note: async (id, fmt) => ({ path: `C:\Users\you\Documents\Cover note - ${id}.${fmt}` }),
     show_in_folder: async () => undefined,

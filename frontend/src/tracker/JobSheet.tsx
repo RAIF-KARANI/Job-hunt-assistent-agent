@@ -22,12 +22,14 @@ interface Props {
   onFollowUp(id: number, action: "done" | "snooze"): Promise<void>;
   /** 14h: notes saved: refresh the cards. */
   onChanged(): void;
+  /** 1.0.1: the job was deleted. */
+  onDeleted(what: string): void;
   onClose(): void;
 }
 
 const isWebLink = (url: string) => /^https?:\/\//i.test(url);
 
-export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, onClose }: Props) {
+export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, onDeleted, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [job, setJob] = useState<JobDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +37,21 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false); // 14g
+  const [confirmDelete, setConfirmDelete] = useState(false); // 1.0.1
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null); // 14i: where the export went
   const [exportError, setExportError] = useState<string | null>(null);
+
+  const deleteJob = async () => {
+    setDeleteError(null);
+    try {
+      const removed = await (await getApi()).delete_job(jobId);
+      onDeleted(`${removed.company} · ${removed.title}`);
+      dialog.current?.close();
+    } catch (e) {
+      setDeleteError(errorMessage(e));
+    }
+  };
 
   const exportNote = async (fmt: "txt" | "docx" | "pdf") => {
     setExportError(null);
@@ -294,6 +309,35 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
             <p className="hint sheet-foot">
               Added {parseUtc(job.created_at).toLocaleDateString()} · status changed {ago(job.updated_at)} · job #{job.id}
             </p>
+
+            <section className="delete-job" aria-labelledby="delete-title">
+              {!confirmDelete ? (
+                <button type="button" className="btn btn-ghost btn-sm btn-danger-text" onClick={() => setConfirmDelete(true)}>
+                  Delete this job…
+                </button>
+              ) : (
+                <div className="delete-confirm" role="alertdialog" aria-labelledby="delete-title" aria-describedby="delete-text">
+                  <h3 id="delete-title">Delete {job.company}?</h3>
+                  <p id="delete-text" className="hint">
+                    This removes the job, its analysis, {job.cover_notes.length ? `its ${job.cover_notes.length} approved cover note${job.cover_notes.length > 1 ? "s" : ""}` : "its cover notes"}{" "}
+                    and your notes from this PC. It can't be undone. Evals keeps its numbers.
+                  </p>
+                  <div className="notes-actions">
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => void deleteJob()}>
+                      Delete
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)} autoFocus>
+                      Cancel
+                    </button>
+                  </div>
+                  {deleteError && (
+                    <p className="error" role="alert">
+                      {deleteError}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
           </>
         )}
       </div>

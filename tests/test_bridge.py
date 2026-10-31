@@ -628,11 +628,11 @@ def test_tracing_status_langfuse(monkeypatch):
     api = Api(send=lambda e: None)
     api.save_settings({"TRACING": "langfuse"})
     monkeypatch.setenv("LANGFUSE_HOST", "http://localhost:3000/")
-    monkeypatch.setattr(bridge, "_langfuse_project", lambda host: "proj-1")
+    monkeypatch.setattr(bridge, "langfuse_check", lambda host, pk, sk: ("running", {"id": "proj-1", "name": "p"}))
     status = api.tracing_status()
     assert status["langfuse"] == "running"
     assert status["langfuse_sessions"] == "http://localhost:3000/project/proj-1/sessions/"
-    monkeypatch.setattr(bridge, "_langfuse_project", lambda host: None)  # Docker not started
+    monkeypatch.setattr(bridge, "langfuse_check", lambda host, pk, sk: ("not reachable", None))  # Docker not started
     assert api.tracing_status()["langfuse"] == "not reachable"
 
 

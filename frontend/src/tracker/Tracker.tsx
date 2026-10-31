@@ -41,6 +41,7 @@ export function Tracker() {
   const [followOnly, setFollowOnly] = useState(false); // 14e: only the jobs due a follow-up
   const [exported, setExported] = useState<{ path: string; count: number } | null>(null); // 14i
   const [exportError, setExportError] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState<string | null>(null); // 1.0.1
 
   const [lastMove, setLastMove] = useState<Move | null>(null);
   const undoTimer = useRef<number | undefined>(undefined);
@@ -237,6 +238,13 @@ export function Tracker() {
       )}
 
       <div className="toast-slot" aria-live="polite">
+        {deleted && (
+          <div className="toast" role="status">
+            <span>
+              Deleted <strong>{deleted}</strong>
+            </span>
+          </div>
+        )}
         {lastMove && (
           <div className="toast" role="status">
             <span>
@@ -257,6 +265,13 @@ export function Tracker() {
           onMove={changeStatus}
           onFollowUp={followUp}
           onChanged={load}
+          onDeleted={(what) => {
+            setDeleted(what);
+            setLastMove(null);
+            load();
+            window.clearTimeout(undoTimer.current);
+            undoTimer.current = window.setTimeout(() => setDeleted(null), 6000);
+          }}
           onClose={() => setOpenId(null)}
         />
       )}

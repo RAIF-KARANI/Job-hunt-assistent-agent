@@ -159,6 +159,10 @@ export function Dashboard({ level }: { level: Ui3D }) {
           onMove={(id, to) => void move(id, to)}
           onFollowUp={followUp}
           onChanged={reloadJobs}
+          onDeleted={() => {
+            setSheetId(null);
+            reloadJobs();
+          }}
           onClose={() => setSheetId(null)}
         />
       )}

@@ -714,3 +714,25 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+
+/* ---- delete a job (1.0.1) ---- */
+
+.delete-job {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--danger-ink);
+  background: var(--danger-soft);
+}
+
+.delete-confirm h3,
+.delete-confirm p {
+  margin: 0;
+}

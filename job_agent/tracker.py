@@ -263,3 +263,18 @@ def save_notes(job_id: int, values: dict) -> None:
         cur = conn.execute(f"UPDATE jobs SET {sets} WHERE id = :id", {**clean, "id": job_id})
     if cur.rowcount == 0:
         raise ValueError(f"No job with id {job_id}")
+
+
+def delete_job(job_id: int) -> dict:
+    """Remove a job for good: its row, its approved cover notes (ON DELETE
+    CASCADE) and your notes on it. The run log keeps its runs (Evals'
+    numbers stay right); they just no longer link to a job. Returns what
+    was removed, for the "Deleted" message."""
+    init_db()
+    with _db() as conn:
+        row = conn.execute("SELECT company, title FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        if row is None:
+            raise ValueError(f"No job with id {job_id}")
+        notes = conn.execute("SELECT COUNT(*) FROM cover_notes WHERE job_id = ?", (job_id,)).fetchone()[0]
+        conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))  # foreign_keys ON: its cover notes go too
+    return {"company": row["company"], "title": row["title"], "cover_notes": notes}

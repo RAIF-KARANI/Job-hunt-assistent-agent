@@ -639,5 +639,35 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
 - The installed app's self-test now writes a .docx and a .pdf, so a build
   that can't is caught before release.
 
+## D36 — 1.0.1: Langfuse keys in the app, and deleting a job ✅ (31 Oct 2026)
+**Langfuse.** You set Tracing to Langfuse and restarted, and Evals said
+"not reachable". Langfuse was running; the installed app simply had **no
+keys**: they were only in the developer `.env`, and Settings had nowhere to
+enter them. Every failure was reported as "not reachable".
+- **Settings → Options → Tracing = Langfuse** now shows:
+  - the address, the public key and the secret key
+  - **Save keys** and **Test**
+- **The secret key is write-only, like the Claude key.** The page never
+  receives it; the field just shows "Saved".
+- **The status says what's wrong** (Evals' chip and the Test button):
+  - "no keys"
+  - "keys rejected" (Langfuse answered 401/403)
+  - "not reachable" (nothing answers; start Docker)
+- Your installed app got the keys copied from the repo `.env` (your OK,
+  "fix both").
+
+**Deleting a job** (your friend's idea):
+- **Where:** "Delete this job…" at the bottom of a job's details. You confirm
+  first ("Delete LamdaX? … can't be undone"); the focus starts on Cancel.
+- **It removes:**
+  - the tracker row and its analysis
+  - its approved cover notes, in the database and their `.md` copies
+  - your notes on it
+- **The run log keeps its runs:** Evals' numbers stay right; they just no
+  longer link to a job.
+- **Refused while the agent works on that job,** or while its cover note
+  waits for you.
+- **Analyzing the same link later starts fresh,** with nothing reused.
+
 ## Open questions ❓
 - (none)

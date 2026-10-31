@@ -12,6 +12,7 @@ export interface Settings {
   UI_THEME?: Theme;
   SETUP_DONE?: string;
   ANTHROPIC_API_KEY_SET: boolean;
+  LANGFUSE_SECRET_KEY_SET?: boolean; // 1.0.1: the key itself never reaches the page
   [key: string]: string | boolean | undefined;
 }
 
@@ -341,7 +342,7 @@ export interface EvalsData {
 
 export interface TracingStatus {
   mode: "off" | "langfuse" | "langsmith";
-  langfuse: "off" | "running" | "not reachable";
+  langfuse: "off" | "running" | "not reachable" | "no keys" | "keys rejected";
   langfuse_sessions: string | null; // + run_id = that run's trace
   langsmith: "off" | "on" | "no key";
   langsmith_url: string;
@@ -379,6 +380,10 @@ export interface PyApi {
   export_tracker(): Promise<{ path: string; count: number } | null>;
   export_cover_note(jobId: number, fmt: "txt" | "docx" | "pdf"): Promise<{ path: string } | null>;
   show_in_folder(path: string): Promise<void>;
+  /** 1.0.1: remove a job with its cover notes and your notes. */
+  delete_job(jobId: number): Promise<{ company: string; title: string; cover_notes: number; files: number }>;
+  test_langfuse(host: string | null, publicKey: string | null, secretKey: string | null): Promise<LlmStatus & { state: string }>;
+  set_langfuse_secret(key: string): Promise<Settings>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;
