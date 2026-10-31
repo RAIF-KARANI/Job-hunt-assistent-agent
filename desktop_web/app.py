@@ -174,7 +174,7 @@ def main(argv=None) -> int:
             threading.Timer(1.0, window.show).start()
     if tray:
         _follow_up_reminders(tray)
-    hotkey = _start_quick_box(url, api, tray)
+    hotkey = _start_quick_box(url, window, api, tray)
     instance.listen(on_show=lambda: _bring_back(window, tray))
     _check_for_updates_later(window, api)
     # 13d: the installer takes over -> close (never during a run: refused before)
@@ -215,9 +215,15 @@ def _check_for_updates_later(window, api) -> None:
 QUICK_SIZE = (480, 210)
 
 
-def _start_quick_box(page_url: str, api, tray):
+def _start_quick_box(page_url: str, main_window, api, tray):
     """14f: the quick-analyze box, made once (hidden) so the shortcut opens it
-    at once, and the global shortcut that shows it."""
+    at once, and the global shortcut that shows it.
+
+    pywebview's loop only ends when EVERY window is closed. In 1.0.0-1.0.1
+    the hidden box stayed when you closed JobLens, so the process lived on
+    with no window, and opening JobLens again showed nothing (it asked that
+    process to show a window it no longer had). Closing the main window now
+    closes the box too."""
     from desktop_web.hotkey import HotkeyListener
     from desktop_web.quick import QuickApi
 
@@ -229,6 +235,13 @@ def _start_quick_box(page_url: str, api, tray):
                                 width=QUICK_SIZE[0], height=QUICK_SIZE[1], resizable=False, frameless=True,
                                 easy_drag=False, on_top=True, hidden=True, background_color=_background())
     holder["window"] = box
+
+    def close_box():
+        try:
+            box.destroy()
+        except Exception:  # already gone
+            pass
+    main_window.events.closed += close_box
 
     def show():
         box.show()

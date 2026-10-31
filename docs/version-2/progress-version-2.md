@@ -1653,3 +1653,34 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.1
   - GitHub's SHA-256 of both uploads matches the notes
   - the updater, asked as 1.0.0 (real API), offers v1.0.1 with the right
     checksum
+
+## Fix for 1.0.2: JobLens wouldn't open after being closed (31 Oct 2026)
+**What you saw:** JobLens "running in the background and not opening", even
+after trying several times.
+
+**Cause (a 14f bug, in 1.0.0 and 1.0.1):**
+- The quick-analyze box is a second, hidden window, and pywebview only
+  exits when **every** window is closed.
+- Closing JobLens while idle closed the main window, but the hidden box
+  stayed, so the process lived on with no window.
+- Every new start asked that process to show its window (the
+  single-instance rule, 13a), but it had none, so nothing opened.
+- The tray's Quit couldn't end it either: Quit closes the main window,
+  which was already gone.
+
+**Found on your PC:**
+- one `JobLens.exe` (1.0.0, started 18:11), idle (0.02 s of CPU in 5 s)
+- its only window was the hidden "JobLens quick analyze"
+- I ended it (with nothing running in it, nothing was lost)
+
+**Fix:** closing the main window now closes the quick box too
+(`app._start_quick_box`).
+
+**Checked:**
+- Before the fix, from source: closing the window left the process
+  running, with only the quick box left. After: it exits.
+- **Timing:** JobLens finishes 0.4 s after the close, including closing its
+  single-instance listener, so a reopen right after starts fresh. The
+  remaining ~4 s is Windows ending the process (the .NET runtime and the
+  WebView2 helper processes).
+- A regression test fails without the fix and passes with it.

@@ -18,3 +18,35 @@ def test_window_background_matches_the_theme(monkeypatch):
     assert app._background() == "#F4F6FA"
     monkeypatch.setattr(app.settings, "read_settings", lambda: {"UI_THEME": "system"})
     assert app._background() == "#0A0F1C"
+
+
+class FakeEvent(list):
+    def __iadd__(self, handler):
+        self.append(handler)
+        return self
+
+
+class FakeWindow:
+    def __init__(self):
+        self.events = type("Events", (), {})()
+        self.events.closed = FakeEvent()
+        self.destroyed = False
+
+    def destroy(self):
+        self.destroyed = True
+
+
+def test_closing_the_main_window_also_closes_the_quick_box(monkeypatch):
+    # 1.0.2: pywebview only exits when EVERY window is closed. The hidden quick
+    # box stayed, so JobLens kept running with no window and couldn't be opened.
+    from desktop_web import hotkey
+
+    box = FakeWindow()
+    monkeypatch.setattr(app.webview, "create_window", lambda *a, **k: box)
+    monkeypatch.setattr(hotkey.HotkeyListener, "start", lambda self, key: None)
+    main = FakeWindow()
+    app._start_quick_box("C:/x/index.html", main, api=type("Api", (), {})(), tray=None)
+    assert len(main.events.closed) == 1
+    for handler in main.events.closed:
+        handler()
+    assert box.destroyed
