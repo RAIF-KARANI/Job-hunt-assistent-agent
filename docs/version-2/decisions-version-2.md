@@ -597,5 +597,24 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
   - questions about the gaps
   - keywords, only where they are true
 
+## D34 — Your notes per job ✅ (31 Oct 2026, step 14h)
+- **Three fields per job**, in a "Your notes" section of its details:
+  - **Interview** (date and time)
+  - **Contact** (free text: name, email, LinkedIn; up to 300 characters)
+  - **Notes** (up to 5000 characters)
+- **Saving:** with a **Save notes** button, not on every key. It's disabled
+  until something changes and shows "Saved" afterwards.
+- **The interview time is stored as you typed it** (your local time,
+  `2026-11-04T10:30`), not converted to UTC: an interview is at a time on
+  your clock.
+- **On the card:** the interview ("Interview Wed, Nov 4, 10:30 AM", muted
+  once it has passed) and the contact. Notes stay in the details.
+- **On the list:** an **Interview** column you can sort by; jobs without one
+  go last.
+- **Search** also finds contacts and notes.
+- **Notes don't count as news:** saving them doesn't change `updated_at`,
+  so the follow-up clock (D31) isn't reset by your own notes.
+- A re-analysis keeps them. Old trackers get the columns automatically.
+
 ## Open questions ❓
 - (none)

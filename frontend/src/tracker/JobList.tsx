@@ -4,15 +4,16 @@
 import { useState } from "react";
 import type { JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
-import { ago, parseUtc, STATUSES, statusLabel } from "./status";
+import { ago, interviewAhead, interviewDate, interviewLabel, parseUtc, STATUSES, statusLabel } from "./status";
 
-type SortKey = "company" | "title" | "fit_score" | "status" | "updated_at";
+type SortKey = "company" | "title" | "fit_score" | "status" | "interview_at" | "updated_at";
 
 const COLUMNS: { key: SortKey; label: string }[] = [
   { key: "company", label: "Company" },
   { key: "title", label: "Role" },
   { key: "fit_score", label: "Fit" },
   { key: "status", label: "Status" },
+  { key: "interview_at", label: "Interview" },
   { key: "updated_at", label: "Updated" },
 ];
 
@@ -26,6 +27,9 @@ function compare(a: JobRow, b: JobRow, key: SortKey): number {
       return ORDER.indexOf(a.status) - ORDER.indexOf(b.status);
     case "updated_at":
       return parseUtc(a.updated_at).getTime() - parseUtc(b.updated_at).getTime();
+    case "interview_at": // 14h: jobs without one go last either way round
+      if (!a.interview_at || !b.interview_at) return 0;
+      return interviewDate(a.interview_at).getTime() - interviewDate(b.interview_at).getTime();
     default:
       return a[key].localeCompare(b[key]);
   }
@@ -39,7 +43,10 @@ interface Props {
 
 export function JobList({ jobs, onOpen, onMove }: Props) {
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: "fit_score", desc: true });
-  const rows = [...jobs].sort((a, b) => compare(a, b, sort.key) * (sort.desc ? -1 : 1));
+  const rows = [...jobs].sort((a, b) => {
+    if (sort.key === "interview_at" && !a.interview_at !== !b.interview_at) return a.interview_at ? -1 : 1;
+    return compare(a, b, sort.key) * (sort.desc ? -1 : 1);
+  });
 
   const sortBy = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, desc: !s.desc } : { key, desc: key === "fit_score" || key === "updated_at" }));
@@ -86,6 +93,9 @@ export function JobList({ jobs, onOpen, onMove }: Props) {
                     </option>
                   ))}
                 </select>
+              </td>
+              <td className={job.interview_at && interviewAhead(job.interview_at) ? undefined : "cell-muted"}>
+                {job.interview_at ? interviewLabel(job.interview_at) : ""}
               </td>
               <td className="cell-muted" title={`${job.updated_at} UTC`}>
                 {ago(job.updated_at)}

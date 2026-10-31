@@ -38,7 +38,7 @@ function bestJob(jobs: JobRow[]): JobRow | undefined {
 }
 
 export function Dashboard({ level }: { level: Ui3D }) {
-  const { jobs, error: jobsError, move, followUp } = useJobs();
+  const { jobs, error: jobsError, load: reloadJobs, move, followUp } = useJobs();
   const [days, setDays] = useState<Range>(savedRange);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +158,7 @@ export function Dashboard({ level }: { level: Ui3D }) {
           row={jobs?.find((j) => j.id === sheetId)}
           onMove={(id, to) => void move(id, to)}
           onFollowUp={followUp}
+          onChanged={reloadJobs}
           onClose={() => setSheetId(null)}
         />
       )}

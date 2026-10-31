@@ -31,7 +31,7 @@ function savedStatuses(): JobStatus[] {
 }
 
 export function Tracker() {
-  const { jobs, error, move, followUp } = useJobs();
+  const { jobs, error, load, move, followUp } = useJobs();
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>(savedView);
   const [statuses, setStatuses] = useState<JobStatus[]>(savedStatuses); // empty = all
@@ -109,7 +109,7 @@ export function Tracker() {
               id="job-search"
               className="input search"
               type="search"
-              placeholder="Company, role or status"
+              placeholder="Company, role, contact or notes"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -232,6 +232,7 @@ export function Tracker() {
           row={jobs?.find((j) => j.id === openId)}
           onMove={changeStatus}
           onFollowUp={followUp}
+          onChanged={load}
           onClose={() => setOpenId(null)}
         />
       )}

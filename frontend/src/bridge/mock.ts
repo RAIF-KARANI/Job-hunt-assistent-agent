@@ -15,12 +15,12 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
   };
   let autostart = { supported: true, enabled: false };
   const jobs: JobRow[] = [
-    { id: 1, title: "AI Engineer", company: "Northwind Labs", fit_score: 86, best_resume: "AI_Engineer.pdf", status: "interviewing", created_at: "2026-10-29 10:42", updated_at: "2026-10-29 10:42", followed_up_at: null, snoozed_until: null, follow_up: false },
-    { id: 2, title: "Backend Engineer (Python)", company: "Lumen Robotics", fit_score: 78, best_resume: "Software_Engineer.pdf", status: "applied", created_at: "2026-10-21 09:15", updated_at: "2026-10-21 09:15", followed_up_at: null, snoozed_until: null, follow_up: true },
-    { id: 3, title: "Applied Scientist", company: "Peregrine AI", fit_score: 81, best_resume: "AI_Engineer.pdf", status: "researched", created_at: "2026-10-28 14:02", updated_at: "2026-10-28 14:02", followed_up_at: null, snoozed_until: null, follow_up: false },
-    { id: 4, title: "Platform Engineer (Rust)", company: "Tessellate", fit_score: 52, best_resume: "Software_Engineer.pdf", status: "researched", created_at: "2026-10-26 08:30", updated_at: "2026-10-26 08:30", followed_up_at: null, snoozed_until: null, follow_up: false },
-    { id: 5, title: "LLM Engineer", company: "Halcyon Data", fit_score: 72, best_resume: "AI_Engineer.pdf", status: "cover_note_ready", created_at: "2026-10-30 07:10", updated_at: "2026-10-30 07:10", followed_up_at: null, snoozed_until: null, follow_up: false },
-    { id: 6, title: "Full-stack Engineer", company: "Atlas Freight", fit_score: 39, best_resume: "Software_Engineer.pdf", status: "rejected", created_at: "2026-10-15 16:45", updated_at: "2026-10-15 16:45", followed_up_at: null, snoozed_until: null, follow_up: false },
+    { id: 1, title: "AI Engineer", company: "Northwind Labs", fit_score: 86, best_resume: "AI_Engineer.pdf", status: "interviewing", created_at: "2026-10-29 10:42", updated_at: "2026-10-29 10:42", followed_up_at: null, snoozed_until: null, follow_up: false, notes: "Asked about evals; prepare the LangGraph demo.", interview_at: "2026-11-04T10:30", contact: "Dana Lee (recruiter)" },
+    { id: 2, title: "Backend Engineer (Python)", company: "Lumen Robotics", fit_score: 78, best_resume: "Software_Engineer.pdf", status: "applied", created_at: "2026-10-21 09:15", updated_at: "2026-10-21 09:15", followed_up_at: null, snoozed_until: null, follow_up: true, notes: null, interview_at: null, contact: null },
+    { id: 3, title: "Applied Scientist", company: "Peregrine AI", fit_score: 81, best_resume: "AI_Engineer.pdf", status: "researched", created_at: "2026-10-28 14:02", updated_at: "2026-10-28 14:02", followed_up_at: null, snoozed_until: null, follow_up: false, notes: null, interview_at: null, contact: null },
+    { id: 4, title: "Platform Engineer (Rust)", company: "Tessellate", fit_score: 52, best_resume: "Software_Engineer.pdf", status: "researched", created_at: "2026-10-26 08:30", updated_at: "2026-10-26 08:30", followed_up_at: null, snoozed_until: null, follow_up: false, notes: null, interview_at: null, contact: null },
+    { id: 5, title: "LLM Engineer", company: "Halcyon Data", fit_score: 72, best_resume: "AI_Engineer.pdf", status: "cover_note_ready", created_at: "2026-10-30 07:10", updated_at: "2026-10-30 07:10", followed_up_at: null, snoozed_until: null, follow_up: false, notes: null, interview_at: null, contact: null },
+    { id: 6, title: "Full-stack Engineer", company: "Atlas Freight", fit_score: 39, best_resume: "Software_Engineer.pdf", status: "rejected", created_at: "2026-10-15 16:45", updated_at: "2026-10-15 16:45", followed_up_at: null, snoozed_until: null, follow_up: false, notes: null, interview_at: null, contact: null },
   ];
   const run = fakeRun(emit);
   const resumes = ["AI_Engineer.pdf", "Software_Engineer.pdf"];
@@ -102,6 +102,11 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
     autostart_status: async () => autostart,
+    save_notes: async (id, values) => {
+      const job = jobs.find((j) => j.id === id)!;
+      for (const [k, v] of Object.entries(values)) Object.assign(job, { [k]: v || null });
+      return { notes: job.notes, interview_at: job.interview_at, contact: job.contact };
+    },
     resume_prompt: async (id) => {
       const fits = id === 1;
       return {

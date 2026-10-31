@@ -4,7 +4,7 @@
 import { useState, type DragEvent } from "react";
 import type { JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
-import { cardNote, fitLevel, STATUSES } from "./status";
+import { cardNote, fitLevel, interviewAhead, interviewLabel, STATUSES } from "./status";
 
 interface Props {
   jobs: JobRow[];
@@ -87,6 +87,12 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
                   <span className="fit-bar" aria-hidden="true">
                     <span className={`fit-bar-fill fit-${fitLevel(job.fit_score)}`} style={{ width: `${job.fit_score}%` }} />
                   </span>
+                  {job.interview_at && (
+                    <span className={interviewAhead(job.interview_at) ? "interview-chip" : "interview-chip past"}>
+                      Interview {interviewLabel(job.interview_at)}
+                    </span>
+                  )}
+                  {job.contact && <span className="job-card-contact">{job.contact}</span>}
                   <span className="job-card-note">
                     {cardNote(job)}
                     {job.follow_up && <span className="follow-badge">Follow up?</span>}

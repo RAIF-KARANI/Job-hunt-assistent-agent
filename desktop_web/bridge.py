@@ -224,6 +224,12 @@ class Api:
     def set_status(self, job_id: int, status: str) -> None:
         tracker.update_status(int(job_id), status)  # rejects unknown statuses
 
+    def save_notes(self, job_id: int, values: dict) -> dict:
+        """14h: your notes, interview date and contact. Returns them as saved."""
+        tracker.save_notes(int(job_id), values)
+        job = tracker.get_job(int(job_id))
+        return {field: job[field] for field in tracker.NOTE_FIELDS}
+
     def resume_prompt(self, job_id: int) -> dict:
         """14g: the prompt for improving your resume for this job, with its
         keyword coverage. Plain template: no AI call, your resume isn't in it."""

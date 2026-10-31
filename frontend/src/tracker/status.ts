@@ -51,8 +51,28 @@ export function quietDays(job: JobRow, now = Date.now()): number {
   return Math.floor((now - since) / 86_400_000);
 }
 
+/** 14h: "2026-11-04T10:30" (your local time) -> a Date; a date alone counts as the start of that day. */
+export function interviewDate(value: string): Date {
+  return new Date(value.length === 10 ? `${value}T00:00` : value);
+}
+
+/** "Tue 4 Nov, 10:30" (the year only if it isn't this one). */
+export function interviewLabel(value: string): string {
+  const date = interviewDate(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  const day = date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: sameYear ? undefined : "numeric" });
+  return value.length === 10 ? day : `${day}, ${date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+/** Still ahead (or today, for a date without a time). */
+export function interviewAhead(value: string, now = Date.now()): boolean {
+  const date = interviewDate(value);
+  return value.length === 10 ? date.getTime() + 86_400_000 > now : date.getTime() > now;
+}
+
 export function matches(job: JobRow, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return [job.company, job.title, job.best_resume, statusLabel(job.status)].some((v) => v?.toLowerCase().includes(q));
+  return [job.company, job.title, job.best_resume, statusLabel(job.status), job.contact, job.notes].some((v) => v?.toLowerCase().includes(q));
 }

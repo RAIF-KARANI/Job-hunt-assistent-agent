@@ -1466,3 +1466,31 @@ Warehouse 5 of 10, counting one proven skill twice. The stricter rule gives
 
 272 tests pass (6 new in `tests/test_resume_prompt.py`) and the typecheck is
 clean. Your real data was unchanged.
+
+## 14h — Your notes per job ✅ (31 Oct 2026, D34)
+
+### What was done
+- **A "Your notes" section** in each job's details: **Interview** (date and
+  time), **Contact** and **Notes**, saved with **Save notes**. There's also
+  "Clear the date".
+- **Cards** show "Interview Wed, Nov 4, 10:30 AM" (muted once it has
+  passed) and the contact.
+- **The list** has a sortable **Interview** column.
+- **Search** also finds contacts and notes ("sara" finds LamdaX).
+- **The follow-up clock (14e) isn't reset** by saving notes, and a
+  re-analysis keeps them.
+
+### Checked in the real window (copy of your data)
+- **LamdaX:**
+  - Save was disabled until something was typed
+  - interview 4 Nov 10:30, contact and notes were saved to the database
+  - `updated_at` was unchanged
+- **The card** showed the interview chip and the contact.
+- **Revolut** with a past date (20 Oct) got the muted chip.
+- **The list sorted by Interview:** Revolut, LamdaX, then the two without
+  one.
+- **Searching "sara"** found only LamdaX.
+- **After a reload** all three fields came back.
+
+282 tests pass (10 new in `tests/test_job_notes.py`) and the typecheck is
+clean. Your real data was unchanged.

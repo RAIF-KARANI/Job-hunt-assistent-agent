@@ -65,7 +65,7 @@ the real window.
 | 14e ✅ | **Follow-up reminders:** jobs in **Applied or Interviewing** for **7 days** (a setting) get a "Follow up?" badge and one tray notification a day; mark as followed up, or snooze. Plus **"Start JobLens with Windows (in the tray)"** | reminders appear on time, once; snooze and done work |
 | 14f ✅ | **Quick analyze:** a global shortcut **`Ctrl+Alt+J`** (changeable) opens a small always-on-top box (link + Analyze); the run goes to the background; a **notification with sound** when the draft is ready | works with the main window hidden in the tray |
 | 14g ✅ | **Resume-improvement prompt**, on demand only: a "Generate resume prompt" button after each run and in the job's details. Built from the analysis with **no AI call**. Your resume isn't in it: you paste yours into the other AI with it. Rules in the prompt: rephrase only real experience, never invent any. Shows **keyword coverage** (e.g. 9 of 14 requirements), not an "ATS score". At **≥ 95 % coverage and no gaps** it says your resume already fits, with a small "Generate anyway" | the prompt is correct for a job; no LLM call is made |
-| 14h | **Your notes per job:** notes, an interview date, a contact, in the job's details | saved in the tracker, shown on the card |
+| 14h ✅ | **Your notes per job:** notes, an interview date, a contact, in the job's details | saved in the tracker, shown on the card |
 | 14i | **Export:** the tracker to **CSV**; a cover note to **.txt, .docx and .pdf** | the files open in Excel / Word / a PDF viewer |
 | then | **v1.0.0:** merge `version-2` → `main` after the D3 checks, release; 0.3.2 users get it through Settings → Updates | |
 

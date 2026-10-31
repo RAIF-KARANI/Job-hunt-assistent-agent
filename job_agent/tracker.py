@@ -65,7 +65,13 @@ CREATE TABLE IF NOT EXISTS cover_notes (
 MIGRATIONS = (
     ("followed_up_at", "TEXT"),   # 14e: you marked "I followed up"
     ("snoozed_until", "TEXT"),    # 14e: "remind me later"
+    ("notes", "TEXT"),            # 14h: your own notes
+    ("interview_at", "TEXT"),     # 14h: "YYYY-MM-DDTHH:MM" as you typed it (your local time)
+    ("contact", "TEXT"),          # 14h: recruiter / hiring manager: name, email, link
 )
+
+# 14h: what you may write about a job, and how long it may be.
+NOTE_FIELDS = {"notes": 5000, "interview_at": 16, "contact": 300}
 
 
 @contextmanager
@@ -162,7 +168,7 @@ def list_jobs() -> list[sqlite3.Row]:
     with _db() as conn:
         return conn.execute(
             """SELECT id, title, company, fit_score, best_resume, status, created_at, updated_at,
-                      followed_up_at, snoozed_until
+                      followed_up_at, snoozed_until, notes, interview_at, contact
                FROM jobs ORDER BY fit_score DESC, updated_at DESC"""
         ).fetchall()
 
@@ -222,5 +228,38 @@ def update_status(job_id: int, status: str) -> None:
             "UPDATE jobs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             (status, job_id),
         )
+    if cur.rowcount == 0:
+        raise ValueError(f"No job with id {job_id}")
+
+
+def save_notes(job_id: int, values: dict) -> None:
+    """14h: your notes, interview date and contact for a job. Only the given
+    fields change; "" clears one. The interview is "YYYY-MM-DD" or
+    "YYYY-MM-DDTHH:MM" (your local time: stored as you typed it)."""
+    from datetime import datetime
+
+    clean = {}
+    for field, value in (values or {}).items():
+        if field not in NOTE_FIELDS:
+            raise ValueError(f"Unknown field '{field}'.")
+        value = str(value or "").strip()
+        if len(value) > NOTE_FIELDS[field]:
+            raise ValueError(f"{field} is too long (at most {NOTE_FIELDS[field]} characters).")
+        if field == "interview_at" and value:
+            for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d"):
+                try:
+                    datetime.strptime(value, fmt)
+                    break
+                except ValueError:
+                    pass
+            else:
+                raise ValueError("The interview date must look like 2026-11-04 or 2026-11-04T10:30.")
+        clean[field] = value or None
+    if not clean:
+        return
+    init_db()
+    sets = ", ".join(f"{field} = :{field}" for field in clean)  # field names checked above
+    with _db() as conn:
+        cur = conn.execute(f"UPDATE jobs SET {sets} WHERE id = :id", {**clean, "id": job_id})
     if cur.rowcount == 0:
         raise ValueError(f"No job with id {job_id}")

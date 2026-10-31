@@ -42,7 +42,13 @@ export interface JobRow {
   snoozed_until: string | null;
   /** 14e: Applied/Interviewing with no change for FOLLOW_UP_DAYS, not snoozed. */
   follow_up: boolean;
+  notes: string | null; // 14h
+  interview_at: string | null; // "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM", your local time
+  contact: string | null;
 }
+
+/** Your own notes about a job (14h). */
+export type JobNotes = Pick<JobRow, "notes" | "interview_at" | "contact">;
 
 export type JobStatus = "researched" | "cover_note_ready" | "applied" | "interviewing" | "offer" | "rejected";
 
@@ -92,6 +98,9 @@ export interface JobDetail {
     sources: string[];
   } | null;
   cover_notes: { id: number; text: string; approved_at: string }[];
+  notes: string | null; // 14h
+  interview_at: string | null;
+  contact: string | null;
 }
 
 export interface RunSummary {
@@ -366,6 +375,7 @@ export interface PyApi {
   discard_run(runId: string): Promise<void>;
   followed_up(jobId: number): Promise<void>;
   resume_prompt(jobId: number): Promise<ResumePromptData>;
+  save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;
   set_autostart(on: boolean): Promise<Autostart>;

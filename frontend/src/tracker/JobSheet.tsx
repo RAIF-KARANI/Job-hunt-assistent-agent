@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { prefill } from "../analyze/runStore";
 import { copy } from "../app/clipboard";
 import { ResumePrompt } from "../resume/ResumePrompt";
+import { NotesSection } from "./NotesSection";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
@@ -18,12 +19,14 @@ interface Props {
   row: JobRow | undefined;
   onMove(id: number, to: JobStatus): void;
   onFollowUp(id: number, action: "done" | "snooze"): Promise<void>;
+  /** 14h: notes saved: refresh the cards. */
+  onChanged(): void;
   onClose(): void;
 }
 
 const isWebLink = (url: string) => /^https?:\/\//i.test(url);
 
-export function JobSheet({ jobId, status, row, onMove, onFollowUp, onClose }: Props) {
+export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [job, setJob] = useState<JobDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,6 +159,8 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onClose }: Pr
                 </div>
               </section>
             )}
+
+            <NotesSection key={job.id} jobId={job.id} initial={job} onSaved={onChanged} />
 
             <section className="sheet-section" aria-labelledby="fit-title">
               <div className="fit-head">
