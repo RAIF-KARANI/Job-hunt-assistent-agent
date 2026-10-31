@@ -105,6 +105,9 @@ set `TRACING=langfuse` and the `LANGFUSE_*` keys. Open
 http://localhost:3000. Every run appears as a session, tagged `cli`/`web`
 and with the model name, and your approve/edit/reject decision is attached
 as a score. `TRACING=langsmith` (cloud) and `TRACING=off` also work.
+In the desktop app: Settings → Options → Tracing = Langfuse, then enter the
+address and keys there and press **Test**. Evals shows whether Langfuse is
+running, has no keys, or rejected them.
 
 ### Desktop app: JobLens for Windows
 
@@ -120,7 +123,7 @@ with five screens:
   list with a status filter. Each job's details have the fit with its
   evidence, the cover note (**save as Word, PDF or text**), the company
   research, and **your notes**: interview date, contact, notes. **Export
-  CSV** for Excel.
+  CSV** for Excel. **Delete** a job you no longer want (after a confirmation).
 - **Follow-up reminders:** a job in Applied or Interviewing with no news for
   a week gets a "Follow up?" badge, and one tray notification a day.
 - **Resume prompt:** how many of the job's required skills your resume
@@ -236,7 +239,7 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 292 tests cover:
+The 301 tests cover:
 - the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
 - the fit verdict, the run log, quality checks and monitoring numbers
 - the PC check, the 3D recommendation and Ollama setup

@@ -1627,3 +1627,23 @@ not reachable".
 
 301 tests pass (9 new in `tests/test_v101.py`, one older test updated to the
 new check) and the typecheck is clean. Your real tracker was unchanged.
+
+## Release v1.0.1 (31 Oct 2026, D36)
+- **Contents:**
+  - deleting a job
+  - the Langfuse keys in Settings, with an honest status
+- **Checked before publishing (D3):**
+  - 301 tests (SyntaxWarnings as errors)
+  - a clean `npm ci`: 0 vulnerabilities, typecheck clean, no dev mock in
+    the bundle
+  - the app from source opened at 1.0.1
+  - `--test-install`: self-test PASS and window test 1.0.1 for the build and
+    for its installed copy; it uninstalled clean; your JobLens (now 1.0.0)
+    was untouched
+  - the release build: self-test PASS, window test 1.0.1
+  - no `.env`, databases, PDFs or personal data in the app folder
+- **Files:**
+  - `JobLens-Setup-1.0.1.exe`: 59 MB, SHA-256 `7dfdc487…4cb4`
+  - portable zip: 72 MB, SHA-256 `09f117e0…03bc`
+- `main` fast-forwarded to the release commit. You publish it with
+  `gh release create`.
