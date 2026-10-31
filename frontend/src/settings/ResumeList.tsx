@@ -5,7 +5,37 @@ import { useCallback, useEffect, useState } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { Resume } from "../bridge/types";
 
-export function ResumeList({ onCount }: { onCount?(count: number): void }) {
+interface Props {
+  onCount?(count: number): void;
+  /** 14b (Settings only): the default set to compare, as saved ("" = all), and how to save it. */
+  defaults?: { saved: string; onChange(saved: string): void };
+}
+
+/** One resume's "use by default" box. All ticked is saved as "" (= all), so a
+ *  resume added later is included without a visit to Settings. */
+function DefaultBox({ name, all, defaults }: { name: string; all: string[]; defaults: NonNullable<Props["defaults"]> }) {
+  const saved = defaults.saved.split("|").filter((n) => all.includes(n));
+  const chosen = saved.length ? saved : all;
+  const on = chosen.includes(name);
+  const toggle = () => {
+    const next = on ? chosen.filter((n) => n !== name) : all.filter((n) => n === name || chosen.includes(n));
+    if (next.length === 0) return; // at least one resume
+    defaults.onChange(next.length === all.length ? "" : next.join("|"));
+  };
+  return (
+    <input
+      type="checkbox"
+      className="resume-default"
+      checked={on}
+      onChange={toggle}
+      disabled={on && chosen.length === 1}
+      aria-label={`Compare ${name} by default`}
+      title={on && chosen.length === 1 ? "At least one resume is needed" : "Compare this resume by default"}
+    />
+  );
+}
+
+export function ResumeList({ onCount, defaults }: Props) {
   const [resumes, setResumes] = useState<Resume[] | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -61,6 +91,9 @@ export function ResumeList({ onCount }: { onCount?(count: number): void }) {
         <ul className="resume-list">
           {resumes.map((r) => (
             <li key={r.name} className="resume">
+              {defaults && resumes.length > 1 && (
+                <DefaultBox name={r.name} all={resumes.map((x) => x.name)} defaults={defaults} />
+              )}
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                 <path d="M4.5 1.8h6l3.7 3.7v10.7H4.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
                 <path d="M10.3 1.8v3.9h3.9" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

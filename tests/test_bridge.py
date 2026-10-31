@@ -871,3 +871,55 @@ def test_step_estimates_from_this_pcs_runs():
 
 def test_no_estimates_before_the_first_run():
     assert Api(send=lambda e: None).step_estimates() == {}
+
+
+# ---- 14b: which resumes to compare ---------------------------------------------
+
+def test_choose_resumes_rules(monkeypatch):
+    from job_agent.resume import choose_resumes
+
+    every = {"CV_AI": "a", "CV_AI_UAE": "b", "CV_SE": "c"}
+    monkeypatch.setenv("RESUMES_DEFAULT", "")
+    assert choose_resumes(every, None) == (every, None)                       # no defaults: all
+    monkeypatch.setenv("RESUMES_DEFAULT", "CV_AI.pdf|CV_SE.pdf")
+    assert list(choose_resumes(every, None)[0]) == ["CV_AI", "CV_SE"]          # the default set
+    assert list(choose_resumes(every, ["CV_AI_UAE.pdf"])[0]) == ["CV_AI_UAE"]  # this job's pick wins
+    assert choose_resumes(every, []) == (every, None)                          # empty pick: all
+    picked, note = choose_resumes(every, ["CV_AI.pdf", "Old.pdf"])
+    assert list(picked) == ["CV_AI"] and "Old" in note                         # a deleted one is skipped
+    picked, note = choose_resumes(every, ["Gone.pdf"])
+    assert picked == every and "all of them" in note                           # never fail silently
+
+
+class S14(S, total=False):
+    resumes: list | None  # what step 2 reads (job_agent/graph.py)
+
+
+def test_the_page_choice_reaches_the_agent():
+    seen = []
+    g = StateGraph(S14)
+    g.add_node("analyze_fit", lambda state: seen.append(state.get("resumes")) or {"text": "done"})
+    g.add_edge(START, "analyze_fit")
+    g.add_edge("analyze_fit", END)
+    api, _ = make_api(g.compile(checkpointer=InMemorySaver()))
+    api.start_run("https://jobs.example/1", False, ["CV_AI.pdf"])
+    step(api)
+    api.start_run("https://jobs.example/2")                                   # no choice: the defaults
+    step(api)
+    assert seen == [["CV_AI.pdf"], None]
+
+
+@pytest.mark.parametrize("bad", ["CV.pdf", [1, 2], {"a": 1}])
+def test_a_bad_resume_list_is_refused(bad):
+    api, _ = make_api(review_graph())
+    with pytest.raises(ValueError, match="list of file names"):
+        api.start_run("https://jobs.example/1", False, bad)
+
+
+def test_resume_settings_are_writable_and_no_line_breaks_get_into_env():
+    api = Api(send=lambda e: None)
+    assert api.save_settings({"RESUMES_DEFAULT": "CV_AI.pdf|CV_SE.pdf", "RESUMES_ASK": "true"})["RESUMES_ASK"] == "true"
+    with pytest.raises(ValueError, match="line breaks"):
+        api.save_settings({"RESUMES_DEFAULT": "CV.pdf\nOLLAMA_BASE_URL=http://evil:11434"})
+    with pytest.raises(ValueError, match="line breaks"):
+        api.save_settings({"LLM_MODEL": "qwen3:8b\rTRACING=langsmith"})

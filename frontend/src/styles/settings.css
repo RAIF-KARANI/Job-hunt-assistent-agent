@@ -525,3 +525,44 @@
 .hint.warn-ink {
   color: var(--warn-ink);
 }
+
+/* 14b: which resumes to compare */
+.resume-default {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.resume-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.resume-choice legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.resume-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.resume-choice .hint,
+.resume-choice-line {
+  margin: 0;
+}
+
+.resume-choice-line {
+  margin-top: calc(-1 * var(--space-2));
+}

@@ -293,7 +293,8 @@ export interface TracingStatus {
 export interface PyApi {
   app_info(): Promise<AppInfo>;
   llm_status(): Promise<LlmStatus>;
-  start_run(url: string, fresh?: boolean): Promise<{ run_id: string }>;
+  /** `resumes`: the file names to compare for this job (14b); omitted = the default set. */
+  start_run(url: string, fresh?: boolean, resumes?: string[] | null): Promise<{ run_id: string }>;
   resume(answer: Answer): Promise<void>;
   paste_text(text: string): Promise<void>;
   stop_run(): Promise<boolean>;

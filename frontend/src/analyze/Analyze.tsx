@@ -13,6 +13,7 @@ import type { Answer } from "../bridge/types";
 import { LiveLog } from "./LiveLog";
 import { PastePanel } from "./PastePanel";
 import { ResultPanel } from "./ResultPanel";
+import { ResumeChoice } from "./ResumeChoice";
 import { ReviewPanel, WarnIcon } from "./ReviewPanel";
 import { dismiss, markBusy, useRun, type RunView } from "./runStore";
 import { Steps } from "./Steps";
@@ -22,6 +23,7 @@ export function Analyze() {
   const run = useRun();
   const [url, setUrl] = useState(run.url);
   const [fresh, setFresh] = useState(false);
+  const [resumes, setResumes] = useState<string[] | null>(null); // 14b: this job's resumes
   const [checking, setChecking] = useState(false);
   const [problem, setProblem] = useState<{ text: string; settings: boolean } | null>(null);
   const [estimates, setEstimates] = useState<Partial<Record<string, number>>>({});
@@ -56,7 +58,7 @@ export function Analyze() {
         setProblem({ text: status.message, settings: true });
         return;
       }
-      await api.start_run(link, fresh);
+      await api.start_run(link, fresh, resumes);
     } catch (err) {
       setProblem({ text: errorMessage(err), settings: false });
     } finally {
@@ -113,6 +115,7 @@ export function Analyze() {
         <StartButton run={run} checking={checking} disabled={locked || !url.trim()} />
         {run.busy && run.phase === "running" && <StopControl stopping={run.stopping} />}
       </form>
+      <ResumeChoice value={resumes} onChange={setResumes} disabled={locked} />
 
       {problem && (
         <div className="notice notice-danger" role="alert">

@@ -55,6 +55,8 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "UI_THEME": ("system", "dark", "light"),
     "SETUP_DONE": ("true", "false"),
     "UPDATE_CHECK": ("true", "false"),        # 13b
+    "RESUMES_DEFAULT": None,                  # 14b: file names joined by "|"; "" = all
+    "RESUMES_ASK": ("true", "false"),         # 14b: pick the resumes for each job
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 
@@ -141,8 +143,9 @@ class Api:
 
     # ---- the agent run ------------------------------------------------------
 
-    def start_run(self, url: str, fresh: bool = False) -> dict:
-        return {"run_id": self._runner.start(url, fresh)}
+    def start_run(self, url: str, fresh: bool = False, resumes: list | None = None) -> dict:
+        """`resumes`: file names picked on Analyze for this job (14b); None = the defaults."""
+        return {"run_id": self._runner.start(url, fresh, resumes)}
 
     def resume(self, answer: dict) -> None:
         self._runner.resume(answer)
@@ -482,6 +485,9 @@ class Api:
                 raise ValueError(f"Setting '{key}' can't be changed from the app.")
             allowed = WRITABLE_SETTINGS[key]
             value = str(value).strip()
+            if any(ord(ch) < 32 for ch in value):
+                # A line break would write an extra line (another setting) into .env.
+                raise ValueError(f"{key} can't contain line breaks or control characters.")
             if allowed and value not in allowed:
                 raise ValueError(f"{key} must be one of {', '.join(allowed)}")
             clean[key] = value

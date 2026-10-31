@@ -201,8 +201,32 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
       </section>
 
       <section className="card settings-card" aria-labelledby="resumes-title">
-        <h2 id="resumes-title">Your resumes</h2>
-        <ResumeList />
+        <div className="section-head">
+          <h2 id="resumes-title">Your resumes</h2>
+          {saved === "resumes" && (
+            <span className="saved" role="status">
+              Saved
+            </span>
+          )}
+        </div>
+        <p className="hint">Ticked resumes are compared with each job by default. Fewer resumes make step 2 faster.</p>
+        <ResumeList
+          defaults={{
+            saved: String(settings.RESUMES_DEFAULT ?? ""),
+            onChange: (value) => void saveNow({ RESUMES_DEFAULT: value }, "resumes"),
+          }}
+        />
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.RESUMES_ASK === "true"}
+            onChange={(e) => void saveNow({ RESUMES_ASK: e.target.checked ? "true" : "false" }, "resumes")}
+          />
+          <span>
+            Ask me which resumes to compare for each job
+            <span className="hint">Shows the resumes on the Analyze screen every time, ticked with the defaults.</span>
+          </span>
+        </label>
       </section>
 
       <section className="card settings-card" aria-labelledby="look-title">

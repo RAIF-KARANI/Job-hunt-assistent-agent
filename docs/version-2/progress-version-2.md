@@ -1199,3 +1199,32 @@ In the first window run, the "not installed" check read **Claude Haiku**.
 Three runs after that were all correct ("qwen3:4b (not installed)" + the
 hint). Most likely the test read the page during its reload; I couldn't
 make it happen again, so that cause isn't proven.
+
+## 14b — Which resumes to compare ✅ (31 Oct 2026)
+
+### What was done
+- **Settings → Your resumes:**
+  - a tick box per resume: "compare by default"
+  - all ticked is saved as "all", so a resume you add later is included
+  - at least one stays ticked
+  - new switch **"Ask me which resumes to compare for each job"**
+- **Analyze:**
+  - switch off: one line, "Comparing with 2 of 4 resumes · change"
+  - switch on (or "change"): a chip per resume, pre-ticked with the defaults,
+    for this job only
+- **Agent:** step 2 scores only the chosen resumes. The log says
+  "-> comparing 1 of 4 resumes". If a chosen resume was removed, it says
+  so and skips it; if none of them exist any more, it compares all of them.
+- **Hardening:** saving a setting now refuses line breaks and other control
+  characters, so a value can't add extra lines to the settings file.
+
+### Checked in the real window (copy of your database and resumes, real agent)
+- Unticking the two UAE resumes saved the other two; Analyze showed
+  "Comparing with 2 of 4 resumes · change", also after a reload.
+- "Ask me" saved; the chips came up with the 2 defaults ticked.
+- A real run with **1** resume ticked:
+  - the log said "comparing 1 of 4 resumes" and scored only that one
+  - **step 2 took 30.5 s**, against about 3 min 25 s with all 4 on your PC
+  - the step said "best: Raif_Karani_AI_Engineer · fit 75"
+  - then I stopped the run
+- 222 tests, typecheck clean.

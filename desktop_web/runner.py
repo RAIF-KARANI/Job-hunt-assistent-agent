@@ -170,10 +170,13 @@ class AgentRunner:
     def busy(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
 
-    def start(self, url: str, fresh: bool = False) -> str:
+    def start(self, url: str, fresh: bool = False, resumes: list[str] | None = None) -> str:
+        """`resumes`: the file names picked for this job (14b); None = the default set."""
         url = (url or "").strip()
         if not url:
             raise ValueError("Paste a job posting link (or the job text) first.")
+        if resumes is not None and not (isinstance(resumes, list) and all(isinstance(r, str) for r in resumes)):
+            raise ValueError("The resumes to compare must be a list of file names.")
         with self._lock:
             if self.busy:
                 raise RuntimeError("The agent is still working on the current step.")
@@ -182,7 +185,7 @@ class AgentRunner:
         self.last_pause = None
         self._ai_draft, self._revision, self._decision, self._final_text = "", 0, "", ""
         self.emit({"type": "started", "run_id": self.run_id, "url": url})
-        self._launch({"url": url, "fresh": bool(fresh)})
+        self._launch({"url": url, "fresh": bool(fresh), "resumes": resumes})
         return self.run_id
 
     def resume(self, answer: dict) -> None:

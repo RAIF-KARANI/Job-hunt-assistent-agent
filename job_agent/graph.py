@@ -44,7 +44,7 @@ from job_agent.fit import pick_best_resume
 from job_agent.models import ResumeMatch
 from job_agent.posting import extract_job_posting, fetch_page_text
 from job_agent.research import research_company
-from job_agent.resume import load_resumes
+from job_agent.resume import choose_resumes, load_resumes
 from job_agent.tracker import find_job_id, get_job, save_job
 
 
@@ -57,6 +57,7 @@ class JobHuntState(CoverNoteState, total=False):
     reused: bool          # True = loaded from the tracker, analysis skipped
     all_matches: list[ResumeMatch]
     research_checks: dict  # Phase 11b: invented URLs / dates removed by verification
+    resumes: list[str] | None  # 14b: the resumes to compare (None = the default set)
 
 
 def _step(n: int, text: str) -> None:
@@ -116,7 +117,12 @@ def read_posting(state: JobHuntState) -> dict:
 
 def analyze_fit(state: JobHuntState) -> dict:
     _step(2, "Comparing your resumes with the job...")
-    resumes = load_resumes()
+    every = load_resumes()
+    resumes, note = choose_resumes(every, state.get("resumes"))  # 14b
+    if note:
+        print(f"  ! {note}")
+    if len(resumes) < len(every):
+        print(f"  -> comparing {len(resumes)} of {len(every)} resumes")
     best, all_matches = pick_best_resume(state["job"], resumes)
     for m in all_matches:
         print(f"  {m.fit_score:>3}/100  {m.resume_name}   [{m.score_breakdown}]")
