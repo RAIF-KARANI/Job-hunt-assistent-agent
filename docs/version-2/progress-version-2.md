@@ -1757,7 +1757,8 @@ you open JobLens again. That doesn't fit your way of using it, so you chose
 304 tests pass (2 new: when closing keeps JobLens in the tray; a
 notification click opens the right screen and icon clicks still work).
 
-## Release v1.0.3 (31 Oct 2026, D37)
+## Release v1.0.3 ✅ (31 Oct 2026, D37)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.3
 - **Contents:** D37 (the shortcut keeps JobLens in the tray; notification
   clicks open it), on top of 1.0.2's fix.
 - **Checked before publishing (D3):**
@@ -1774,4 +1775,9 @@ notification click opens the right screen and icon clicks still work).
 - **Files:**
   - `JobLens-Setup-1.0.3.exe`: SHA-256 `a3f055ec…773c`
   - portable zip: SHA-256 `a45220af…e79d`
-- `main` fast-forwarded; you publish it with `gh release create`.
+- `main` fast-forwarded; you published it with `gh release create`.
+- **Checked after publishing:**
+  - Latest; not a draft or pre-release; tag → `22e823f`
+  - GitHub's SHA-256 of both uploads matches the notes
+  - the updater, asked as 1.0.0 and as 1.0.2 (real API), offers v1.0.3 with
+    the right checksum
