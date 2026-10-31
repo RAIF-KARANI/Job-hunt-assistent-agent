@@ -239,7 +239,7 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 301 tests cover:
+The 302 tests cover:
 - the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
 - the fit verdict, the run log, quality checks and monitoring numbers
 - the PC check, the 3D recommendation and Ollama setup

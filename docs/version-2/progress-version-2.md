@@ -1684,3 +1684,20 @@ after trying several times.
   remaining ~4 s is Windows ending the process (the .NET runtime and the
   WebView2 helper processes).
 - A regression test fails without the fix and passes with it.
+
+## Release v1.0.2 (31 Oct 2026)
+- **Contents:** the fix above. JobLens exits when you close it.
+- **Checked before publishing (D3):**
+  - 302 tests (SyntaxWarnings as errors)
+  - a clean `npm ci`: 0 vulnerabilities, typecheck clean
+  - `--test-install`: self-test PASS and window test 1.0.2 for the build and
+    for its installed copy; it uninstalled clean; your JobLens untouched
+  - the release build: self-test PASS, window test 1.0.2
+  - **the close test on the built `JobLens.exe`:** closing the window ended
+    the process (4.5 s, exit code 0)
+  - no `.env`, databases, PDFs or personal data in the app folder
+- **Files:**
+  - `JobLens-Setup-1.0.2.exe`: SHA-256 `8ac66718…27d8`
+  - portable zip: SHA-256 `0d4e2d80…f5a4`
+- `main` fast-forwarded to the release commit; you publish it with
+  `gh release create`.
