@@ -320,6 +320,20 @@ export interface TracingStatus {
   langsmith_url: string;
 }
 
+/** The quick-analyze box's own API (desktop_web/quick.py, 14f). */
+export interface QuickApi {
+  app_info(): Promise<{ version: string; quick: true; settings: Settings }>;
+  clipboard_link(): Promise<string>;
+  quick_start(url: string): Promise<{ run_id: string }>;
+  close(): Promise<void>;
+}
+
+/** Api.quick_key_status() (14f). */
+export interface QuickKeyStatus {
+  key: string | null; // registered, e.g. "Ctrl+Alt+J"
+  error: string | null; // why there's no shortcut
+}
+
 /** window.pywebview.api: every public method of bridge.Api (all async from JS). */
 export interface PyApi {
   app_info(): Promise<AppInfo>;
@@ -336,6 +350,7 @@ export interface PyApi {
   snooze_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;
   set_autostart(on: boolean): Promise<Autostart>;
+  quick_key_status(): Promise<QuickKeyStatus>;
   update_status(): Promise<UpdateStatus>;
   check_for_updates(): Promise<UpdateStatus>;
   /** 13d: download + verify (size and SHA-256 from GitHub); runs nothing. */

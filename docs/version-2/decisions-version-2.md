@@ -539,5 +539,33 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
   `jobs.db` files get the two new columns (`followed_up_at`,
   `snoozed_until`) on first use.
 
+## D32 — Quick analyze ✅ (31 Oct 2026, step 14f)
+- **The shortcut:** **Ctrl+Alt+J** by default, changeable in Settings →
+  Quick analyze ("Change", then press the keys) or turned off.
+  - It needs Ctrl or Alt plus one letter, digit or F1-F12, so it never fires
+    while you type.
+  - If another program already uses it, Settings says so and you pick
+    another.
+  - It's a Windows global hotkey (`RegisterHotKey`), so it works with the
+    window in the tray. It needs JobLens running.
+- **The box:** a small frameless window, always on top.
+  - A link you just copied is filled in. Only http(s) links: other
+    clipboard text is never shown.
+  - **Enter** = Analyze, **Esc** = close.
+  - It is made once at start (hidden), so the shortcut opens it at once.
+- **Analyze from the box** is the same run as on the Analyze screen:
+  - It uses your **default resumes** and never asks, even with "Ask me which
+    resumes" on: the box is for speed.
+  - It checks the model first, as Analyze does.
+  - It refuses while a run is going or a cover note / paste is waiting for
+    you, and says why.
+  - The box closes; the Analyze screen shows the run if you open it.
+- **The notification:** a quick run is always told about ("Cover note
+  ready", "JobLens needs you", "Run failed"), even if the window is open,
+  because you didn't start it from there.
+  - The sound is Windows' own notification sound, so it follows your
+    Windows sound and Do Not Disturb settings.
+  - After that first notification, the run is a normal one.
+
 ## Open questions ❓
 - (none)

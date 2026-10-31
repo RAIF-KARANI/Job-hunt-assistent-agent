@@ -102,6 +102,7 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
     autostart_status: async () => autostart,
+    quick_key_status: async () => ({ key: String(settings.QUICK_KEY ?? "Ctrl+Alt+J") === "off" ? null : String(settings.QUICK_KEY ?? "Ctrl+Alt+J"), error: null }),
     set_autostart: async (on) => (autostart = { ...autostart, enabled: on }),
     open_link: async (url) => void window.open(url, "_blank", "noopener"),
     dashboard: async (days) => {

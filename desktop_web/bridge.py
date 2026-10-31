@@ -59,6 +59,7 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "RESUMES_ASK": ("true", "false"),         # 14b: pick the resumes for each job
     "FIT_DETAIL": ("short", "detailed"),      # 14c: talking points + verdict length
     "FOLLOW_UP_DAYS": followup.DAY_CHOICES,   # 14e
+    "QUICK_KEY": None,                        # 14f: e.g. "Ctrl+Alt+J", or "off" (checked below)
 }
 SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 
@@ -128,6 +129,7 @@ class Api:
         self._update_file = None
         self._http_get = None  # None = requests.get; tests serve a stand-in
         self._quit = None  # set by app.py
+        self._hotkey = None  # 14f: the shortcut listener, set by app.py
 
     def _emit(self, event: Event) -> None:
         self._send(to_json(event))
@@ -512,9 +514,20 @@ class Api:
                 raise ValueError(f"{key} can't contain line breaks or control characters.")
             if allowed and value not in allowed:
                 raise ValueError(f"{key} must be one of {', '.join(allowed)}")
+            if key == "QUICK_KEY" and value.lower() != "off":
+                from desktop_web.hotkey import parse
+                value = parse(value)[2]  # raises with a readable message; "ctrl+alt+j" -> "Ctrl+Alt+J"
             clean[key] = value
         settings.save_settings(clean)
+        if "QUICK_KEY" in clean and self._hotkey:
+            self._hotkey.change(clean["QUICK_KEY"])
         return self.get_settings()
+
+    def quick_key_status(self) -> dict:
+        """14f: the registered shortcut, or why there is none (e.g. another program has it)."""
+        if self._hotkey is None:
+            return {"key": None, "error": "The shortcut isn't available in this window."}
+        return self._hotkey.status()
 
     def autostart_status(self) -> dict:
         """14e: "Start JobLens with Windows". Read from the registry each time."""

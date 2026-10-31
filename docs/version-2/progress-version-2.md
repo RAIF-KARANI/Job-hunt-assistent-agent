@@ -1372,3 +1372,46 @@ Not checked by hand:
 
 14 tests added (`tests/test_followup.py`). 252 tests pass and the typecheck
 is clean. Your real `jobs.db` was unchanged.
+
+## 14f — Quick analyze ✅ (31 Oct 2026, D32)
+
+### What was done
+- **Ctrl+Alt+J anywhere in Windows** opens a small always-on-top box:
+  - It works even with JobLens hidden in the tray.
+  - A job link you just copied is already filled in.
+  - **Enter** analyzes; **Esc** closes.
+- **The run goes on in the background** with your default resumes. The box
+  says "Started" and closes itself.
+- **A Windows notification** (with Windows' notification sound) when the
+  cover note is ready, or if the run needs you or fails.
+- **The box refuses** a second job while one is running or waiting for you,
+  and says why.
+- **Settings → Quick analyze:**
+  - change the shortcut (click, press the new keys) or turn it off
+  - if another program already has the keys, it says so
+
+### Checked in the real app (`--tray`, copy of your data, real qwen3:8b)
+- Started hidden in the tray: the main window and the box were both hidden.
+  Ctrl+Alt+J was registered with no conflict.
+- **A real Ctrl+Alt+J** (pressed with SendInput):
+  - the box opened, always on top
+  - the copied LamdaX link was filled in and the field had focus
+  - Esc closed it, and the shortcut opened it again
+- **Analyze:**
+  - "Started. Carry on with your day: you'll get a notification when the
+    cover note is ready." The box closed itself.
+  - A second Analyze while it ran was refused: "JobLens is already analyzing
+    a job. You'll be told when it's done."
+- **The notification:** "Cover note ready: The draft for AI Engineer @
+  LamdaX is waiting for your review", 20 s later. LamdaX was already in the
+  tracker, so the saved analysis was reused and only the draft was written.
+  - The main window stayed hidden.
+  - Opened, its Analyze screen showed the 137-word draft waiting for review.
+- Found on the way: my first check picked up your own open JobLens window
+  (same title). The checks now look only at the test's own windows.
+
+Not checked by hand: the sound and what the notification looks like. No
+desktop screenshots, for privacy; it's Windows' standard notification.
+
+266 tests pass (14 new in `tests/test_quick.py`, one registers a real
+hotkey) and the typecheck is clean. Your real data was unchanged.

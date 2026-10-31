@@ -566,3 +566,25 @@
 .resume-choice-line {
   margin-top: calc(-1 * var(--space-2));
 }
+
+/* ---- quick-analyze shortcut (14f) ---- */
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.shortcut-key {
+  width: auto;
+  min-width: 160px;
+  text-align: left;
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+.shortcut-key.listening {
+  border-color: var(--accent);
+  color: var(--text-muted);
+}

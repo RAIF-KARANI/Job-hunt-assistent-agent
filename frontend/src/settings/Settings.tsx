@@ -8,6 +8,7 @@ import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme
 import { LevelPicker } from "./LevelPicker";
 import { ModelPicker } from "./ModelPicker";
 import { ResumeList } from "./ResumeList";
+import { ShortcutField } from "./ShortcutField";
 import { UpdatesCard } from "./UpdatesCard";
 
 const DEFAULT_MODELS: Record<string, string> = { ollama: "qwen3:8b", anthropic: "claude-haiku-5-5" };
@@ -139,6 +140,13 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
     } catch (e) {
       setError(errorMessage(e));
     }
+  };
+
+  /** 14f: errors go to the shortcut field, next to the keys you pressed. */
+  const saveShortcut = async (value: string) => {
+    onSettings(await (await getApi()).save_settings({ QUICK_KEY: value }));
+    setSaved("quick");
+    window.setTimeout(() => setSaved((s) => (s === "quick" ? null : s)), 2500);
   };
 
   const changeProvider = (next: string) => {
@@ -384,6 +392,22 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
             </span>
           </span>
         </label>
+      </section>
+
+      <section className="card settings-card" aria-labelledby="quick-title">
+        <div className="section-head">
+          <h2 id="quick-title">Quick analyze</h2>
+          {saved === "quick" && (
+            <span className="saved" role="status">
+              Saved
+            </span>
+          )}
+        </div>
+        <p className="hint">
+          Press the shortcut anywhere in Windows, even with JobLens in the tray: a small box opens with the link you copied. Analyze runs in the
+          background, and a notification (with a sound) tells you when the cover note is ready.
+        </p>
+        <ShortcutField saved={String(settings.QUICK_KEY ?? "Ctrl+Alt+J")} onSave={saveShortcut} />
       </section>
 
       <section className="card settings-card" aria-labelledby="updates-title">

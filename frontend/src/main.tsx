@@ -18,13 +18,14 @@ import "./styles/tracker.css";
 import "./styles/dashboard.css";
 import "./styles/evals.css";
 import "./styles/settings.css";
+import "./styles/quick.css";
 import { App } from "./app/App";
 import { routeLinksToBrowser } from "./bridge/bridge";
+import { QuickBox } from "./quick/QuickBox";
 
 routeLinksToBrowser();
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// 14f: the same page in the small quick-analyze window shows only the box.
+const quick = window.location.hash === "#/quick";
+
+createRoot(document.getElementById("root")!).render(<StrictMode>{quick ? <QuickBox /> : <App />}</StrictMode>);

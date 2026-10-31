@@ -8,6 +8,8 @@ The tray icon (13a, D24): JobLens keeps working while its window is closed.
     14e: "Start with Windows" on -> JobLens lives in the tray: closing the
          window always hides it; jobs due a follow-up get one notification
          a day and a line in the menu
+    14f: a run started from the quick box (Ctrl+Alt+J) is always told about,
+         window hidden or not: you didn't start it from the window
 
 pystray runs its own Windows message loop on its own thread, next to
 pywebview's (which owns the main thread). It is LGPL-3.0, so it ships as
@@ -126,6 +128,7 @@ class Tray:
         self._show, self._stop_run, self._quit = show, stop_run, quit_app
         self._keep_in_tray, self._open_tracker = keep_in_tray, open_tracker or show
         self.follow_ups = 0  # jobs due a follow-up; set by count_follow_ups()
+        self.quick = False  # 14f: the current run came from the quick box
         self._count = follow_ups
         self._told_about_tray = False
         self._icon = None
@@ -197,10 +200,12 @@ class Tray:
     # -- events (the same ones the page gets) --
     def on_event(self, event: Event) -> None:
         self.state.update(event)
-        if self.hidden:
+        if self.hidden or self.quick:
             note = notification(event, self.state)
             if note:
-                self.notify(*note)
+                self.notify(*note)  # Windows plays its notification sound with it
+        if event.get("type") in ("paused", "finished", "failed", "stopped"):
+            self.quick = False  # told once: from here you're in the window
         self._refresh()
 
     def notify(self, title: str, message: str) -> None:

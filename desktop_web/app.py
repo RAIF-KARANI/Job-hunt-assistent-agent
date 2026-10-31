@@ -174,6 +174,7 @@ def main(argv=None) -> int:
             threading.Timer(1.0, window.show).start()
     if tray:
         _follow_up_reminders(tray)
+    hotkey = _start_quick_box(url, api, tray)
     instance.listen(on_show=lambda: _bring_back(window, tray))
     _check_for_updates_later(window, api)
     # 13d: the installer takes over -> close (never during a run: refused before)
@@ -185,6 +186,8 @@ def main(argv=None) -> int:
     finally:
         if tray:
             tray.stop()  # its thread would otherwise keep the process alive
+        if hotkey:
+            hotkey.stop()
         instance.close()
     return 0
 
@@ -207,6 +210,37 @@ def _check_for_updates_later(window, api) -> None:
             threading.Thread(target=later, name="joblens-updates", daemon=True).start()
 
     window.events.loaded += on_loaded
+
+
+QUICK_SIZE = (480, 210)
+
+
+def _start_quick_box(page_url: str, api, tray):
+    """14f: the quick-analyze box, made once (hidden) so the shortcut opens it
+    at once, and the global shortcut that shows it."""
+    from desktop_web.hotkey import HotkeyListener
+    from desktop_web.quick import QuickApi
+
+    holder = {}
+    quick_api = QuickApi(api, hide=lambda: holder["window"].hide(),
+                         on_started=lambda: setattr(tray, "quick", True) if tray else None)
+    base = page_url if page_url.startswith("http") else Path(page_url).as_uri()  # a path can't carry a #
+    box = webview.create_window("JobLens quick analyze", base + "#/quick", js_api=quick_api,
+                                width=QUICK_SIZE[0], height=QUICK_SIZE[1], resizable=False, frameless=True,
+                                easy_drag=False, on_top=True, hidden=True, background_color=_background())
+    holder["window"] = box
+
+    def show():
+        box.show()
+        box.restore()
+        box.evaluate_js("window.joblensQuick && window.joblensQuick.opened()")  # fresh box, focus the field
+
+    listener = HotkeyListener(on_press=show)
+    listener.start(settings.read_settings().get("QUICK_KEY", "Ctrl+Alt+J"))
+    if listener.error:
+        print(f"! quick analyze shortcut: {listener.error}")
+    api._hotkey = listener
+    return listener
 
 
 def _follow_up_reminders(tray) -> None:

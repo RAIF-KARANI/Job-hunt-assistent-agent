@@ -1,0 +1,52 @@
+/* The quick-analyze box (14f): a small frameless window, so the page is
+   the whole frame: a thin border and a drag strip at the top. */
+
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100vh;
+  padding: 10px 16px 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+}
+
+.quick-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.quick-head .icon-btn {
+  cursor: pointer;
+}
+
+.quick-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.quick-form .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-note {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.quick-started {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+}
