@@ -19,6 +19,7 @@ import "./styles/dashboard.css";
 import "./styles/evals.css";
 import "./styles/settings.css";
 import "./styles/quick.css";
+import "./styles/resume.css";
 import { App } from "./app/App";
 import { routeLinksToBrowser } from "./bridge/bridge";
 import { QuickBox } from "./quick/QuickBox";

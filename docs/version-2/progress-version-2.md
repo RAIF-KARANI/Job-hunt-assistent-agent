@@ -1415,3 +1415,54 @@ desktop screenshots, for privacy; it's Windows' standard notification.
 
 266 tests pass (14 new in `tests/test_quick.py`, one registers a real
 hotkey) and the typecheck is clean. Your real data was unchanged.
+
+## 14g — Resume-improvement prompt ✅ (31 Oct 2026, D33)
+
+### What was done
+- **Where:** a **Resume prompt** button in a job's details, and **Generate
+  resume prompt** after a run. Only when you ask.
+- **The dialog:**
+  - **Keyword coverage**, e.g. "Raif_Karani_AI_Engineer shows 5 of 7
+    required skills (71%)", with a bar
+  - the skills not shown yet
+  - the prompt with **Copy prompt**
+- **The prompt contains:**
+  - the job (title, place, summary, responsibilities, skills)
+  - what the check found: the shown skills with their resume quotes, the
+    missing ones, the unclear ones
+  - strict rules: use only real experience, never invent any
+  - a "[paste your resume here]" slot
+- **Already fits:** when every required skill is shown, it says "Your resume
+  already fits this job" and only shows the prompt on "Generate the prompt
+  anyway".
+- **Made by plain code from the saved analysis:** no AI call.
+
+### Your 4 saved jobs
+| Job | Required skills shown |
+|---|---|
+| Revolut | 9 of 13 (the rest: graduation year, availability, office days, "passion") |
+| LamdaX | 5 of 7 |
+| Lenovo | 3 of 4 |
+| Warehouse | 4 of 10 |
+
+Found on the way: matching with the fit score's rule (half the words) gave
+Warehouse 5 of 10, counting one proven skill twice. The stricter rule gives
+4, the same as its 4 proven skills.
+
+### Checked in the real window (copy of your data)
+- **LamdaX:**
+  - the coverage line and the 2 missing skills showed
+  - the prompt has the rules and the resume slot
+  - Copy worked
+  - closing the dialog left the job details open
+- **Lenovo** (edited in the copy so every required skill is proven):
+  - "4 of 4 (100%)" and "Your resume already fits this job", with no prompt
+  - "Generate the prompt anyway" showed it
+- **After a run:** "Generate resume prompt" opened the same dialog.
+- **AI calls:** none (the test made any AI call fail loudly).
+- **Fixed after the first look:**
+  - the close button sat next to the title instead of at the right edge
+  - the dialog opened with a focus ring on the close button
+
+272 tests pass (6 new in `tests/test_resume_prompt.py`) and the typecheck is
+clean. Your real data was unchanged.

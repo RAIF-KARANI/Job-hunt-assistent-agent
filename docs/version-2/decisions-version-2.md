@@ -567,5 +567,35 @@ Closes Q1. The steps are in the plan (14a–14i). Your choices:
     Windows sound and Do Not Disturb settings.
   - After that first notification, the run is a normal one.
 
+## D33 — The resume-improvement prompt ✅ (31 Oct 2026, step 14g)
+- **Only on request:**
+  - **Generate resume prompt** after a run
+  - **Resume prompt** in a job's details
+- **No AI call.** A template filled from the analysis already in the
+  tracker, so it is instant and free.
+- **Your resume is not in it.** You paste the prompt and your resume into
+  the other AI yourself, so you choose what leaves your PC.
+- **Keyword coverage, not an "ATS score":**
+  - It counts the job's own required skills that your resume visibly
+    proves, i.e. a quote that passed the code check and the judge. Example:
+    "5 of 7 required skills (71%) · 0 of 1 nice-to-haves".
+  - It uses the job's own list, so a requirement the model skipped still
+    counts as not shown.
+  - A skill counts as shown only if at least 80% of the shorter wording's
+    words appear in the other. The fit score's looser rule (half the words)
+    would count "NoSQL databases" as "SQL databases".
+- **Already fits:** coverage of 95% or more, and no required skill missing.
+  Then it says "Your resume already fits this job", with a small "Generate
+  the prompt anyway". Nice-to-haves don't block this.
+- **The rules in the prompt:**
+  - use only experience already in the resume
+  - never invent or inflate anything
+  - ask about a missing skill instead of adding it
+  - keep the resume's structure and country conventions
+- **What it asks for back:**
+  - edits as before -> after
+  - questions about the gaps
+  - keywords, only where they are true
+
 ## Open questions ❓
 - (none)

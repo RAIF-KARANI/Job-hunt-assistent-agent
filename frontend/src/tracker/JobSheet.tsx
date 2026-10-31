@@ -4,6 +4,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { prefill } from "../analyze/runStore";
+import { copy } from "../app/clipboard";
+import { ResumePrompt } from "../resume/ResumePrompt";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
@@ -19,20 +21,6 @@ interface Props {
   onClose(): void;
 }
 
-async function copy(text: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    // Older WebView2 without clipboard permission: the classic way.
-    const area = document.createElement("textarea");
-    area.value = text;
-    document.body.append(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
-  }
-}
-
 const isWebLink = (url: string) => /^https?:\/\//i.test(url);
 
 export function JobSheet({ jobId, status, row, onMove, onFollowUp, onClose }: Props) {
@@ -42,6 +30,7 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onClose }: Pr
   const [copied, setCopied] = useState(false);
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false); // 14g
 
   const followUp = async (action: "done" | "snooze") => {
     setFollowing(true);
@@ -137,7 +126,11 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onClose }: Pr
               <button type="button" className="btn btn-secondary" onClick={draft}>
                 {note ? "Draft another cover note" : "Draft a cover note"}
               </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setPromptOpen(true)}>
+                Resume prompt
+              </button>
             </div>
+            {promptOpen && <ResumePrompt jobId={job.id} onClose={() => setPromptOpen(false)} />}
             {draftProblem && (
               <p className="hint" role="status">
                 {draftProblem}

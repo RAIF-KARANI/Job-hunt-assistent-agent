@@ -102,6 +102,18 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
     autostart_status: async () => autostart,
+    resume_prompt: async (id) => {
+      const fits = id === 1;
+      return {
+        resume: "AI_Engineer.pdf",
+        coverage: {
+          required_total: 8, required_shown: fits ? 8 : 6, ratio: fits ? 1 : 0.75,
+          shown: [{ skill: "Python", quote: "Built FastAPI services in Python" }],
+          missing: fits ? [] : ["Kubernetes", "Rust"], nice_total: 2, nice_shown: 1, nice_missing: ["Go"], unclear: [], fits,
+        },
+        prompt: "I'm applying for the job below...\n\nMY RESUME\n[paste your resume here]",
+      };
+    },
     quick_key_status: async () => ({ key: String(settings.QUICK_KEY ?? "Ctrl+Alt+J") === "off" ? null : String(settings.QUICK_KEY ?? "Ctrl+Alt+J"), error: null }),
     set_autostart: async (on) => (autostart = { ...autostart, enabled: on }),
     open_link: async (url) => void window.open(url, "_blank", "noopener"),

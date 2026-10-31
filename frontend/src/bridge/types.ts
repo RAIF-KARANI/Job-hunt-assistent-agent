@@ -173,6 +173,24 @@ export interface UnfinishedRun {
   done: DoneStep[];
 }
 
+/** Api.resume_prompt() (14g): keyword coverage + the prompt. */
+export interface ResumePromptData {
+  resume: string;
+  coverage: {
+    required_total: number;
+    required_shown: number;
+    ratio: number; // 0..1
+    shown: { skill: string; quote: string }[];
+    missing: string[];
+    nice_total: number;
+    nice_shown: number;
+    nice_missing: string[];
+    unclear: string[];
+    fits: boolean; // >= 95 % and nothing required missing
+  };
+  prompt: string;
+}
+
 /** "Start JobLens with Windows" (14e): only the installed app can. */
 export interface Autostart {
   supported: boolean;
@@ -347,6 +365,7 @@ export interface PyApi {
   continue_run(runId: string): Promise<void>;
   discard_run(runId: string): Promise<void>;
   followed_up(jobId: number): Promise<void>;
+  resume_prompt(jobId: number): Promise<ResumePromptData>;
   snooze_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;
   set_autostart(on: boolean): Promise<Autostart>;

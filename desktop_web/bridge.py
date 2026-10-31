@@ -224,6 +224,16 @@ class Api:
     def set_status(self, job_id: int, status: str) -> None:
         tracker.update_status(int(job_id), status)  # rejects unknown statuses
 
+    def resume_prompt(self, job_id: int) -> dict:
+        """14g: the prompt for improving your resume for this job, with its
+        keyword coverage. Plain template: no AI call, your resume isn't in it."""
+        from job_agent.resume_prompt import resume_prompt
+
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        return to_json(resume_prompt(job["job"], job["best_match"]))
+
     def followed_up(self, job_id: int) -> None:
         """14e: you sent the follow-up; the next reminder is FOLLOW_UP_DAYS away."""
         followup.mark_followed_up(int(job_id))

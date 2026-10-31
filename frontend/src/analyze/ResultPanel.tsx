@@ -5,6 +5,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { FeedbackOptions, FinishedEvent } from "../bridge/types";
+import { ResumePrompt } from "../resume/ResumePrompt";
 
 const ASPECTS = [
   { id: "fit_score", label: "The fit score was" },
@@ -18,6 +19,7 @@ interface Props {
 
 export function ResultPanel({ result, onAnother }: Props) {
   const saved = result.decision === "approve" && result.saved_path;
+  const [promptOpen, setPromptOpen] = useState(false); // 14g: only when you ask
   return (
     <section className="card review" aria-labelledby="result-title">
       <header className="panel-head">
@@ -37,10 +39,16 @@ export function ResultPanel({ result, onAnother }: Props) {
         <a className="btn btn-secondary" href="#/tracker">
           Open the Tracker
         </a>
+        {result.job_id !== null && (
+          <button type="button" className="btn btn-secondary" onClick={() => setPromptOpen(true)}>
+            Generate resume prompt
+          </button>
+        )}
         <button type="button" className="btn btn-ghost" onClick={onAnother}>
           Analyze another job
         </button>
       </div>
+      {promptOpen && result.job_id !== null && <ResumePrompt jobId={result.job_id} onClose={() => setPromptOpen(false)} />}
       {result.decision && <Feedback result={result} />}
     </section>
   );
