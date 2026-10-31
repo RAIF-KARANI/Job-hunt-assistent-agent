@@ -1628,7 +1628,8 @@ not reachable".
 301 tests pass (9 new in `tests/test_v101.py`, one older test updated to the
 new check) and the typecheck is clean. Your real tracker was unchanged.
 
-## Release v1.0.1 (31 Oct 2026, D36)
+## Release v1.0.1 ✅ (31 Oct 2026, D36)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.1
 - **Contents:**
   - deleting a job
   - the Langfuse keys in Settings, with an honest status
@@ -1645,5 +1646,10 @@ new check) and the typecheck is clean. Your real tracker was unchanged.
 - **Files:**
   - `JobLens-Setup-1.0.1.exe`: 59 MB, SHA-256 `7dfdc487…4cb4`
   - portable zip: 72 MB, SHA-256 `09f117e0…03bc`
-- `main` fast-forwarded to the release commit. You publish it with
+- `main` fast-forwarded to the release commit. You published it with
   `gh release create`.
+- **Checked after publishing:**
+  - Latest; not a draft or pre-release; tag → `193ba97`
+  - GitHub's SHA-256 of both uploads matches the notes
+  - the updater, asked as 1.0.0 (real API), offers v1.0.1 with the right
+    checksum
