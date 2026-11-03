@@ -710,5 +710,29 @@ Amends D32 and 13a's "closing an idle JobLens quits".
   output tokens instead of 877). It's accepted for now: accuracy went from
   50 % to 85 %. Shorter reasons are a possible later saving.
 
+## D39 — 15c: which "fairer checks" stayed ✅ (3 Nov 2026, measured)
+Kept, because the numbers held or improved:
+- **Glued PDF text:** a quote whose letters appear in the resume in order,
+  ignoring spaces and punctuation, counts (at least 8 letters).
+- **A second look**, one extra call, only when needed:
+  - for a quote that isn't in the resume (the note says so)
+  - for a gap whose key terms are on a resume line: 1 term for short
+    requirements, 2 for long ones
+
+  A quote still wrong after that makes the requirement a gap, with the
+  reason shown. Nothing is lost from the score any more (F3).
+- **Years rule (code):** "N+ years" is at most partial unless the quote
+  mentions years or dates.
+- **One sentence in the judge's prompt:** a skill in a skills list is proof.
+
+Dropped, because it made things worse:
+- **A three-way judge** (proven / partial / no) that also saw the quote's
+  whole resume line. It called proven skills "partial" because "the quote
+  is incomplete": Nexora accuracy fell from 96 % to 70 %, total accuracy
+  from 85 % to 76 %. The judge stays yes/no.
+- **A one-term gap hint for long requirements:** "power" (from EEG
+  "band-power features") sent "battery-powered design" for a second look,
+  and the model then called it partial, a false match.
+
 ## Open questions ❓
 - (none)

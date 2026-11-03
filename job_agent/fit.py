@@ -69,14 +69,26 @@ def _words(text: str) -> list[str]:
     return [w for w in words if len(w) > 2]
 
 
+def _letters(text: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", text.lower())
+
+
 def is_evidence_in_resume(evidence: str, resume_text: str) -> bool:
-    """Plain-code fact check: does the quoted evidence really come from the resume?"""
+    """Plain-code fact check: does the quoted evidence really come from the resume?
+
+    15c: PDFs often glue a heading to its text ("LanguagesEmbedded C/C++"), so
+    the quote "Languages: Embedded C/C++" lost a word and failed. A quote whose
+    letters and digits appear in the resume in the same order, ignoring
+    spaces and punctuation, is a real quote too (F2)."""
     quote_words = _words(evidence)
     if not quote_words:
         return False
     resume_words = set(_words(resume_text))
     found = sum(1 for w in quote_words if w in resume_words)
-    return found / len(quote_words) >= EVIDENCE_THRESHOLD
+    if found / len(quote_words) >= EVIDENCE_THRESHOLD:
+        return True
+    letters = _letters(evidence)
+    return len(letters) >= 8 and letters in _letters(resume_text)
 
 
 CHECK_PROMPT = """You check a candidate's RESUME against numbered job requirements.
@@ -126,42 +138,71 @@ def job_requirements(job: JobPosting) -> list[tuple[str, str]]:
     return kept
 
 
-def check_requirements(job: JobPosting, resume_text: str) -> list[RequirementCheck]:
-    """One answer per requirement, in the job's order (several small calls)."""
+def check_requirements(job: JobPosting, resume_text: str, ids: list[int] | None = None,
+                       notes: dict[int, str] | None = None) -> list[RequirementCheck]:
+    """One answer per requirement, in the job's order (several small calls).
+    15c: `ids` + `notes` ask again about some of them, each with a note
+    (a second look)."""
     reqs = job_requirements(job)
+    ids = list(range(len(reqs))) if ids is None else list(ids)
+    notes = notes or {}
     header = (f"=== RESUME ===\n{resume_text}\n=== END RESUME ===\n\n"
               f"=== JOB ===\n{job.title} at {job.company} (seniority: {job.seniority})\n\n")
     llm = structured_llm(RequirementReview)
     answers: dict[int, RequirementCheck] = {}
 
-    def ask(ids: list[int]) -> None:
-        listed = "\n".join(f"{i}. {reqs[i][0]}" for i in ids)
+    def ask(batch: list[int]) -> None:
+        listed = "\n".join(f"{i}. {reqs[i][0]}" + (f"\n   Note: {notes[i]}" if i in notes else "")
+                           for i in batch)
         review = llm.invoke([SystemMessage(content=CHECK_PROMPT),
                              HumanMessage(content=f"{header}=== REQUIREMENTS TO CHECK ===\n{listed}")])
         for check in review.checks:
-            if check.id in ids and check.id not in answers:
+            if check.id in batch and check.id not in answers:
                 answers[check.id] = check
 
-    for start in range(0, len(reqs), BATCH_SIZE):
-        batch = list(range(start, min(start + BATCH_SIZE, len(reqs))))
+    for start in range(0, len(ids), BATCH_SIZE):
+        batch = ids[start:start + BATCH_SIZE]
         ask(batch)
         unanswered = [i for i in batch if i not in answers]
         if unanswered:
             ask(unanswered)  # once more, just the ones it skipped
     return [answers.get(i) or RequirementCheck(id=i, status="missing", resume_evidence="",
                                                reason="the AI gave no answer for it")
-            for i in range(len(reqs))]
+            for i in ids]
 
 
-def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
-    """How well does this single resume fit this job? (Facts only.)
+# 15c: words that say nothing about WHICH skill a requirement is about. The
+# rest ("OpenCV", "SQLite", "C") are its key terms.
+_GENERIC = {
+    "ability", "applications", "application", "basic", "building", "build", "concepts", "degree",
+    "design", "develop", "developing", "development", "engineering", "environment", "environments",
+    "equivalent", "etc", "experience", "exposure", "familiarity", "field", "good", "hands",
+    "including", "knowledge", "least", "like", "minimum", "plus", "preferred", "proficiency",
+    "programming", "related", "skill", "skills", "solid", "strong", "such", "systems", "system",
+    "tools", "understanding", "use", "using", "work", "working", "year", "years", "e.g", "i.e",
+}
 
-    15b: the code owns the requirement list and the model answers each one,
-    so nothing is skipped and no gap is invented. Talking points and the
-    verdict are written later, for the best resume only."""
-    reqs = job_requirements(job)
+
+def gap_hint(requirement: str, resume_text: str, limit: int = 3) -> str:
+    """Resume lines that contain the requirement's key terms ("" if none).
+    A gap whose terms are in the resume deserves a second look (F1, F6)."""
+    terms = {t for t in _tokens(requirement) if t not in _GENERIC and not t.isdigit()}
+    # A requirement with many terms needs two of them on one line: "power"
+    # alone (from "band-power features") sent "battery-powered design" for a
+    # second look, and the model then called it partial (15c measurement).
+    need = 1 if len(terms) <= 3 else 2
+    hits = []
+    for line in (raw.strip() for raw in resume_text.splitlines()):
+        found = terms & _tokens(line)
+        if line and len(found) >= need:
+            hits.append((len(found), line))
+    hits.sort(key=lambda hit: -hit[0])
+    return " | ".join(f'"{line[:200]}"' for _, line in hits[:limit])
+
+
+def analysis_from_checks(reqs: list[tuple[str, str]], checks: list[RequirementCheck]) -> FitAnalysis:
     proven, partial, missing, reasons = [], [], [], {}
-    for check in check_requirements(job, resume_text):
+    for check in checks:
         text = reqs[check.id][0]
         evidence = check.resume_evidence.strip()
         if check.status in ("proven", "partial") and evidence:
@@ -173,6 +214,48 @@ def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
             reasons[text] = check.reason
     return FitAnalysis(matching_skills=proven, partial_skills=partial, missing_skills=missing,
                        talking_points=[], gap_reasons=reasons)
+
+
+def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
+    """How well does this single resume fit this job? (Facts only, first look.)
+
+    15b: the code owns the requirement list and the model answers each one,
+    so nothing is skipped and no gap is invented. Talking points and the
+    verdict are written later, for the best resume only."""
+    return analysis_from_checks(job_requirements(job), check_requirements(job, resume_text))
+
+
+def assess_resume(job: JobPosting, resume_text: str) -> ResumeMatch:
+    """15c: the first look, then a second look where it is likely wrong:
+    - a quote that isn't in the resume (F3: it used to vanish from the score)
+    - a gap whose key terms ARE in the resume (F1, F6)
+    Both are asked again in one go, with a note each. A quote that still
+    isn't in the resume after that is a gap, never a lost requirement."""
+    reqs = job_requirements(job)
+    checks = {c.id: c for c in check_requirements(job, resume_text)}
+
+    caught, notes = [], {}
+    for i, c in checks.items():
+        quote = c.resume_evidence.strip()
+        if c.status != "missing" and quote and not is_evidence_in_resume(quote, resume_text):
+            caught.append(SkillMatch(requirement=reqs[i][0], resume_evidence=quote))
+            notes[i] = (f'Your quote "{quote[:160]}" is not in the resume. Quote the resume '
+                        "word for word, or answer missing.")
+        elif c.status == "missing":
+            hint = gap_hint(reqs[i][0], resume_text)
+            if hint:
+                notes[i] = f"These resume lines share its key terms: {hint}. Read them before answering."
+    if notes:
+        print(f"    second look at {len(notes)} requirement(s)")
+        for c in check_requirements(job, resume_text, ids=sorted(notes), notes=notes):
+            quote = c.resume_evidence.strip()
+            if c.status != "missing" and not (quote and is_evidence_in_resume(quote, resume_text)):
+                c = RequirementCheck(id=c.id, status="missing", resume_evidence="",
+                                     reason="its quote isn't in the resume")
+            checks[c.id] = c
+
+    match = verify_analysis(analysis_from_checks(reqs, [checks[i] for i in range(len(reqs))]), resume_text)
+    return match.model_copy(update={"rejected_matches": caught + match.rejected_matches})
 
 
 def verify_analysis(analysis: FitAnalysis, resume_text: str) -> ResumeMatch:
@@ -223,13 +306,20 @@ JUDGE_PROMPT = """You are a strict reviewer double-checking a recruiter's work.
 For each numbered claim, decide whether the resume quote is real PROOF of that
 specific job requirement.
 - supported = true only if the quote directly demonstrates the requirement.
+- A tool or skill named in the requirement and listed in the resume IS proof,
+  wherever it is listed (a skills list counts as much as a project).
 - Related-but-different is NOT proof (a React project doesn't prove Vue;
   writing code alone doesn't prove team leadership or communication).
 Judge every claim, using its number as the id."""
 
 
 def judge_evidence(matches: list[SkillMatch]) -> list[SkillJudgment]:
-    """One LLM call that rules on all claims at once (faster than one each)."""
+    """One LLM call that rules on all claims at once (faster than one each).
+
+    15c tried a three-way judge (proven / partial / no) that also saw the
+    quote's whole resume line. It called proven skills "partial" because
+    "the quote is incomplete" (Nexora accuracy 96 % -> 70 %), so it was
+    dropped (D39). Only the sentence about skills lists stayed."""
     claims = "\n".join(
         f'{i}. Requirement: {m.requirement}\n   Resume quote: "{m.resume_evidence}"'
         for i, m in enumerate(matches)
@@ -267,6 +357,28 @@ def apply_judgments(match: ResumeMatch, judgments: list[SkillJudgment]) -> Resum
         }
     )
     return match.model_copy(update={"analysis": analysis, "unsupported_matches": unsupported})
+
+
+# 15c: "3+ years of ...", "2 yrs", "five years"
+YEARS = re.compile(r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*\+?\s*(?:years?|yrs)\b", re.I)
+
+
+def cap_years(match: ResumeMatch) -> ResumeMatch:
+    """A requirement asking for N years is at most partial when its quote says
+    nothing about time (a student project for "3+ years": job 14, F7)."""
+    kept, partly = [], list(match.analysis.partial_skills)
+    reasons = dict(match.analysis.gap_reasons)
+    for m in match.analysis.matching_skills:
+        if YEARS.search(m.requirement) and not re.search(r"\b(years?|yrs|months?|20\d\d)\b", m.resume_evidence, re.I):
+            partly.append(m)
+            reasons[m.requirement] = "the skill is shown, but not the years of experience asked for"
+        else:
+            kept.append(m)
+    if len(kept) == len(match.analysis.matching_skills):
+        return match
+    analysis = match.analysis.model_copy(update={"matching_skills": kept, "partial_skills": partly,
+                                                 "gap_reasons": reasons})
+    return match.model_copy(update={"analysis": analysis})
 
 
 # ---------------------------------------------------------------------------
@@ -332,13 +444,14 @@ def pick_best_resume(
     matches = []
     for name, text in resumes.items():
         print(f"  - scoring '{name}'...")
-        match = verify_analysis(analyze_fit(job, text), text)
+        match = assess_resume(job, text)  # 15c: first look + second look
         match.resume_name = name
         if use_judge and match.analysis.matching_skills:
             match = apply_judgments(match, judge_evidence(match.analysis.matching_skills))
             if match.unsupported_matches:
                 print(f"    [judge] {len(match.unsupported_matches)} claim(s) not "
                       "actually proven by their quote -> moved to gaps")
+        match = cap_years(match)
         # Score LAST, after code verification and the judge, so the number is
         # built only from facts that survived every check.
         matches.append(score_match(match, job))

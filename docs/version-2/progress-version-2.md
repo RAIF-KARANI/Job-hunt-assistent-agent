@@ -1884,3 +1884,54 @@ false gaps and 61 s, against 2 % and 65 s with batches of 6, so 6 stays.
 - The Cranes and Tag-N-Trac scores sit 10–30 points under the labels.
   Their labels are mostly "partial", which the formula and the labels
   still treat differently (15d).
+
+## 15c — Fairer checks ✅ (3 Nov 2026, D39)
+
+### What was done
+- **`is_evidence_in_resume`** also accepts a quote whose letters and
+  digits appear in the resume in order, ignoring spaces and punctuation
+  (at least 8). The PDF reads `LanguagesEmbedded C/C++`, so the quote
+  `Languages: Embedded C/C++, C, Python` failed before (F2).
+- **`assess_resume`** adds a second look after the first pass, in one call
+  and only when needed:
+  - a quote that isn't in the resume, with the note "Your quote ... is not
+    in the resume"
+  - a gap whose key terms are on resume lines, with those lines in the note
+    (`gap_hint`: generic words like "experience" or "knowledge" don't count;
+    long requirements need 2 terms on one line)
+
+  A quote still not in the resume after that becomes a gap with the reason
+  "its quote isn't in the resume". A requirement can no longer drop out of
+  the score (F3). Caught quotes are still counted in the run log's quality
+  checks.
+- **`cap_years`**: "N+ years" requirements are at most partial when the
+  quote mentions no years or dates.
+- The judge's prompt says a skill in a skills list is proof.
+- 8 new tests in `tests/test_fit_second_look.py`; 333 pass.
+
+### Measured: the first try made it worse
+| | 15b | 15c, first try | 15c, kept |
+|---|---|---|---|
+| Accuracy | 85 % | 76 % | 83 % (Vertex missing, see below) |
+| Missing skills called proven | 0 % | 14 % | **0 %** |
+| Nexora accuracy | 96 % | 70 % | **100 %** (100 points, all 3 runs) |
+| Same answer every run | 95 % | 91 % | **98 %** |
+
+- **The first try** also had a three-way judge that saw the whole resume
+  line. It downgraded HTTP/REST, FastAPI, OpenCV, ArUco and FFT to
+  "partial" ("the quote is incomplete"). A one-term gap hint also sent
+  "battery-powered design" for a second look because of "band-power" (EEG),
+  which became a false match. Both were removed (D39).
+- **The kept version** is equal or better on every case: the made-up
+  student 94 %, Nexora 96 → 100 %, Cranes 60 %, Tag-N-Trac 80 %.
+  Vertex: 94 % in the 2 runs that finished; the run was stopped (low
+  memory) before the case was saved, so the totals have 4 cases.
+  Results: `data/evals/results/20261103-2250_merged_15c.json`.
+
+### What's left
+- Cranes (38 points against 69 from the labels) and Tag-N-Trac (22 against
+  40) are mostly "partial" labels. The answers are right; the formula
+  counts them differently (15d).
+- "Data Science & Analytics" and "Building Relationships" are still called
+  partial for Cranes, and Tag-N-Trac's "Git and collaborative workflows" is
+  a gap. These are borderline: check my labels.
