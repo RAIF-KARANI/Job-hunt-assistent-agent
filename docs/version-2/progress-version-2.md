@@ -1935,3 +1935,43 @@ false gaps and 61 s, against 2 % and 65 s with batches of 6, so 6 stays.
 - "Data Science & Analytics" and "Building Relationships" are still called
   partial for Cranes, and Tag-N-Trac's "Git and collaborative workflows" is
   a gap. These are borderline: check my labels.
+
+## 15d — A score from two coverages ✅ (3 Nov 2026)
+
+### What was done
+- **`fit.coverage_score`**: score = 0.8 × required coverage + 0.2 ×
+  nice-to-have coverage. Partly shown counts half; a job with only one
+  kind uses that kind alone.
+  - Every required skill shown means **at least 80**, whatever the
+    nice-to-haves. The old formula gave 77 there (job 16, F7).
+  - A missing required skill costs more than before: 1/8 of the required
+    part = 10 points on an 8-requirement job.
+- **The breakdown says it in words**, e.g. "Required: 7.5 of 8 shown,
+  1 of them partly (94%); Nice-to-have: 3 of 9 shown (33%); score = 0.8 x
+  94% + 0.2 x 33% = 82 (partly shown counts half)". It shows in the review
+  panel and in the job details, next to each gap's reason (15b).
+- The eval's "labels would give" uses the same formula (`label_score`).
+- The old weight `NICE_TO_HAVE_WEIGHT` is gone. 334 tests pass (the
+  formula tests updated, plus "every required skill shown scores ≥ 80").
+
+### Measured without the AI
+Only the formula changed, so the saved 15b and 15c answers were re-scored
+(no new runs):
+
+| Case | Old formula | New formula | Labels (new) |
+|---|---|---|---|
+| Made-up student | 94 89 89 | 92 85 85 | 92 |
+| Nexora | 100 100 100 | 100 100 100 | 100 |
+| Vertex (15b answers) | 94 94 94 | 90 90 90 | 99 |
+| Cranes | 38 | 43 | 71 |
+| Tag-N-Trac | 22 | 18 | 35 |
+
+The score error hardly moves (13.1 → 12.4 on the 15c answers): 15b had
+already removed most of what the old formula got wrong. The gain is the
+guarantee and the readable breakdown. The Cranes and Tag-N-Trac distance is
+the AI calling "partial" what my labels call proven (and the other way
+round), not the formula.
+
+**Saved jobs keep their old score** until they're re-scored
+(`python main.py rescore`, code only). The release should do that on
+first start (added to the plan).

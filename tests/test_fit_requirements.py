@@ -120,9 +120,10 @@ def test_partial_counts_half():
                     partial_skills=[SkillMatch(requirement="Embedded C", resume_evidence="x")],
                     missing_skills=["Docker"], talking_points=[])
     score, breakdown = fit.compute_fit_score(a, j)
-    # 1.5 proven / (1.5 + 0 required gaps + 0.3 x 1 nice gap + 0.5 x 1 partial required) = 1.5 / 2.3
-    assert score == 65
-    assert "0.5 x 1 partial" in breakdown and "1 nice-to-have gaps" in breakdown
+    # required 1.5 of 2 (75 %), nice 0 of 1: 0.8 x 75 + 0.2 x 0 = 60
+    assert score == 60
+    assert "Required: 1.5 of 2 shown, 1 of them partly (75%)" in breakdown
+    assert "Nice-to-have: 0 of 1 shown (0%)" in breakdown and "counts half" in breakdown
 
 
 def test_an_exact_required_wording_is_never_taken_for_a_nice_to_have():
@@ -130,4 +131,4 @@ def test_an_exact_required_wording_is_never_taken_for_a_nice_to_have():
     j = job(["Python"], ["Python scripting for test automation"])
     a = FitAnalysis(matching_skills=[], missing_skills=["Python"], talking_points=[])
     _, breakdown = fit.compute_fit_score(a, j)
-    assert "1 required gaps" in breakdown
+    assert "Required: 0 of 1 shown" in breakdown and "Nice-to-have" not in breakdown

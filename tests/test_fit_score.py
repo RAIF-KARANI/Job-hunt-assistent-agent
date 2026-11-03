@@ -1,7 +1,8 @@
 """
 Tests for the fit score computed in code (Phase 8a).
 
-score = proven / (proven + required gaps + 0.3 x nice-to-have gaps)
+Since 15d: score = 0.8 x required coverage + 0.2 x nice-to-have coverage
+(a job with only one kind: that kind alone; partly shown counts half).
 """
 
 from job_agent.fit import compute_fit_score
@@ -50,9 +51,19 @@ def test_nice_to_have_gaps_hurt_less():
     job = _job(nice_to_have=["Familiarity with Ruby on Rails and/or JavaScript and Vue"])
     gaps = ["LangGraph", "communication", "Familiarity with Ruby on Rails and Vue"]
     score, breakdown = compute_fit_score(_analysis(4, gaps), job)
-    # 4 / (4 + 2 + 0.3 x 1) = 63
-    assert score == 63
-    assert "2 required gaps" in breakdown and "1 nice-to-have gaps" in breakdown
+    # required 4 of 6 (67 %), nice 0 of 1: 0.8 x 67 % + 0.2 x 0 = 53
+    assert score == 53
+    assert "Required: 4 of 6 shown (67%)" in breakdown and "Nice-to-have: 0 of 1 shown" in breakdown
+
+
+def test_every_required_skill_shown_scores_at_least_80():
+    # 15d: the old formula gave 77 when all 8 required were proven but 8
+    # nice-to-haves missing (job 16, F7).
+    nice = [f"nice {i}" for i in range(8)]
+    job = _job(nice_to_have=nice)
+    score, breakdown = compute_fit_score(_analysis(8, nice), job)
+    assert score == 80
+    assert "score = 0.8 x 100% + 0.2 x 0% = 80" in breakdown
 
 
 def test_same_facts_always_give_the_same_score():

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from job_agent.fit import NICE_TO_HAVE_WEIGHT, _words
+from job_agent.fit import _words, coverage_score
 
 LABELS = ("proven", "partial", "missing")
 # An answer item belongs to a requirement if this share of the item's words
@@ -93,17 +93,15 @@ def predict(fit: dict, requirements: list[str]) -> Prediction:
 
 
 def label_score(labels: list[str], kinds: list[str]) -> int:
-    """The score today's formula would give if every answer matched the labels
-    (partial = half proven, half gap). Shows the formula's own ceiling,
-    separately from classification mistakes."""
-    proven = gaps = 0.0
+    """The score the app's formula would give if every answer matched the
+    labels (partial = half). Shows the formula's own ceiling, separately from
+    classification mistakes."""
+    have = {"required": 0.0, "nice": 0.0}
+    count = {"required": 0, "nice": 0}
     for label, kind in zip(labels, kinds):
-        weight = 1.0 if kind == "required" else NICE_TO_HAVE_WEIGHT
-        have = {"proven": 1.0, "partial": 0.5, "missing": 0.0}[label]
-        proven += have
-        gaps += (1 - have) * weight
-    total = proven + gaps
-    return round(100 * proven / total) if total else 0
+        have[kind] += {"proven": 1.0, "partial": 0.5, "missing": 0.0}[label]
+        count[kind] += 1
+    return coverage_score(have["required"], count["required"], have["nice"], count["nice"])
 
 
 @dataclass

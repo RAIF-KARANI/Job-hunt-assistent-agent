@@ -388,10 +388,6 @@ def cap_years(match: ResumeMatch) -> ResumeMatch:
 # breakdown shows exactly why.
 # ---------------------------------------------------------------------------
 
-# A missing nice-to-have hurts less than a missing requirement.
-NICE_TO_HAVE_WEIGHT = 0.3
-
-
 def _similar(text: str, other: str) -> bool:
     """True if most of text's words appear in other (wording often differs)."""
     words = set(_words(text))
@@ -408,26 +404,53 @@ def _is_nice(text: str, job: JobPosting) -> bool:
     return any(_similar(text, nice) for nice in job.nice_to_have_skills)
 
 
-def compute_fit_score(analysis: FitAnalysis, job: JobPosting) -> tuple[int, str]:
-    """score = proven / (proven + required gaps + 0.3 x nice-to-have gaps).
-    15b: a partial requirement counts half proven, half gap."""
-    full = len(analysis.matching_skills)
-    partial = analysis.partial_skills
-    nice_gaps = sum(1 for gap in analysis.missing_skills if _is_nice(gap, job))
-    required_gaps = len(analysis.missing_skills) - nice_gaps
-    partial_gap_weight = sum(NICE_TO_HAVE_WEIGHT if _is_nice(m.requirement, job) else 1.0
-                             for m in partial)
+# 15d: how much each kind of requirement counts in the score.
+REQUIRED_SHARE = 0.8
 
-    proven = full + 0.5 * len(partial)
-    total = proven + required_gaps + NICE_TO_HAVE_WEIGHT * nice_gaps + 0.5 * partial_gap_weight
-    score = round(100 * proven / total) if total else 0
-    shown = f"{full} proven" + (f" + 0.5 x {len(partial)} partial" if partial else "")
-    breakdown = (
-        f"{shown} / ({shown} + {required_gaps} required gaps + "
-        f"{NICE_TO_HAVE_WEIGHT} x {nice_gaps} nice-to-have gaps"
-        + (" + the partial ones' missing half" if partial else "") + f") = {score}"
-    )
-    return score, breakdown
+
+def coverage_score(required_have: float, required_n: int, nice_have: float, nice_n: int) -> int:
+    """80 % required coverage + 20 % nice-to-have coverage (a job with only
+    one kind: that kind alone). Meeting every required skill gives >= 80,
+    whatever the nice-to-haves (the old formula capped that case at 77: F7)."""
+    if required_n and nice_n:
+        value = REQUIRED_SHARE * required_have / required_n + (1 - REQUIRED_SHARE) * nice_have / nice_n
+    elif required_n:
+        value = required_have / required_n
+    elif nice_n:
+        value = nice_have / nice_n
+    else:
+        return 0
+    return round(100 * value)
+
+
+def compute_fit_score(analysis: FitAnalysis, job: JobPosting) -> tuple[int, str]:
+    """15d: score = 0.8 x required coverage + 0.2 x nice-to-have coverage,
+    where a partly shown requirement counts half (15b)."""
+    have = {"required": 0.0, "nice": 0.0}
+    count = {"required": 0, "nice": 0}
+    partly = {"required": 0, "nice": 0}
+    for items, value in ((analysis.matching_skills, 1.0), (analysis.partial_skills, 0.5),
+                         ([SkillMatch(requirement=g, resume_evidence="") for g in analysis.missing_skills], 0.0)):
+        for m in items:
+            kind = "nice" if _is_nice(m.requirement, job) else "required"
+            have[kind] += value
+            count[kind] += 1
+            partly[kind] += value == 0.5
+    score = coverage_score(have["required"], count["required"], have["nice"], count["nice"])
+
+    def part(kind: str, title: str) -> str:
+        pct = round(100 * have[kind] / count[kind])
+        extra = f", {partly[kind]} of them partly" if partly[kind] else ""
+        return f"{title}: {have[kind]:g} of {count[kind]} shown{extra} ({pct}%)"
+
+    parts = [part(k, t) for k, t in (("required", "Required"), ("nice", "Nice-to-have")) if count[k]]
+    if count["required"] and count["nice"]:
+        rule = (f"score = {REQUIRED_SHARE:g} x {round(100 * have['required'] / count['required'])}% + "
+                f"{1 - REQUIRED_SHARE:.1g} x {round(100 * have['nice'] / count['nice'])}% = {score}")
+    else:
+        rule = f"score = {score}"
+    note = " (partly shown counts half)" if partly["required"] or partly["nice"] else ""
+    return score, "; ".join(parts + [rule]) + note
 
 
 def score_match(match: ResumeMatch, job: JobPosting) -> ResumeMatch:

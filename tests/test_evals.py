@@ -62,9 +62,9 @@ def test_compare_counts_false_gaps_matches_and_partials():
 
 
 def test_label_score_shows_the_formulas_ceiling():
-    # All 8 required proven, all 8 nice-to-haves missing: today's formula
-    # can't go above 77, the number job 16 got (finding F7).
-    assert label_score(["proven"] * 8 + ["missing"] * 8, ["required"] * 8 + ["nice"] * 8) == 77
+    # All 8 required proven, all 8 nice-to-haves missing: the old formula
+    # capped this at 77 (job 16, F7); since 15d it is 80.
+    assert label_score(["proven"] * 8 + ["missing"] * 8, ["required"] * 8 + ["nice"] * 8) == 80
     assert label_score(["proven", "partial"], ["required", "required"]) == 75
 
 
