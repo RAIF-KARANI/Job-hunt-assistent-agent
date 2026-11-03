@@ -68,6 +68,15 @@ def test_label_score_shows_the_formulas_ceiling():
     assert label_score(["proven", "partial"], ["required", "required"]) == 75
 
 
+def test_partial_answers_are_read_and_count_as_half_a_mistake():
+    fit = answer(matches=["Python"], gaps=["Apache Spark"])
+    fit["analysis"]["partial_skills"] = [{"requirement": "SQL and PostgreSQL", "resume_evidence": "x"}]
+    pred = predict(fit, REQS)
+    assert pred.status[:2] == ["proven", "partial"]
+    res = compare(pred, ["proven", "proven", "partial", "missing"], score=50)
+    assert res.proven_as_partial == [1] and res.false_gaps == []
+
+
 def test_stability():
     assert stability([["proven", "missing"], ["proven", "missing"]]) == 1.0
     assert stability([["proven", "missing"], ["proven", "proven"]]) == 0.5

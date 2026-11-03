@@ -156,6 +156,8 @@ def show(job_id: int) -> None:
     print(f"Fit:      {best.fit_score}/100 with {best.resume_name}")
     print(f"Score:    {best.score_breakdown or 'not computed yet - run: python main.py rescore'}")
     print(f"Verdict:  {best.analysis.verdict}")
+    if best.analysis.partial_skills:  # 15b
+        print("Partly:   " + ", ".join(p.requirement for p in best.analysis.partial_skills))
     print("Gaps:     " + (", ".join(best.analysis.missing_skills) or "none found"))
     if brief:
         print(f"Company:  {brief.what_they_do}")

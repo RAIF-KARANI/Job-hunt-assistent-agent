@@ -24,21 +24,15 @@ from job_agent.llm import structured_llm
 from job_agent.models import (
     EvidenceReview,
     FitAnalysis,
-    FitFacts,
     FitVerdict,
     JobPosting,
+    RequirementCheck,
+    RequirementReview,
     ResumeMatch,
     SkillJudgment,
     SkillMatch,
+    TalkingPoints,
 )
-
-SYSTEM_PROMPT = """You are an experienced technical recruiter.
-Compare the candidate's RESUME with the JOB POSTING. Be honest and specific.
-Rules:
-- A skill matches ONLY if the RESUME shows it. The job posting is never evidence.
-- For each match, quote a short phrase copied word-for-word from the RESUME.
-- Anything required but not in the resume goes in missing_skills.
-- Do not invent experience. If unsure, treat it as missing."""
 
 # 14c: how much the agent writes besides the facts. "short" never trims the
 # matches and their quotes (the evidence checks and the score need them);
@@ -85,34 +79,135 @@ def is_evidence_in_resume(evidence: str, resume_text: str) -> bool:
     return found / len(quote_words) >= EVIDENCE_THRESHOLD
 
 
-def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
-    """One LLM call: how well does this single resume fit this job? (Facts only.)"""
-    llm = structured_llm(FitFacts)
+CHECK_PROMPT = """You check a candidate's RESUME against numbered job requirements.
+For EACH requirement, answer:
+- "proven": the resume clearly shows it. Projects, coursework, certificates and
+  skill lists all count as evidence. Quote the phrase that shows it.
+- "partial": the resume shows part of it, or something close but less (some of
+  the listed tools; student projects where years of work experience are asked;
+  a degree not finished yet). Quote the closest phrase.
+- "missing": nothing in the resume shows it. Leave the quote empty.
+Rules:
+- Search the WHOLE resume (summary, experience, projects, skills, certificates)
+  for each requirement before answering. Skills are often only in a list.
+- The quote is copied word for word from the RESUME. The job posting is never evidence.
+- Answer every requirement id exactly once."""
 
-    # Send the structured job (from Phase 1) as JSON, not the raw page:
-    # it's shorter and already cleaned up, so the model focuses better.
-    # Clear section markers help the model keep the two documents apart.
-    prompt = (
-        f"=== JOB POSTING ===\n{job.model_dump_json(indent=2)}\n\n"
-        f"=== RESUME ===\n{resume_text}\n=== END RESUME ==="
-    )
-    system = f"{SYSTEM_PROMPT}\n{TALKING_POINTS[detail_level()]}"
-    facts = llm.invoke([SystemMessage(content=system), HumanMessage(content=prompt)])
-    return FitAnalysis(**facts.model_dump())
+# 15b: how many requirements one call checks. An 8B model checking 19 at once
+# got lazy (all nice-to-haves "missing", unread); a smaller batch keeps it
+# reading. The resume comes first in the prompt, so Ollama reuses that part
+# from the previous batch instead of reading it again.
+BATCH_SIZE = int(os.getenv("FIT_BATCH_SIZE", "6"))  # env only for the evals
+
+
+_FILLER = {"a", "an", "and", "as", "for", "in", "of", "on", "or", "the", "to", "with"}
+
+
+def _tokens(text: str) -> set[str]:
+    """Every word, short ones included ("C", "Go", "AI" matter here)."""
+    return {w.rstrip(".") for w in re.findall(r"[a-z0-9+#.]+", text.lower())} - _FILLER - {""}
+
+
+def _same_requirement(a: str, b: str) -> bool:
+    """Near-identical wording (a posting repeating itself across its lists)."""
+    wa, wb = _tokens(a), _tokens(b)
+    return bool(wa and wb) and len(wa & wb) / max(len(wa), len(wb)) >= 0.8
+
+
+def job_requirements(job: JobPosting) -> list[tuple[str, str]]:
+    """The job's requirements as (text, "required" | "nice"), in order, with
+    repeats dropped (the first one wins, so a required skill stays required)."""
+    kept: list[tuple[str, str]] = []
+    for kind, items in (("required", job.required_skills), ("nice", job.nice_to_have_skills)):
+        for text in items:
+            text = text.strip()
+            if text and not any(_same_requirement(text, seen) for seen, _ in kept):
+                kept.append((text, kind))
+    return kept
+
+
+def check_requirements(job: JobPosting, resume_text: str) -> list[RequirementCheck]:
+    """One answer per requirement, in the job's order (several small calls)."""
+    reqs = job_requirements(job)
+    header = (f"=== RESUME ===\n{resume_text}\n=== END RESUME ===\n\n"
+              f"=== JOB ===\n{job.title} at {job.company} (seniority: {job.seniority})\n\n")
+    llm = structured_llm(RequirementReview)
+    answers: dict[int, RequirementCheck] = {}
+
+    def ask(ids: list[int]) -> None:
+        listed = "\n".join(f"{i}. {reqs[i][0]}" for i in ids)
+        review = llm.invoke([SystemMessage(content=CHECK_PROMPT),
+                             HumanMessage(content=f"{header}=== REQUIREMENTS TO CHECK ===\n{listed}")])
+        for check in review.checks:
+            if check.id in ids and check.id not in answers:
+                answers[check.id] = check
+
+    for start in range(0, len(reqs), BATCH_SIZE):
+        batch = list(range(start, min(start + BATCH_SIZE, len(reqs))))
+        ask(batch)
+        unanswered = [i for i in batch if i not in answers]
+        if unanswered:
+            ask(unanswered)  # once more, just the ones it skipped
+    return [answers.get(i) or RequirementCheck(id=i, status="missing", resume_evidence="",
+                                               reason="the AI gave no answer for it")
+            for i in range(len(reqs))]
+
+
+def analyze_fit(job: JobPosting, resume_text: str) -> FitAnalysis:
+    """How well does this single resume fit this job? (Facts only.)
+
+    15b: the code owns the requirement list and the model answers each one,
+    so nothing is skipped and no gap is invented. Talking points and the
+    verdict are written later, for the best resume only."""
+    reqs = job_requirements(job)
+    proven, partial, missing, reasons = [], [], [], {}
+    for check in check_requirements(job, resume_text):
+        text = reqs[check.id][0]
+        evidence = check.resume_evidence.strip()
+        if check.status in ("proven", "partial") and evidence:
+            (proven if check.status == "proven" else partial).append(
+                SkillMatch(requirement=text, resume_evidence=evidence))
+        else:  # "missing", or a claim with nothing quoted
+            missing.append(text)
+        if check.status != "proven" and check.reason:
+            reasons[text] = check.reason
+    return FitAnalysis(matching_skills=proven, partial_skills=partial, missing_skills=missing,
+                       talking_points=[], gap_reasons=reasons)
 
 
 def verify_analysis(analysis: FitAnalysis, resume_text: str) -> ResumeMatch:
-    """Split the model's claimed matches into verified and rejected."""
-    verified: list[SkillMatch] = []
+    """Split the model's claimed matches (proven and partial) into verified
+    and rejected: every quote must really be in the resume."""
     rejected: list[SkillMatch] = []
-    for match in analysis.matching_skills:
-        if is_evidence_in_resume(match.resume_evidence, resume_text):
-            verified.append(match)
-        else:
-            rejected.append(match)
 
-    cleaned = analysis.model_copy(update={"matching_skills": verified})
+    def keep(matches: list[SkillMatch]) -> list[SkillMatch]:
+        ok = []
+        for match in matches:
+            (ok if is_evidence_in_resume(match.resume_evidence, resume_text) else rejected).append(match)
+        return ok
+
+    cleaned = analysis.model_copy(update={"matching_skills": keep(analysis.matching_skills),
+                                          "partial_skills": keep(analysis.partial_skills)})
     return ResumeMatch(resume_name="", analysis=cleaned, rejected_matches=rejected)
+
+
+TALKING_POINTS_PROMPT = """You help a job seeker prepare an application.
+From the RESUME, pick the achievements or projects that best show the PROVEN
+requirements below. Use only facts in the resume; keep its numbers exact."""
+
+
+def write_talking_points(job: JobPosting, match: ResumeMatch, resume_text: str) -> list[str]:
+    """15b: for the best resume only, from the requirements that survived
+    every check (it used to come from the first, unchecked answer: F10)."""
+    proven = "\n".join(f"- {m.requirement}" for m in match.analysis.matching_skills)
+    if not proven:
+        return []
+    prompt = (f"=== RESUME ===\n{resume_text}\n=== END RESUME ===\n\n"
+              f"=== JOB ===\n{job.title} at {job.company}\n\n=== PROVEN ===\n{proven}")
+    system = f"{TALKING_POINTS_PROMPT}\n{TALKING_POINTS[detail_level()]}"
+    answer = structured_llm(TalkingPoints).invoke(
+        [SystemMessage(content=system), HumanMessage(content=prompt)])
+    return [t.strip() for t in answer.talking_points if t.strip()]
 
 
 # ---------------------------------------------------------------------------
@@ -191,21 +286,34 @@ def _similar(text: str, other: str) -> bool:
     return bool(words) and len(words & set(_words(other))) / len(words) >= 0.5
 
 
-def compute_fit_score(analysis: FitAnalysis, job: JobPosting) -> tuple[int, str]:
-    """score = proven / (proven + required gaps + 0.3 x nice-to-have gaps)."""
-    proven = len(analysis.matching_skills)
-    nice_gaps = sum(
-        1
-        for gap in analysis.missing_skills
-        if any(_similar(gap, nice) for nice in job.nice_to_have_skills)
-    )
-    required_gaps = len(analysis.missing_skills) - nice_gaps
+def _is_nice(text: str, job: JobPosting) -> bool:
+    """Is this requirement a nice-to-have? Since 15b the text is the job's own
+    wording (exact); older rows have the model's wording (similar)."""
+    if text in job.required_skills:
+        return False
+    if text in job.nice_to_have_skills:
+        return True
+    return any(_similar(text, nice) for nice in job.nice_to_have_skills)
 
-    total = proven + required_gaps + NICE_TO_HAVE_WEIGHT * nice_gaps
+
+def compute_fit_score(analysis: FitAnalysis, job: JobPosting) -> tuple[int, str]:
+    """score = proven / (proven + required gaps + 0.3 x nice-to-have gaps).
+    15b: a partial requirement counts half proven, half gap."""
+    full = len(analysis.matching_skills)
+    partial = analysis.partial_skills
+    nice_gaps = sum(1 for gap in analysis.missing_skills if _is_nice(gap, job))
+    required_gaps = len(analysis.missing_skills) - nice_gaps
+    partial_gap_weight = sum(NICE_TO_HAVE_WEIGHT if _is_nice(m.requirement, job) else 1.0
+                             for m in partial)
+
+    proven = full + 0.5 * len(partial)
+    total = proven + required_gaps + NICE_TO_HAVE_WEIGHT * nice_gaps + 0.5 * partial_gap_weight
     score = round(100 * proven / total) if total else 0
+    shown = f"{full} proven" + (f" + 0.5 x {len(partial)} partial" if partial else "")
     breakdown = (
-        f"{proven} proven / ({proven} proven + {required_gaps} required gaps + "
-        f"{NICE_TO_HAVE_WEIGHT} x {nice_gaps} nice-to-have gaps) = {score}"
+        f"{shown} / ({shown} + {required_gaps} required gaps + "
+        f"{NICE_TO_HAVE_WEIGHT} x {nice_gaps} nice-to-have gaps"
+        + (" + the partial ones' missing half" if partial else "") + f") = {score}"
     )
     return score, breakdown
 
@@ -242,6 +350,8 @@ def pick_best_resume(
         key=lambda m: (m.fit_score, len(m.analysis.matching_skills)),
     )
     print("  - writing the verdict...")
+    points = write_talking_points(job, best, resumes[best.resume_name])
+    best = best.model_copy(update={"analysis": best.analysis.model_copy(update={"talking_points": points})})
     analysis = best.analysis.model_copy(update={"verdict": write_verdict(job, best)})
     best = best.model_copy(update={"analysis": analysis})
     matches = [best if m.resume_name == best.resume_name else m for m in matches]
@@ -281,10 +391,12 @@ def verdict_from_facts(match: ResumeMatch) -> str:
 def write_verdict(job: JobPosting, match: ResumeMatch) -> str:
     fit = match.analysis
     proven = "\n".join(f"- {m.requirement}" for m in fit.matching_skills) or "- (none)"
+    partial = "\n".join(f"- {m.requirement}" for m in fit.partial_skills) or "- (none)"
     gaps = "\n".join(f"- {g}" for g in fit.missing_skills) or "- (none)"
     prompt = (
         f"=== JOB ===\n{job.title} at {job.company}\n{job.summary}\n\n"
         f"=== PROVEN (checked against the resume) ===\n{proven}\n\n"
+        f"=== PARTLY SHOWN (not a strength, not a full gap) ===\n{partial}\n\n"
         f"=== GAPS ===\n{gaps}\n\n"
         f"Fit score: {match.fit_score}/100"
     )

@@ -73,6 +73,11 @@ def predict(fit: dict, requirements: list[str]) -> Prediction:
         elif status[i] != "proven":
             status[i] = "missing"
 
+    for m in analysis.get("partial_skills") or []:  # 15b
+        i = best_requirement(m["requirement"], requirements)
+        if i is not None and status[i] != "proven":
+            status[i] = "partial"
+
     for m in analysis.get("matching_skills") or []:
         i = best_requirement(m["requirement"], requirements)
         if i is not None:
@@ -111,6 +116,7 @@ class RunResult:
     partial_as: dict[str, int]  # what the app said for partial labels
     invented_gaps: int
     score: int
+    proven_as_partial: list[int] = field(default_factory=list)  # half a mistake (15b)
 
     @property
     def accuracy(self) -> float:
@@ -119,7 +125,7 @@ class RunResult:
 
 def compare(pred: Prediction, labels: list[str], score: int) -> RunResult:
     correct = hard = 0
-    false_gaps, false_matches, not_seen = [], [], []
+    false_gaps, false_matches, not_seen, downgraded = [], [], [], []
     partial_as: dict[str, int] = {}
     for i, (said, label) in enumerate(zip(pred.status, labels)):
         if said in ("lost", "skipped"):
@@ -130,12 +136,14 @@ def compare(pred: Prediction, labels: list[str], score: int) -> RunResult:
         hard += 1
         if said == label:
             correct += 1
+        elif label == "proven" and said == "partial":
+            downgraded.append(i)  # half credit: neither right nor a false gap
         elif label == "proven":
             false_gaps.append(i)
-        elif label == "missing" and said == "proven":
+        elif label == "missing" and said in ("proven", "partial"):
             false_matches.append(i)
     return RunResult(correct, hard, false_gaps, false_matches, not_seen, partial_as,
-                     len(pred.invented_gaps), score)
+                     len(pred.invented_gaps), score, downgraded)
 
 
 def stability(statuses: list[list[str]]) -> float:

@@ -688,5 +688,27 @@ Amends D32 and 13a's "closing an idle JobLens quits".
   pystray ignores notification clicks (`NIN_BALLOONUSERCLICK`), so JobLens
   adds that one message to pystray's handler.
 
+## D38 — Phase 15: measure first; the code owns the requirement list ✅ (3 Nov 2026, your OK: "go for it")
+- **Evals before changes (15a).** Every change to the fit step is measured
+  on the eval set (`python -m evals.fit`) and kept only if the numbers improve.
+- **One answer per requirement (15b).**
+  - The model no longer writes its own lists of matches and gaps. Code sends
+    the job's own requirements, numbered and with repeats dropped, and the
+    model answers each one: proven, partial or missing, with a quote and a
+    reason.
+  - Anything it skips is asked once more, then counts as missing.
+  - Why: the free lists skipped requirements, dumped every nice-to-have as
+    a gap unread, and invented gaps from the responsibilities.
+- **Batches of 6** requirements per call, with the resume first so Ollama
+  reuses it. Batches of 10 were measured: more false gaps (13 % against
+  2 % on the same cases) and barely faster (61 s against 65 s).
+- **Partial = half** in today's formula (half proven, half gap). The new
+  formula is 15d.
+- **Talking points** are written after the checks, for the best resume
+  only, from the proven requirements (finding F10).
+- **Cost:** step 2 takes about 52 s instead of 30 s per resume (1,635
+  output tokens instead of 877). It's accepted for now: accuracy went from
+  50 % to 85 %. Shorter reasons are a possible later saving.
+
 ## Open questions ❓
 - (none)

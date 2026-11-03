@@ -420,6 +420,11 @@
   min-width: 0;
 }
 
+/* 15b: "Partly shown" under the proven list */
+.why-cols > div > h3:not(:first-child) {
+  margin-top: var(--space-4);
+}
+
 .why h3 {
   margin-bottom: var(--space-2);
   font-family: var(--font-body);

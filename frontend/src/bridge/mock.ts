@@ -424,6 +424,8 @@ function mockJob(row: JobRow): JobDetail {
       analysis: {
         matching_skills: [{ requirement: "Python", resume_evidence: "Python, FastAPI, pytest" }],
         missing_skills: ["Kubernetes"],
+        partial_skills: [{ requirement: "AWS", resume_evidence: "deployed on a small Linux VM" }],
+        gap_reasons: { Kubernetes: "not in the resume", AWS: "a VM, not AWS itself" },
         talking_points: [],
         verdict: "Strong match; the main gap is Kubernetes.",
       },

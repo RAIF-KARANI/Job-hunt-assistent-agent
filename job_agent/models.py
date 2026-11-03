@@ -12,6 +12,8 @@ Why Pydantic models?
     the LLM as part of the schema, so it acts as an instruction for that field.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -88,6 +90,47 @@ class FitAnalysis(FitFacts):
     # Rows saved before 14c have the LLM's old verdict; "" for resumes that
     # weren't the best one (only the best gets a verdict).
     verdict: str = ""
+    # 15b: requirements the resume shows only in part (half credit in the
+    # score), and why each gap is a gap. Rows saved before 15b have neither.
+    partial_skills: list[SkillMatch] = []
+    gap_reasons: dict[str, str] = {}
+
+
+# ---------------------------------------------------------------------------
+# 15b: the code owns the list of requirements. The model answers each one
+# (in small batches) instead of writing its own lists of matches and gaps,
+# so it can't skip a requirement, dump all nice-to-haves as gaps unread, or
+# invent gaps from the responsibilities (findings F1, F3, F6).
+# ---------------------------------------------------------------------------
+
+class RequirementCheck(BaseModel):
+    """The answer for one numbered requirement."""
+
+    id: int = Field(description="The requirement's number, as given")
+    status: Literal["proven", "partial", "missing"] = Field(
+        description="proven = the resume clearly shows it; partial = it shows part "
+        "of it or something close but less; missing = nothing in the resume shows it"
+    )
+    resume_evidence: str = Field(
+        description="For proven or partial: 3-15 words copied EXACTLY from the "
+        "resume. For missing: an empty string."
+    )
+    reason: str = Field(description="Why, in under 15 words")
+
+
+class RequirementReview(BaseModel):
+    """One batch of requirement answers."""
+
+    checks: list[RequirementCheck] = Field(description="One answer per requirement id, each id once")
+
+
+class TalkingPoints(BaseModel):
+    """15b: written for the best resume only, from its proven requirements."""
+
+    talking_points: list[str] = Field(
+        description="Short, specific achievements or projects FROM THE RESUME "
+        "(with numbers if the resume has them) worth highlighting for THIS job"
+    )
 
 
 class FitVerdict(BaseModel):

@@ -1834,3 +1834,53 @@ in three runs.
 - Scores move by up to 17 points between runs of the same input.
 - The cases have few labelled-missing skills (5 real ones). A low-match
   case should be added before the false-match rate is trusted.
+
+## 15b — The code owns the requirement list ✅ (3 Nov 2026, D38)
+
+### What was done
+- **`fit.check_requirements`** sends the job's own requirements, numbered,
+  6 per call, with repeats dropped (`job_requirements`). The model answers
+  each id with proven / partial / missing, a quote and a reason
+  (`RequirementCheck`). Skipped ids are asked once more; if still
+  unanswered, they count as missing ("the AI gave no answer for it").
+- **`analyze_fit`** turns the answers into the same saved shape as before,
+  plus two new fields that old rows simply lack:
+  - `partial_skills`: quote-checked like matches, half credit in the score
+  - `gap_reasons`: why each partial or gap is one
+- Gaps use the job's exact wording, so **an invented gap is impossible**,
+  and required vs nice-to-have is known exactly.
+- **Talking points** are written after the checks, for the best resume only
+  (`write_talking_points`). The verdict also sees "partly shown".
+- **The app shows it:** "Partly shown" under "Proven by your resume" (review
+  panel and job details), and each gap's reason in the job details. The CLI
+  `show` lists them too.
+- Found while testing: the repeat check ignored short words, so "Knowledge
+  of C" and "Knowledge of Go" counted as one requirement. It now compares
+  every word except filler words.
+- 325 tests pass (11 new in `tests/test_fit_requirements.py`, plus the
+  14c verdict tests adapted to the new flow); the typecheck is clean.
+
+### Measured (same 5 cases × 3 runs as the baseline, qwen3:8b)
+| | Baseline | 15b |
+|---|---|---|
+| Accuracy | 50 % | **85 %** |
+| Proven skills not counted | 57 % | **4 %** |
+| Missing skills called proven | 14 % | **0 %** |
+| Score off by (points) | 26 | **12** |
+| Same answer every run | 88 % | **95 %** |
+| Invented gaps | 12 | **0** |
+| Time / output tokens per run | 30 s / 877 | 52 s / 1,635 |
+
+Per case: Nexora 76 → 99 (labels: 100), Vertex 50 → 94 (99), the made-up
+student 80 → 91 (94). Batches of 10 were tried on the 3 big cases: 13 %
+false gaps and 61 s, against 2 % and 65 s with batches of 6, so 6 stays.
+
+### What's left (15c)
+- The judge rejected plain "Git" for "Git and collaborative workflows".
+- A weak quote was picked for "embedded debugging", and the judge
+  rightly rejected it.
+- On Tag-N-Trac, the model quoted the requirement itself as evidence; the
+  quote check rejected it, and the requirement was never scored (F3).
+- The Cranes and Tag-N-Trac scores sit 10–30 points under the labels.
+  Their labels are mostly "partial", which the formula and the labels
+  still treat differently (15d).

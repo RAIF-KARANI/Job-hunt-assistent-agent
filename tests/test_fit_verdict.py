@@ -14,6 +14,9 @@ from job_agent.models import (
     FitAnalysis,
     FitFacts,
     FitVerdict,
+    RequirementCheck,
+    RequirementReview,
+    TalkingPoints,
     JobPosting,
     ResumeMatch,
     SkillJudgment,
@@ -32,7 +35,8 @@ RESUMES = {
 
 
 class FakeLLM:
-    """structured_llm(schema) stand-in: canned answer per schema, prompts recorded."""
+    """structured_llm(schema) stand-in: canned answer per schema, prompts recorded.
+    15b: the facts come as one RequirementReview per batch of numbered requirements."""
 
     def __init__(self, calls):
         self.calls = calls
@@ -45,25 +49,26 @@ class FakeLLM:
         system = next(m.content for m in messages if isinstance(m, SystemMessage))
         human = next(m.content for m in messages if isinstance(m, HumanMessage))
         self.calls.append((self.schema, system, human))
-        if self.schema is FitFacts:
+        if self.schema is RequirementReview:
+            listed = human.split("=== REQUIREMENTS TO CHECK ===")[1].strip().splitlines()
+            ids = [int(line.split(".")[0]) for line in listed]
             if "Java" in human:
-                return FitFacts(matching_skills=[], missing_skills=["Python", "LangGraph", "Docker"],
-                                talking_points=["Java services"])
-            return FitFacts(
-                matching_skills=[
-                    SkillMatch(requirement="Python", resume_evidence="Built agents in Python"),
-                    # A real quote that doesn't prove the skill: the judge rejects it.
-                    SkillMatch(requirement="LangGraph", resume_evidence="Built agents in Python with LangChain"),
-                    SkillMatch(requirement="Docker", resume_evidence="Shipped Docker images"),
-                ],
-                missing_skills=[], talking_points=["Agents in Python"],
-            )
+                return RequirementReview(checks=[
+                    RequirementCheck(id=i, status="missing", resume_evidence="", reason="no") for i in ids])
+            quotes = {0: "Built agents in Python",
+                      # A real quote that doesn't prove the skill: the judge rejects it.
+                      1: "Built agents in Python with LangChain",
+                      2: "shipped Docker images"}
+            return RequirementReview(checks=[
+                RequirementCheck(id=i, status="proven", resume_evidence=quotes[i], reason="shown") for i in ids])
         if self.schema is EvidenceReview:
             return EvidenceReview(judgments=[
                 SkillJudgment(id=0, supported=True, reason="ok"),
                 SkillJudgment(id=1, supported=False, reason="LangChain is not LangGraph"),
                 SkillJudgment(id=2, supported=True, reason="ok"),
             ])
+        if self.schema is TalkingPoints:
+            return TalkingPoints(talking_points=["Agents in Python"])
         assert self.schema is FitVerdict
         return FitVerdict(verdict=self.verdict)
 
@@ -107,13 +112,13 @@ def test_only_the_best_resume_gets_a_verdict(monkeypatch):
 
 def test_short_is_the_default_and_detailed_asks_for_more(monkeypatch):
     _, _, calls = run(monkeypatch)
-    facts_system = next(c[1] for c in calls if c[0] is FitFacts)
-    assert "at most 3" in facts_system
+    points_system = next(c[1] for c in calls if c[0] is TalkingPoints)
+    assert "at most 3" in points_system
     assert "One sentence." in calls[-1][1]
 
     _, _, calls = run(monkeypatch, "detailed")
-    facts_system = next(c[1] for c in calls if c[0] is FitFacts)
-    assert "3-5" in facts_system
+    points_system = next(c[1] for c in calls if c[0] is TalkingPoints)
+    assert "3-5" in points_system
     assert "Two or three sentences" in calls[-1][1]
 
 
@@ -147,5 +152,6 @@ def test_rows_saved_before_14c_still_load():
 
 
 def test_the_llm_is_never_asked_for_a_verdict_per_resume():
-    # The per-resume schema has no verdict field any more.
+    # The per-resume schemas have no verdict field any more.
     assert "verdict" not in FitFacts.model_json_schema()["properties"]
+    assert "verdict" not in RequirementCheck.model_json_schema()["properties"]

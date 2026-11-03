@@ -87,7 +87,15 @@ export interface JobDetail {
     resume_name: string;
     fit_score: number;
     score_breakdown: string;
-    analysis: { matching_skills: SkillMatch[]; missing_skills: string[]; talking_points: string[]; verdict: string };
+    analysis: {
+      matching_skills: SkillMatch[];
+      missing_skills: string[];
+      talking_points: string[];
+      verdict: string;
+      // 15b; jobs analyzed before it have neither
+      partial_skills?: SkillMatch[];
+      gap_reasons?: Record<string, string>;
+    };
   };
   company_brief: {
     what_they_do: string;
@@ -111,6 +119,7 @@ export interface RunSummary {
   breakdown?: string;
   resume?: string;
   matches?: { requirement: string; evidence: string }[];
+  partial?: { requirement: string; evidence: string }[]; // 15b
   gaps?: string[];
 }
 

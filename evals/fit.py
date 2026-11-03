@@ -154,6 +154,7 @@ def run_cases(cases: list[dict], runs: int, on_case=None) -> dict:
             res = compare(pred, case["labels"], raw["fit"]["fit_score"])
             print(f"  run {n}: score {res.score:3d} | accuracy {res.accuracy:.0%} | "
                   f"{len(res.false_gaps)} false gaps | {len(res.false_matches)} false matches | "
+                  f"{len(res.proven_as_partial)} proven->partial | "
                   f"{len(res.not_seen)} not seen | {raw['seconds']} s")
             results.append({**raw, "status": pred.status, "invented_gaps": pred.invented_gaps,
                             "judge_rejected": pred.judge_rejected, "metrics": vars(res)})
@@ -170,7 +171,7 @@ def run_cases(cases: list[dict], runs: int, on_case=None) -> dict:
 def summarize(case: dict, results: list[dict]) -> dict:
     ok = [r for r in results if "metrics" in r]
     m = [r["metrics"] for r in ok]
-    count = lambda key, i: sum(1 for x in m if i in x[key])  # noqa: E731  runs where i is wrong
+    count = lambda key, i: sum(1 for x in m if i in x.get(key, []))  # noqa: E731  runs where i is wrong
     return {
         "requirements": case["reqs"], "kinds": case["kinds"], "labels": case["labels"],
         "expected": case["expected"], "label_score": label_score(case["labels"], case["kinds"]),
@@ -180,6 +181,8 @@ def summarize(case: dict, results: list[dict]) -> dict:
         "false_gaps": {i: count("false_gaps", i) for i in range(len(case["reqs"])) if count("false_gaps", i)},
         "false_matches": {i: count("false_matches", i) for i in range(len(case["reqs"])) if count("false_matches", i)},
         "not_seen": {i: count("not_seen", i) for i in range(len(case["reqs"])) if count("not_seen", i)},
+        "proven_as_partial": {i: count("proven_as_partial", i) for i in range(len(case["reqs"]))
+                              if count("proven_as_partial", i)},
         "invented_gaps": sum(x["invented_gaps"] for x in m),
         "stability": stability([r["status"] for r in ok]),
         "seconds": statistics.mean(r["seconds"] for r in ok) if ok else None,
@@ -217,6 +220,7 @@ def print_case(case: dict, c: dict) -> None:
           f"invented gaps {c['invented_gaps']}")
     runs = len(c["scores"])
     for key, title in (("false_gaps", "proven, but not counted (gap or never scored)"), ("false_matches", "called proven, but missing"),
+                       ("proven_as_partial", "proven, but called partial"),
                        ("not_seen", "never scored (skipped / quote failed)")):
         for i, n in c[key].items():
             print(f"    {title}: {short(c['requirements'][i])} ({n}/{runs})")

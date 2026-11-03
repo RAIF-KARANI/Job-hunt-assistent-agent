@@ -217,13 +217,34 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
                   ) : (
                     <p className="hint">Nothing proven by a quote.</p>
                   )}
+                  {!!job.best_match.analysis.partial_skills?.length && (
+                    <>
+                      <h4>Partly shown</h4>
+                      <ul>
+                        {job.best_match.analysis.partial_skills.map((m) => (
+                          <li key={m.requirement}>
+                            <strong>{m.requirement}</strong>
+                            {m.resume_evidence && <q>{m.resume_evidence}</q>}
+                            {job.best_match.analysis.gap_reasons?.[m.requirement] && (
+                              <span className="hint">{job.best_match.analysis.gap_reasons[m.requirement]}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </div>
                 <div>
                   <h4>Gaps</h4>
                   {job.best_match.analysis.missing_skills.length ? (
                     <ul>
                       {job.best_match.analysis.missing_skills.map((g) => (
-                        <li key={g}>{g}</li>
+                        <li key={g}>
+                          {g}
+                          {job.best_match.analysis.gap_reasons?.[g] && (
+                            <span className="hint">{job.best_match.analysis.gap_reasons[g]}</span>
+                          )}
+                        </li>
                       ))}
                     </ul>
                   ) : (

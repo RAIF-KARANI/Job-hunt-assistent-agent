@@ -75,6 +75,19 @@ export function ReviewPanel({ payload, summary, busy, onAnswer }: Props) {
               ) : (
                 <p className="hint">No requirement was proven by a quote.</p>
               )}
+              {!!summary.partial?.length && (
+                <>
+                  <h3>Partly shown</h3>
+                  <ul>
+                    {summary.partial.map((m) => (
+                      <li key={m.requirement}>
+                        <strong>{m.requirement}</strong>
+                        {m.evidence && <q>{m.evidence}</q>}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
             <div>
               <h3>Gaps</h3>

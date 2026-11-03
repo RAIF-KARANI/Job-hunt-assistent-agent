@@ -453,6 +453,8 @@ def summary(values: dict) -> dict:
             resume=best.resume_name,
             matches=[{"requirement": m.requirement, "evidence": m.resume_evidence}
                      for m in best.analysis.matching_skills],
+            partial=[{"requirement": m.requirement, "evidence": m.resume_evidence}
+                     for m in best.analysis.partial_skills],  # 15b
             gaps=list(best.analysis.missing_skills),
         )
     return out
