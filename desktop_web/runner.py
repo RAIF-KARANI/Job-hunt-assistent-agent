@@ -240,8 +240,23 @@ class AgentRunner:
             if not self.busy:
                 return False
             self._stop.stop()
+        # 15g: the flag alone waits for the model's next word, which never comes
+        # while Ollama is still reading the prompt. Closing the connection ends
+        # that at once; the retry after it sees the flag (RunStopped).
+        from job_agent.llm import abort_requests
+
+        abort_requests()
         self.emit({"type": "stopping"})
         return True
+
+    def shut_down(self, grace: float = 5.0) -> bool:
+        """15g, on Quit: stop a running step and wait a little for it to end, so
+        the process can exit (a run cut off here shows as stopped). Returns
+        True if nothing is left running."""
+        if self.busy:
+            self.stop()
+            self.wait(grace)
+        return not self.busy
 
     # ---- 14d: continue where you left off ------------------------------------
 

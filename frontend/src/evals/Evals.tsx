@@ -67,6 +67,8 @@ function TraceLink({ run, status }: { run: EvalsData["recent"][number]; status: 
     );
   }
   if (run.tracing === "langfuse") return <span className="muted" title="No connection to Langfuse right now (see the chip above)">Langfuse (off)</span>;
+  // 15h: Langfuse wasn't answering when this run started, so it has no trace
+  if (run.tracing === "langfuse_down") return <span className="muted" title="Start Langfuse (docker compose up -d) before a run to trace it">no trace (Langfuse wasn't running)</span>;
   return <span className="muted">off</span>;
 }
 

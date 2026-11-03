@@ -13,6 +13,8 @@ How to switch models:
 """
 
 import os
+import threading
+import weakref
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -29,6 +31,62 @@ def max_output_tokens() -> int:
     return int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "4096"))
 
 
+# ---------------------------------------------------------------------------
+# 15g: Stop and Quit must free the GPU at once.
+# The Stop button used to act only when the model sent its next word. While
+# Ollama is still READING the prompt it sends nothing, and on 1 Nov (GPU busy
+# with other apps) that took 25 minutes; quitting didn't end it either. Ollama
+# cancels the moment the connection closes ("srv stop: cancel task" in its
+# log), and closing the HTTP client from another thread aborts a request that
+# is waiting (measured: at once). So every Ollama client is tracked, and
+# abort_requests() closes them all.
+# ---------------------------------------------------------------------------
+
+_live_clients: "weakref.WeakSet" = weakref.WeakSet()
+_live_lock = threading.Lock()
+_model_used = threading.Event()  # this process talked to Ollama: unload on quit
+
+
+def _track(model):
+    client = getattr(getattr(model, "_client", None), "_client", None)  # ollama.Client -> httpx.Client
+    if client is not None:
+        with _live_lock:
+            _live_clients.add(client)
+        _model_used.set()
+    return model
+
+
+def abort_requests() -> int:
+    """Close every open connection to Ollama; a waiting or streaming request
+    fails at once and Ollama stops working on it. Returns how many were open.
+    Call it AFTER the run's stop flag is set, so the retry that follows sees
+    the flag and ends the run as stopped."""
+    with _live_lock:
+        clients = list(_live_clients)
+        _live_clients.clear()
+    for client in clients:
+        try:
+            client.close()
+        except Exception:  # closing must never raise into Stop/Quit
+            pass
+    return len(clients)
+
+
+def unload_model(timeout: float = 3.0) -> bool:
+    """Ask Ollama to free the model's graphics memory now (it would otherwise
+    keep it for 5 minutes). Only if this process used it. True if done."""
+    if os.getenv("LLM_PROVIDER", "ollama").lower() != "ollama" or not _model_used.is_set():
+        return False
+    import requests
+
+    try:
+        requests.post(f"{os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/generate",
+                      json={"model": os.getenv("LLM_MODEL", "qwen3:8b"), "keep_alive": 0}, timeout=timeout)
+        return True
+    except requests.RequestException:
+        return False
+
+
 def get_llm(max_tokens: int | None = None) -> BaseChatModel:
     """max_tokens: a smaller answer-length cap for one kind of call (15c: the
     requirement batches), never above the LLM_MAX_OUTPUT_TOKENS setting."""
@@ -42,7 +100,7 @@ def get_llm(max_tokens: int | None = None) -> BaseChatModel:
     if provider == "ollama":
         from langchain_ollama import ChatOllama
 
-        return ChatOllama(
+        return _track(ChatOllama(
             model=model,
             temperature=temperature,
             base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
@@ -53,7 +111,7 @@ def get_llm(max_tokens: int | None = None) -> BaseChatModel:
             # silently, so the model "forgets" the start of the text.
             num_ctx=int(os.getenv("OLLAMA_NUM_CTX", "16384")),
             num_predict=limit,  # the answer-length cap (12j)
-        )
+        ))
 
     # ---- Claude (Anthropic) ----
     # pip install langchain-anthropic ; set ANTHROPIC_API_KEY in .env

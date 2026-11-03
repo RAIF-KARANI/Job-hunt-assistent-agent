@@ -25,6 +25,31 @@ from job_agent import settings  # noqa: F401  (loads .env from paths.ENV_FILE)
 TRACING = os.getenv("TRACING", "off").lower()
 
 
+# 15h: is the Langfuse server answering? Asked once per run (cached a minute).
+# When it isn't, the run isn't traced: before, every run with Langfuse down
+# was saved as "langfuse", its Evals link said "Session not found" (40 runs
+# between 31 Oct and 3 Nov), and the SDK retried in the background
+# ("Failed to export spans batch ...") for the rest of the session.
+LANGFUSE_DOWN = "langfuse_down"  # runs.tracing for a run Langfuse never saw
+_reachable: dict = {"at": 0.0, "ok": False}
+
+
+def langfuse_reachable(timeout: float = 1.5, max_age: float = 60.0) -> bool:
+    import time
+
+    import requests
+
+    if time.time() - _reachable["at"] < max_age:
+        return _reachable["ok"]
+    host = os.getenv("LANGFUSE_HOST", os.getenv("LANGFUSE_BASE_URL", "http://localhost:3000")).rstrip("/")
+    try:
+        ok = requests.get(f"{host}/api/public/health", timeout=timeout).status_code < 500
+    except requests.RequestException:
+        ok = False
+    _reachable.update(at=time.time(), ok=ok)
+    return ok
+
+
 def tracing_config(session_id: str, interface: str) -> dict:
     """Extra keys to merge into a LangGraph config: {"callbacks": ..., "metadata": ...}.
 
@@ -40,10 +65,14 @@ def tracing_config(session_id: str, interface: str) -> dict:
     # writes to the local SQLite database, so every user gets the Dashboard's
     # run, quality and feedback charts without Langfuse or Docker.
     from job_agent.runlog import RunRecorder
+    langfuse_up = TRACING == "langfuse" and langfuse_reachable()
+    recorded = LANGFUSE_DOWN if TRACING == "langfuse" and not langfuse_up else TRACING
     local = RunRecorder(session_id, interface, os.getenv("LLM_PROVIDER", "ollama"), model,
-                        tracing=TRACING)
+                        tracing=recorded)
+    if TRACING == "langfuse" and not langfuse_up:
+        print("! Langfuse isn't answering: this run isn't traced (start it with docker compose up -d)")
 
-    if TRACING == "langfuse":
+    if langfuse_up:
         from langfuse.langchain import CallbackHandler
 
         return {
@@ -76,8 +105,8 @@ def record_decision(session_id: str, decision: str) -> None:
     dashboard you can then filter: "show me runs whose drafts were rejected"
     and read exactly what the model wrote and why.
     """
-    if TRACING != "langfuse":
-        return
+    if TRACING != "langfuse" or not langfuse_reachable():
+        return  # 15h: no score for a run Langfuse never saw
     from langfuse import get_client
 
     get_client().create_score(
@@ -94,7 +123,7 @@ def flush() -> None:
     The SDK batches events in a background thread for speed. A short-lived
     CLI process must flush before exiting, or the last events are lost.
     """
-    if TRACING == "langfuse":
+    if TRACING == "langfuse" and langfuse_reachable():
         from langfuse import get_client
 
         get_client().flush()

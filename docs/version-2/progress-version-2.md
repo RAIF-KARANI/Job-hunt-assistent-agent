@@ -2106,3 +2106,59 @@ With the real tag "(Fictional)", Nexora and Vertex aren't searched at all.
   against 6 for the next one; Stripe 5 against 3; Rubrik a tie; Intel picked
   the RAG Document Assistant. More variety would need a rule across notes
   (your decision, not made).
+
+## 15g — Stop and Quit free the GPU ✅ (4 Nov 2026, D41)
+
+### What was done
+- **`llm.abort_requests()`**: every Ollama client JobLens makes is tracked
+  (a weak set, nothing kept alive), and this closes them all.
+- **Stop** sets the flag, then aborts. The aborted call fails; its retry's
+  first callback sees the flag and raises RunStopped, so the run ends as
+  *stopped*.
+- **Quit** (`_free_the_gpu`): `runner.shut_down(5 s)`, then
+  `llm.unload_model()` (Ollama `keep_alive: 0`, only if this process used
+  the model), then `os._exit(0)` if a step still hasn't ended.
+- 6 new tests (`tests/test_stop_frees_gpu.py`). They use the real
+  ChatOllama client against a fake Ollama that accepts the request and never
+  answers, as on 1 Nov.
+  - With the abort: RunStopped in under 3 s.
+  - Without it (kept as a test): the flag alone still waits.
+
+### Checked
+- **httpx first:** closing a client from another thread aborts a request
+  that's waiting for an answer at once (`ReadError`, 10053).
+- **The real Ollama:** a 3,000-word answer, stopped after 4 s.
+  - The call ended 0.00 s after Stop, as RunStopped.
+  - Ollama logged `499` (client closed request): it cancelled.
+  - The unload left no model loaded (`/api/ps`: `[]`).
+
+## 15h — What JobLens leaves on disk ✅ (4 Nov 2026, D41)
+
+### What was done
+- **`desktop_web/housekeeping.py`**:
+  - `clean_webview_temp`: removes `%TEMP%\tmp*` folders that hold only
+    `EBWebView` and haven't changed for a day. It runs at start, in the
+    installed app only.
+  - `prune_checkpoints`: drops the saved state of every desktop run except
+    the latest one and the one running, then VACUUMs and folds the WAL back
+    in. It runs at exit.
+- **The window uses one fixed WebView2 profile**
+  (`private_mode=False, storage_path=<data>\webview`).
+  - In developer mode that folder is the repo's `webview\`, now git-ignored.
+- **Langfuse:** `tracing.langfuse_reachable()` is checked per run. If it's
+  down, the run is saved as `langfuse_down` with no Langfuse handler and no
+  score, and Evals says "no trace (Langfuse wasn't running)".
+- 5 new tests (`tests/test_housekeeping.py`); 362 pass; the typecheck is clean.
+
+### Checked
+- **Checkpoints, on a copy of your installed `checkpoints.db`:** 42 runs
+  removed, **15.2 MB → 0.39 MB**.
+  - The first try only reached 12.8 MB: VACUUM in WAL mode writes into the
+    `-wal` file, so the WAL must be folded back in *after* it. Fixed.
+- **The fixed profile, in the real app from source:** the profile was
+  created in `webview\` (21 MB), and **no new folder appeared in `%TEMP%`**.
+- **`%TEMP%` today:** the 20 leftover folders (162 MB) counted on 3 Nov are
+  gone, most likely cleared by Windows' Storage Sense, not by JobLens. One
+  is left, in use by your installed 1.0.3. The leak itself was real (one
+  folder per start, private mode); the installed app's next version stops
+  it and removes older leftovers.

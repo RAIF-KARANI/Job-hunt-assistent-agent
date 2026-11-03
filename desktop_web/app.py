@@ -181,15 +181,64 @@ def main(argv=None) -> int:
     api._on_quit(window.destroy)
     from desktop_web import updates
     updates.clean_downloads(paths.APP_HOME / "updates")  # last update's installer, no longer needed
+    from desktop_web import housekeeping
+    if paths.IS_INSTALLED:  # a run from source never touches the installed app's leftovers
+        threading.Thread(target=_clean_temp, name="joblens-clean-temp", daemon=True).start()
     try:
-        webview.start(gui="edgechromium", debug=args.dev)  # debug = F12 dev tools
+        # 15h: one fixed browser profile instead of a new temporary one per start
+        # (pywebview's private mode left 162 MB of them in %TEMP%).
+        webview.start(gui="edgechromium", debug=args.dev,  # debug = F12 dev tools
+                      private_mode=False, storage_path=str(housekeeping.WEBVIEW_DIR))
     finally:
         if tray:
             tray.stop()  # its thread would otherwise keep the process alive
         if hotkey:
             hotkey.stop()
         instance.close()
+        _free_the_gpu(api, tidy=True)
     return 0
+
+
+def _clean_temp() -> None:
+    from desktop_web import housekeeping
+
+    try:
+        removed, freed = housekeeping.clean_webview_temp()
+        if removed:
+            print(f"  removed {removed} old browser profile(s) from %TEMP% ({freed / 1e6:.0f} MB)")
+    except Exception as e:  # housekeeping must never stop the app
+        print(f"! cleaning %TEMP%: {e}")
+
+
+def _free_the_gpu(api, grace: float = 5.0, tidy: bool = False) -> None:
+    """15g, on Quit: end a running step (closing its connection makes Ollama
+    stop at once), then free the model's graphics memory. On 1 Nov a quit
+    JobLens lived on without a window for ~8 minutes, waiting for an AI call,
+    with the GPU at 90 %. If the step still hasn't ended after `grace`
+    seconds, the process exits anyway.
+    tidy (15h): also drop the saved state of runs that can't be continued."""
+    import os
+
+    from job_agent.llm import unload_model
+
+    runner = getattr(api, "_runner", None)
+    done = runner.shut_down(grace) if runner else True
+    if tidy:
+        try:
+            from desktop_web import housekeeping
+
+            keep = {runner.run_id} if runner and getattr(runner, "run_id", None) else set()
+            result = housekeeping.prune_checkpoints(keep=keep)
+            if result["runs_removed"]:
+                print(f"  checkpoints: removed {result['runs_removed']} old run(s), "
+                      f"{result['bytes_before'] / 1e6:.1f} -> {result['bytes_after'] / 1e6:.1f} MB")
+        except Exception as e:  # never block quitting
+            print(f"! tidying checkpoints: {e}")
+    unload_model()
+    if not done:
+        print("! the agent didn't stop in time: exiting anyway")
+        sys.stdout.flush()
+        os._exit(0)  # a thread blocked in a call must not keep JobLens alive
 
 
 def _check_for_updates_later(window, api) -> None:

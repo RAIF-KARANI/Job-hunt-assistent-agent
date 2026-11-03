@@ -734,5 +734,38 @@ Dropped, because it made things worse:
   "band-power features") sent "battery-powered design" for a second look,
   and the model then called it partial, a false match.
 
+## D40 — The best-matching achievement always wins ✅ (4 Nov 2026, your choice)
+15f picks a cover note's achievements by how well they match the job. CodeLens
+still leads most of your notes, because it is your best match for AI and
+backend roles. No rule across notes ("vary the lead project") is added. You
+only asked to check whether the repetition was a problem: it isn't, as long
+as the project fits the job.
+
+## D41 — Stop, Quit and what JobLens leaves on disk ✅ (4 Nov 2026, 15g + 15h)
+- **Stop closes the connection to Ollama** after setting the stop flag, so
+  a call that's waiting (Ollama still reading the prompt) ends at once, and
+  Ollama cancels its work. Measured with the real Ollama: the call ended in
+  0.00 s, and Ollama logged 499 (client closed).
+- **Quit** stops a running step, waits up to 5 s, and then exits even if a
+  thread is still stuck. It also tells Ollama to unload the model
+  (`keep_alive: 0`), freeing its graphics memory, but only if this JobLens
+  used the model.
+  - A run cut off by Quit now shows as **stopped** (it showed as
+    interrupted at the next start before). Continue offers both (D30).
+- **One fixed WebView2 profile** in the data folder (`webview\`), instead
+  of pywebview's private mode, which left a temporary profile in `%TEMP%`
+  at every start. Old leftovers (only an `EBWebView` folder, unchanged for
+  a day) are removed at start, by the installed app only.
+  - Side effect: the page's local storage (e.g. the Tracker's remembered
+    filter) now really survives a restart.
+- **Checkpoints** are pruned at exit: only the latest desktop run (and the
+  one running) keeps its saved state, then the file is compacted. Web UI
+  runs are left alone. A copy of your installed `checkpoints.db`: 15.2 MB
+  → 0.39 MB.
+- **Langfuse not answering** when a run starts (checked each run, 1.5 s
+  timeout, cached a minute): the run isn't traced, and it's saved as
+  `langfuse_down`. Evals shows "no trace (Langfuse wasn't running)" instead
+  of a link to a missing session, and no score is sent for it.
+
 ## Open questions ❓
 - (none)
