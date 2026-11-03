@@ -2012,3 +2012,42 @@ analyzed a ByteDance frontend job. The run failed in step 2.
   ~495-token answers.
 - **Still slow** with 6 resumes (~75 s each). Choosing fewer resumes per
   job (Settings → Resumes, 14b) helps most.
+
+## 15e — Research about the right company ✅ (3 Nov 2026)
+
+### What was done
+- **Fictional or hidden employers aren't searched** (`is_real_name`):
+  "(Fictional)", "Confidential", "Stealth", "Our client", "Not specified".
+- **A search result counts only if it names the employer** (`is_about`).
+  - Code takes the core name: without "Pvt. Ltd.", "Inc.", "(Fictional)",
+    ", an IBM Company", and without generic words like "Technologies",
+    "Labs" or "Solutions". "Nexora Embedded Technologies Pvt. Ltd." becomes
+    "Nexora Embedded".
+  - It must appear in the result's title, URL or snippet, compared on
+    letters only, so "TagNTrac", "tagntrac.com" and "Hakkoda" match.
+- **The brief is written from the kept results only.** The agent's own
+  notes are left out, because they retell everything it read. Source URLs
+  and dates are checked against the kept results.
+- **No result about the employer → no research** (`None`). The cover note
+  is told to take its reason for interest from the posting only.
+- The search request includes the job's location.
+- The run log's research checks gain `unrelated_results` and `skipped`.
+- 7 new tests (`tests/test_research_identity.py`); 343 pass.
+
+### Checked with real searches (DuckDuckGo + qwen3:8b)
+| Employer | Before | Now |
+|---|---|---|
+| Nexora Embedded Technologies (tag removed, so it was searched) | an unrelated Nexora: $725M sale, a crypto token | 5 unrelated results dropped → **no reliable research** (28 s) |
+| Vertex Embedded Labs | other Vertex firms: "2,106 employees", a scam alert | 10 dropped → **no reliable research** (29 s) |
+| Tag-N-Trac | | brief from tagntrac.ai, tracxn, leadiq; nothing dropped |
+| Cranes Varsity | | brief from cranesvarsity.com, a company registry, tracxn |
+| ByteDance | | brief from bytedance.com and Wikipedia; 4 results that didn't name ByteDance dropped |
+
+With the real tag "(Fictional)", Nexora and Vertex aren't searched at all.
+
+### Limits
+- A one-word name shared by several companies (e.g. just "Vertex") still
+  passes the name check. The search request's location helps, but nothing
+  proves it's the same Vertex.
+- A result that names only a product (e.g. TikTok, not ByteDance) is
+  dropped, so a little real research is lost.

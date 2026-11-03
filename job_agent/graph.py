@@ -139,8 +139,12 @@ def research(state: JobHuntState) -> dict:
     _step(3, "Researching the company (agent picks its own searches)...")
     checks: dict = {}
     try:
-        brief = research_company(state["job"].company, state["job"].title, stats=checks)
-        print(f"  -> {len(brief.sources)} verified sources")
+        job = state["job"]
+        brief = research_company(job.company, job.title, stats=checks, location=job.location)
+        if brief is None:  # 15e: fictional / hidden employer, or nothing about it found
+            print("  -> no reliable research: the cover note uses only the job posting")
+        else:
+            print(f"  -> {len(brief.sources)} verified sources")
     except Exception as e:
         # Graceful degradation: research is nice-to-have, not essential.
         print(f"  ! research failed ({e}) - continuing without it")

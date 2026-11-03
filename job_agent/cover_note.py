@@ -78,7 +78,11 @@ def draft_cover_note(
     verified = "\n".join(
         f"- {m.requirement}: \"{m.resume_evidence}\"" for m in fit.matching_skills
     )
-    company_info = company.model_dump_json(indent=2) if company else "No research available."
+    # 15e: with no research (a fictional or hidden employer, or nothing found
+    # about it), the reason for interest must come from the posting itself.
+    company_info = company.model_dump_json(indent=2) if company else (
+        "No reliable research about this employer. Base the reason for interest ONLY on "
+        "the JOB above (the role, its product or its work); say nothing else about the company.")
 
     prompt = (
         f"=== JOB ===\n{job.model_dump_json(indent=2)}\n\n"

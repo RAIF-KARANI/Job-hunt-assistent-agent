@@ -157,23 +157,98 @@ def build_research_graph():
 # 3. RUN IT + STRUCTURE THE RESULT + VERIFY
 # ---------------------------------------------------------------------------
 
-SUMMARY_PROMPT = """Turn these research notes into a company brief.
-Use ONLY facts found in the notes. If something wasn't found, say 'Unknown'
+SUMMARY_PROMPT = """Turn these search results into a brief about the COMPANY named at the top.
+Use ONLY facts the results state about that company; ignore anything about
+other companies with a similar name. If something wasn't found, say 'Unknown'
 or leave the list empty. Only cite URLs that appear in the notes.
 Copy dates exactly as they appear in the search results; never guess a date."""
 
 URL_PATTERN = re.compile(r"https?://[^\s)\]>\"']+")
 DATE_PATTERN = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 
+# ---------------------------------------------------------------------------
+# 15e: research must be about THIS employer. Searching "Nexora Embedded
+# Technologies (Fictional)" returned an unrelated Nexora ($725M sale, a
+# crypto token), and the brief and cover note used it (finding F8). The URL
+# check only proved a URL came from the search, not that it was about this
+# company.
+# ---------------------------------------------------------------------------
 
-def research_company(company: str, role_context: str = "",
-                     stats: dict | None = None) -> CompanyBrief:
+# A posting that hides or invents its employer: nothing real to search for.
+NOT_A_REAL_NAME = re.compile(
+    r"\b(fictional|fictitious|confidential|undisclosed|anonymous|stealth|example|"
+    r"not specified|unknown|our client|a client)\b", re.I)
+# Legal suffixes and generic words: "Nexora Embedded Technologies Pvt. Ltd."
+# is known as "Nexora Embedded"; "Qualcomm Technologies, Inc." as "Qualcomm".
+_LEGAL = {"pvt", "private", "ltd", "limited", "inc", "incorporated", "llc", "llp", "corp",
+          "corporation", "co", "company", "gmbh", "plc", "sa", "ag", "bv", "pte", "fze", "fzco"}
+_GENERIC_NAME = {"technologies", "technology", "tech", "solutions", "systems", "labs", "lab",
+                 "group", "global", "international", "software", "services", "india", "the"}
+
+
+def _letters(text: str) -> str:
+    """Lowercase letters and digits only, accents removed ("Hakkōda" -> "hakkoda")."""
+    import unicodedata
+
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]", "", plain.lower())
+
+
+def core_name(company: str) -> str:
+    """The part of a company name that search results will contain."""
+    name = re.sub(r"\(.*?\)", " ", company)           # "(Fictional)", "(India)"
+    name = re.split(r",\s*an?\s", name)[0]            # "Hakkoda, an IBM Company"
+    words = re.findall(r"[^\W_]+(?:[-'&][^\W_]+)*", name)
+    kept = [w for w in words if w.lower().strip(".") not in _LEGAL]
+    core = [w for w in kept if w.lower() not in _GENERIC_NAME]
+    return " ".join(core or kept or words)
+
+
+def is_real_name(company: str) -> bool:
+    return bool(company.strip()) and not NOT_A_REAL_NAME.search(company) and bool(_letters(core_name(company)))
+
+
+def is_about(result_block: str, company: str) -> bool:
+    """Does this search result name the employer (title, URL or snippet)?"""
+    needle = _letters(core_name(company))
+    return bool(needle) and needle in _letters(result_block)
+
+
+def keep_results_about(tool_output: str, company: str) -> tuple[str, int, int]:
+    """Drop the search results that don't name the company.
+    Returns (kept text, results kept, results dropped)."""
+    kept, dropped = [], 0
+    for block in tool_output.split("\n\n"):
+        if "URL:" not in block:
+            continue  # "No results found", "Search failed ...": not evidence
+        if is_about(block, company):
+            kept.append(block)
+        else:
+            dropped += 1
+    return "\n\n".join(kept), len(kept), dropped
+
+
+def research_company(company: str, role_context: str = "", stats: dict | None = None,
+                     location: str = "") -> CompanyBrief | None:
     """Run the research agent, then turn its notes into a verified CompanyBrief.
 
     stats (Phase 11b): if a dict is passed, it's filled with how many invented
     URLs / dates the verification removed - quality data for the run log.
+    15e: returns None when the employer is fictional or hidden, or when no
+    search result is about it ("no reliable research"): the cover note then
+    uses only the posting.
     """
-    request = f"Research the company '{company}'."
+    if stats is None:
+        stats = {}
+    if not is_real_name(company):
+        print(f"  [research] skipped: '{company}' isn't a real company name to search for")
+        stats["skipped"] = "not a real company name"
+        return None
+
+    request = f"Research the company '{company}'"
+    if location and location.lower() not in ("not specified", "unknown"):
+        request += f" (the job is in {location})"
+    request += "."
     if role_context:
         request += f" The applicant is applying for: {role_context}."
 
@@ -188,10 +263,19 @@ def research_company(company: str, role_context: str = "",
                 messages.append(msg)
                 _print_step(node_name, msg)
 
-    # Everything the tools returned is our "evidence". The agent's final
-    # message is its own summary of that evidence.
-    tool_outputs = "\n\n".join(m.content for m in messages if isinstance(m, ToolMessage))
-    notes = f"SEARCH RESULTS:\n{tool_outputs}\n\nAGENT NOTES:\n{messages[-1].content}"
+    # Everything the tools returned is our "evidence" - but only the results
+    # that name this employer (15e). The agent's own notes are left out: they
+    # may retell results about a different company with the same name.
+    tool_outputs, kept, dropped = keep_results_about(
+        "\n\n".join(m.content for m in messages if isinstance(m, ToolMessage)), company)
+    stats["unrelated_results"] = dropped
+    if dropped:
+        print(f"  [verify] dropped {dropped} search result(s) that aren't about '{core_name(company)}'")
+    if not kept:
+        print("  [research] no search result is about this employer -> no reliable research")
+        stats["skipped"] = "no search result about this employer"
+        return None
+    notes = f"COMPANY: {company}\n\nSEARCH RESULTS (each one names the company):\n{tool_outputs}"
     if role_context:
         notes = f"APPLICANT'S ROLE: {role_context}\n\n{notes}"
 
@@ -209,7 +293,7 @@ def research_company(company: str, role_context: str = "",
     if news != brief.recent_news:
         print("  [verify] removed invented date(s) from news items")
 
-    if stats is not None:
+    if stats is not None:  # always a dict since 15e; kept for readability
         stats["invented_urls"] = len(brief.sources) - len(verified)
         stats["invented_dates"] = sum(item.count("date unknown") for item in news) - sum(
             item.count("date unknown") for item in brief.recent_news)
