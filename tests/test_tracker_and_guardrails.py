@@ -106,3 +106,29 @@ def test_get_cover_notes_newest_first():
     cover_note.save_cover_note(job_id, _job("Dev"), "first", approved=True)
     cover_note.save_cover_note(job_id, _job("Dev"), "second", approved=True)
     assert [n["text"] for n in tracker.get_cover_notes(job_id)] == ["second", "first"]
+
+
+# ---- v1.1.0: re-scoring saved jobs once with the 15d formula ---------------
+
+def test_rescore_once_keeps_status_and_the_follow_up_clock(tmp_path, monkeypatch):
+    from job_agent import paths
+    from job_agent.models import SkillMatch
+
+    monkeypatch.setattr(paths, "DATA_DIR", tmp_path)
+    job = _job()
+    proven = FitAnalysis(matching_skills=[SkillMatch(requirement="Python", resume_evidence="Python")],
+                         missing_skills=[], talking_points=[], verdict="ok")
+    job_id = tracker.save_job(URL, job, ResumeMatch(resume_name="cv", analysis=proven, fit_score=42), None)
+    tracker.update_status(job_id, "applied")
+    with tracker._db() as conn:  # applied 9 days ago
+        conn.execute("UPDATE jobs SET updated_at = '2026-10-25 10:00:00' WHERE id = ?", (job_id,))
+
+    assert tracker.rescore_all() == [(job_id, 42, 100)]
+    row = tracker.list_jobs()[0]
+    assert row["fit_score"] == 100 and row["status"] == "applied"
+    with tracker._db() as conn:
+        assert conn.execute("SELECT updated_at FROM jobs WHERE id = ?", (job_id,)).fetchone()[0] == \
+            "2026-10-25 10:00:00"  # a new formula is not news: no follow-up reset
+    assert "Required: 1 of 1 shown" in tracker.get_job(job_id)["best_match"].score_breakdown
+    assert tracker.rescore_all() == []  # once per formula
+    assert (tmp_path / "score_formula.txt").read_text() == tracker.SCORE_FORMULA

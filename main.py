@@ -22,7 +22,7 @@ from langgraph.types import Command
 from job_agent.fit import score_match
 from job_agent.graph import build_job_hunt_graph
 from job_agent.llm import check_llm_ready
-from job_agent.tracker import STATUSES, get_job, list_jobs, save_job, update_status
+from job_agent.tracker import STATUSES, get_job, list_jobs, save_job, update_score, update_status
 from job_agent.tracing import check_tracing_ready, flush, record_decision, tracing_config
 
 
@@ -135,10 +135,12 @@ def rescore() -> None:
     Possible only because Phase 4 stores the full analysis as JSON: when the
     scoring formula changes, old results can be re-scored instantly.
     """
+    # v1.1.0: update_score, not save_job - save_job bumps updated_at, which
+    # restarted every applied job's follow-up clock (D31).
     for row in list_jobs():
         data = get_job(row["id"])
         best = score_match(data["best_match"], data["job"])
-        save_job(data["url"], data["job"], best, data["company_brief"])
+        update_score(row["id"], best)
         print(f"#{row['id']:<3} {row['fit_score']:>3} -> {best.fit_score:>3}   "
               f"{data['job'].title[:45]}")
         print(f"      {best.score_breakdown}")

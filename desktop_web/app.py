@@ -142,6 +142,16 @@ def main(argv=None) -> int:
         runlog.mark_interrupted()
     except Exception as e:  # the run log must never stop the app from opening
         print(f"! run log: {e}")
+    # v1.1.0: saved scores were computed with an older formula; re-score them
+    # once, in code (no AI, well under a second), before the screens show them.
+    try:
+        from job_agent.tracker import rescore_all
+
+        changed = rescore_all()
+        if changed:
+            print(f"  re-scored {len(changed)} saved job(s) with the new formula")
+    except Exception as e:  # never stop the app from opening
+        print(f"! re-scoring saved jobs: {e}")
 
     if args.dev:
         url = DEV_URL

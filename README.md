@@ -4,8 +4,11 @@
 An AI agent that helps with job applications. Paste a job posting link and it:
 
 1. **reads the posting** and extracts the key facts,
-2. **compares it with your resumes** and picks the best one, with verified evidence,
-3. **researches the company** on the web (an agent that chooses its own searches),
+2. **compares it with your resumes** and picks the best one: every requirement
+   is checked one by one (proven / partly shown / missing), with a quote from
+   your resume that code verifies,
+3. **researches the company** on the web (an agent that chooses its own
+   searches), keeping only results that are about that employer,
 4. **saves the job** to a local SQLite tracker,
 5. **drafts a tailored cover note**, and
 6. **waits for your approval** before saving anything.
@@ -33,6 +36,11 @@ and journal in
 [docs/version-2/](docs/version-2/): [plan](docs/version-2/plan-version-2.md),
 [decisions](docs/version-2/decisions-version-2.md),
 [progress](docs/version-2/progress-version-2.md).
+**v1.1.0** (Phase 15) is about output quality, measured with an eval set
+before and after every change: the fit check went from 50 % to 85 %
+accuracy, research ignores other companies with the same name, cover notes
+use the achievements that fit the job, Stop and Quit free the GPU at once,
+and JobLens cleans up after itself.
 
 ---
 
@@ -240,9 +248,12 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 304 tests cover:
+The 363 tests cover:
 - the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
-- the fit verdict, the run log, quality checks and monitoring numbers
+- the fit step: one answer per requirement, the second look, the years rule, the score formula, the verdict
+- research about the right employer, cover-note achievements and the misplaced-project check
+- Stop and Quit closing the AI's connection (against a fake Ollama that never answers), the disk clean-up
+- the run log, quality checks and monitoring numbers
 - the PC check, the 3D recommendation and Ollama setup
 - the desktop app's bridge: agent runs with pause/resume, Stop and Continue, progress events, every call the screens make
 - the tray, the update check and verified install, follow-up reminders, Start with Windows, the quick-analyze shortcut (one test registers a real hotkey)
@@ -252,7 +263,23 @@ They use temporary databases and need no LLM, so they run in seconds. The
 UI itself is checked in the real window with driver scripts (see the
 progress journal).
 
-To compare models on a tracked job:
+### Evals: measuring the AI's output
+
+The tests check the code; the evals check what the AI writes, on real
+resumes and postings with hand labels (Phase 15). Real cases live in
+`data\evals\cases\` (git-ignored, like all your data); one made-up case is
+committed in `evals\sample_cases\`.
+```powershell
+python -m evals.fit list                                   # the cases
+python -m evals.fit new my_case --job 16 --resume data:CV.pdf   # freeze a tracked job, then label it
+python -m evals.fit run --runs 3 [--model qwen3:14b]       # step 2 only: accuracy, false gaps, score error, time
+python -m evals.fit compare <old.json> <new.json>          # before / after a change
+python -m evals.cover_notes                                # cover notes, old vs new prompt: projects used, misplaced, stock phrases
+```
+Nothing is saved to the tracker and nothing is sent to Langfuse; results go
+to `data\evals\results\`.
+
+To compare models on a tracked job (the whole fit step, older script):
 ```powershell
 python compare_models.py 1 qwen3:8b qwen3:14b
 ```
@@ -302,9 +329,12 @@ job_agent/
   followup.py         follow-up reminder rule (dates only)
   resume_prompt.py    keyword coverage + the resume-improvement prompt (no LLM)
   export.py           tracker -> CSV, cover note -> .txt / .docx / .pdf
+  achievements.py     resume -> projects / jobs; picks a cover note's achievements (no LLM)
 desktop_web/          the desktop app: window (app.py), JS <-> Python bridge (bridge.py),
                       agent runner (runner.py), tray, updates, autostart, hotkey +
-                      quick box (quick.py), self-test; `python -m desktop_web`
+                      quick box (quick.py), disk clean-up (housekeeping.py), self-test;
+                      `python -m desktop_web`
+evals/                output evals: fit.py (step 2 vs hand labels), cover_notes.py
 frontend/             the UI: React + TypeScript + Vite (+ three.js for the galaxy)
 joblens.spec          PyInstaller recipe for JobLens.exe
 installer/joblens.iss Inno Setup script for JobLens-Setup.exe (+ uninstaller)

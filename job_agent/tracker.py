@@ -154,6 +154,45 @@ def save_job(
     return row["id"]
 
 
+def update_score(job_id: int, best: ResumeMatch) -> None:
+    """Store a re-computed score (and its breakdown) for a job. Unlike
+    save_job, this leaves `updated_at` alone: a new formula is not news about
+    the application, so the follow-up clock (D31) must not restart."""
+    init_db()
+    with _db() as conn:
+        conn.execute("UPDATE jobs SET fit_score = ?, fit_json = ? WHERE id = ?",
+                     (best.fit_score, best.model_dump_json(), job_id))
+
+
+# The score formula the saved scores were computed with. Bump it when
+# fit.compute_fit_score changes, and rescore_all() runs once at the next start.
+SCORE_FORMULA = "15d"
+
+
+def rescore_all(force: bool = False) -> list[tuple[int, int, int]]:
+    """Recompute every saved job's score with today's formula, in code (no
+    AI): possible because the full analysis is stored as JSON. Runs once per
+    formula (a marker file in the data folder) unless forced.
+    Returns [(job id, old score, new score)]."""
+    from job_agent.fit import score_match
+    from job_agent.paths import DATA_DIR
+
+    marker = DATA_DIR / "score_formula.txt"
+    if not force and marker.exists() and marker.read_text(encoding="utf-8").strip() == SCORE_FORMULA:
+        return []
+    changed = []
+    for row in list_jobs():
+        data = get_job(row["id"])
+        if not data or data["best_match"] is None or data["job"] is None:
+            continue
+        best = score_match(data["best_match"], data["job"])
+        update_score(row["id"], best)
+        changed.append((row["id"], row["fit_score"], best.fit_score))
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    marker.write_text(SCORE_FORMULA, encoding="utf-8")
+    return changed
+
+
 def find_job_id(url: str) -> int | None:
     """The id of the job with this URL, or None if it isn't tracked yet."""
     init_db()
