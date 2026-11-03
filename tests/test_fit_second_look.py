@@ -40,7 +40,7 @@ class Script:
     def __init__(self, *rounds):
         self.rounds, self.prompts = list(rounds), []
 
-    def __call__(self, schema):
+    def __call__(self, schema, **kwargs):
         assert schema is RequirementReview
         return self
 

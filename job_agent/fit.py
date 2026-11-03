@@ -20,7 +20,7 @@ import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from job_agent.llm import structured_llm
+from job_agent.llm import AnswerTooLong, structured_llm
 from job_agent.models import (
     EvidenceReview,
     FitAnalysis,
@@ -110,6 +110,10 @@ Rules:
 # reading. The resume comes first in the prompt, so Ollama reuses that part
 # from the previous batch instead of reading it again.
 BATCH_SIZE = int(os.getenv("FIT_BATCH_SIZE", "6"))  # env only for the evals
+# The longest real batch answer was ~850 tokens. With this cap a model stuck
+# repeating itself fails in ~40 s instead of ~110 s, and the batch is split
+# (3 Nov: one stuck batch out of ~25 calls failed a whole 6-resume run).
+BATCH_MAX_TOKENS = 1500
 
 
 _FILLER = {"a", "an", "and", "as", "for", "in", "of", "on", "or", "the", "to", "with"}
@@ -148,14 +152,29 @@ def check_requirements(job: JobPosting, resume_text: str, ids: list[int] | None 
     notes = notes or {}
     header = (f"=== RESUME ===\n{resume_text}\n=== END RESUME ===\n\n"
               f"=== JOB ===\n{job.title} at {job.company} (seniority: {job.seniority})\n\n")
-    llm = structured_llm(RequirementReview)
+    llm = structured_llm(RequirementReview, max_tokens=BATCH_MAX_TOKENS)
     answers: dict[int, RequirementCheck] = {}
 
     def ask(batch: list[int]) -> None:
         listed = "\n".join(f"{i}. {reqs[i][0]}" + (f"\n   Note: {notes[i]}" if i in notes else "")
                            for i in batch)
-        review = llm.invoke([SystemMessage(content=CHECK_PROMPT),
-                             HumanMessage(content=f"{header}=== REQUIREMENTS TO CHECK ===\n{listed}")])
+        try:
+            review = llm.invoke([SystemMessage(content=CHECK_PROMPT),
+                                 HumanMessage(content=f"{header}=== REQUIREMENTS TO CHECK ===\n{listed}")])
+        except AnswerTooLong:
+            # The model got stuck repeating itself. The same input would
+            # likely do it again, so ask about half as many at a time; a
+            # single requirement that still gets stuck is left unchecked
+            # instead of failing the whole run.
+            if len(batch) > 1:
+                print(f"    ! the AI got stuck on {len(batch)} requirements: asking in two halves")
+                ask(batch[: len(batch) // 2])
+                ask(batch[len(batch) // 2:])
+            else:
+                print(f"    ! the AI got stuck on: {reqs[batch[0]][0]}")
+                answers[batch[0]] = RequirementCheck(id=batch[0], status="missing", resume_evidence="",
+                                                     reason="not checked: the AI's answer got stuck")
+            return
         for check in review.checks:
             if check.id in batch and check.id not in answers:
                 answers[check.id] = check

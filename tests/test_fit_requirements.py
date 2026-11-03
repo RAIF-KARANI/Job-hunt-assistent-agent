@@ -27,7 +27,7 @@ class Answers:
     def __init__(self, status_for, skip_first=()):
         self.status_for, self.skip_first, self.batches = status_for, set(skip_first), []
 
-    def __call__(self, schema):
+    def __call__(self, schema, **kwargs):
         assert schema is RequirementReview
         return self
 
@@ -132,3 +132,48 @@ def test_an_exact_required_wording_is_never_taken_for_a_nice_to_have():
     a = FitAnalysis(matching_skills=[], missing_skills=["Python"], talking_points=[])
     _, breakdown = fit.compute_fit_score(a, j)
     assert "Required: 0 of 1 shown" in breakdown and "Nice-to-have" not in breakdown
+
+
+class Stuck(Answers):
+    """Gets stuck (AnswerTooLong) on any batch containing one of `bad`."""
+
+    def __init__(self, bad):
+        super().__init__(lambda i: "proven")
+        self.bad = set(bad)
+
+    def __call__(self, schema, **kwargs):
+        self.max_tokens = kwargs.get("max_tokens")
+        return super().__call__(schema)
+
+    def invoke(self, messages):
+        from job_agent.llm import AnswerTooLong
+
+        human = next(m.content for m in messages if isinstance(m, HumanMessage))
+        ids = [int(line.split(".")[0]) for line in
+               human.split("=== REQUIREMENTS TO CHECK ===")[1].strip().splitlines()]
+        if self.bad & set(ids):
+            self.batches.append(ids)
+            raise AnswerTooLong("stuck")
+        return super().invoke(messages)
+
+
+def test_a_stuck_batch_is_split_and_only_the_stuck_requirement_is_lost(monkeypatch):
+    # 3 Nov: one stuck batch (4,096 tokens, 111 s) failed a whole 6-resume run.
+    fake = Stuck(bad={2})
+    monkeypatch.setattr(fit, "structured_llm", fake)
+    checks = fit.check_requirements(job([f"skill{n}" for n in "abcdef"]), "resume")
+    assert fake.max_tokens == fit.BATCH_MAX_TOKENS
+    assert [c.status for c in checks] == ["proven", "proven", "missing", "proven", "proven", "proven"]
+    assert "got stuck" in checks[2].reason
+    # 6 -> halves [0,1,2] and [3,4,5]; [0,1,2] -> [0] and [1,2]; [1,2] -> [1] and [2]
+    assert fake.batches[0] == [0, 1, 2, 3, 4, 5] and [2] in fake.batches
+
+
+def test_the_per_call_cap_never_exceeds_the_setting(monkeypatch):
+    from job_agent import llm
+
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("LLM_MAX_OUTPUT_TOKENS", "1000")
+    assert llm.get_llm(1500).num_predict == 1000
+    assert llm.get_llm(800).num_predict == 800
+    assert llm.get_llm().num_predict == 1000

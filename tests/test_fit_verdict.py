@@ -41,7 +41,7 @@ class FakeLLM:
     def __init__(self, calls):
         self.calls = calls
 
-    def __call__(self, schema):
+    def __call__(self, schema, **kwargs):
         self.schema = schema
         return self
 

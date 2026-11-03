@@ -29,11 +29,13 @@ def max_output_tokens() -> int:
     return int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "4096"))
 
 
-def get_llm() -> BaseChatModel:
+def get_llm(max_tokens: int | None = None) -> BaseChatModel:
+    """max_tokens: a smaller answer-length cap for one kind of call (15c: the
+    requirement batches), never above the LLM_MAX_OUTPUT_TOKENS setting."""
     provider = os.getenv("LLM_PROVIDER", "ollama").lower()
     model = os.getenv("LLM_MODEL", "qwen3:8b")
     temperature = float(os.getenv("LLM_TEMPERATURE", "0.2"))
-    limit = max_output_tokens()
+    limit = min(max_tokens, max_output_tokens()) if max_tokens else max_output_tokens()
 
     # ---- Local model via Ollama (current choice) ----
     # Runs on your machine: free, private, no API key. Ollama must be running.
@@ -102,14 +104,14 @@ def was_cut_off(message) -> bool:
     return any(str(meta.get(key, "")).lower() == value for key, value in _CUT_OFF.items())
 
 
-def _checked(result: dict):
+def _checked(result: dict, limit: int | None = None):
     """with_structured_output(include_raw=True) -> the parsed object, or an error.
     A cut-off answer is AnswerTooLong (not worth retrying: a model stuck
     repeating itself usually gets stuck again); a bad answer is re-raised."""
     raw = result.get("raw")
     if raw is not None and was_cut_off(raw):
         raise AnswerTooLong(
-            f"The AI's answer was cut off at {max_output_tokens():,} tokens (it was probably "
+            f"The AI's answer was cut off at {limit or max_output_tokens():,} tokens (it was probably "
             "repeating itself). Try again, or try a different model. The limit is "
             "LLM_MAX_OUTPUT_TOKENS in the settings file.")
     if result.get("parsing_error") is not None:
@@ -138,7 +140,7 @@ def with_retries(runnable, attempts: int = 3):
     return RunnableLambda(run, name="structured_llm")
 
 
-def structured_llm(schema):
+def structured_llm(schema, max_tokens: int | None = None):
     """get_llm().with_structured_output(schema), tried up to 3 times.
 
     Small models occasionally return JSON that doesn't match the schema
@@ -149,7 +151,9 @@ def structured_llm(schema):
     """
     from langchain_core.runnables import RunnableLambda
 
-    chain = get_llm().with_structured_output(schema, include_raw=True) | RunnableLambda(_checked)
+    limit = min(max_tokens, max_output_tokens()) if max_tokens else None
+    chain = (get_llm(max_tokens).with_structured_output(schema, include_raw=True)
+             | RunnableLambda(lambda result: _checked(result, limit)))
     return with_retries(chain)
 
 

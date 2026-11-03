@@ -7,6 +7,12 @@ from desktop_web import app
 
 
 def test_missing_build_gives_a_clear_message(tmp_path, monkeypatch, capsys):
+    from desktop_web import instance
+
+    # A JobLens running from this repo would answer the single-instance check
+    # (its window popped up and main() returned 0: found 3 Nov 2026).
+    monkeypatch.setattr(instance.SingleInstance, "ask_running_copy_to_show", lambda self: False)
+    monkeypatch.setattr(instance.SingleInstance, "listen", lambda self, on_show: None)
     monkeypatch.setattr(app, "WEB_DIR", tmp_path)     # no index.html here
     assert app.main([]) == 1
     assert "npm run build" in capsys.readouterr().out

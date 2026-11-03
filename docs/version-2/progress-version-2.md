@@ -1975,3 +1975,40 @@ round), not the formula.
 **Saved jobs keep their old score** until they're re-scored
 (`python main.py rescore`, code only). The release should do that on
 first start (added to the plan).
+
+## Fix: one stuck batch failed a whole run ✅ (3 Nov 2026)
+
+### What you saw
+You added your 4 resumes and a friend's FPGA resume (6 in all) and
+analyzed a ByteDance frontend job. The run failed in step 2.
+
+### Cause (from the run log)
+- On the 3rd resume, one requirement batch got stuck repeating itself: it
+  wrote 4,096 tokens in 111 s and hit the answer-length cap.
+- A cut-off answer is never retried (D23), so the whole run failed.
+- Since 15b a run makes 4–5 AI calls per resume instead of ~2 (25+ for 6
+  resumes), so one stuck call anywhere is much more likely to hit a run.
+
+### Fix
+- **The requirement batches get their own cap: 1,500 tokens.** The longest
+  real batch answer was ~850. A stuck batch now fails in ~40 s instead of
+  ~110 s. `structured_llm(schema, max_tokens=...)` / `get_llm(max_tokens)`;
+  the cap never exceeds `LLM_MAX_OUTPUT_TOKENS`.
+- **A stuck batch is split in half and asked again.** If a single
+  requirement still gets stuck, only it is marked "not checked: the AI's
+  answer got stuck"; the run goes on.
+- 2 new tests (the split; the cap never exceeds the setting).
+- A test fix: `test_missing_build_gives_a_clear_message` found the
+  JobLens running from the repo through its single-instance check, popped
+  up its window and got 0 instead of 1. It now ignores a running copy.
+  336 tests pass.
+
+### Checked with the same job and all 6 resumes
+- The AI got stuck twice (your two UAE resumes); both batches were split,
+  and the run finished in 446 s.
+- Scores: your AI Engineer UAE / Software Engineer / Software Engineer
+  UAE 90, AI Engineer 77, friend A (embedded) 52, friend B (FPGA) 25.
+- **It's random:** the same batch, asked 3 more times, gave normal
+  ~495-token answers.
+- **Still slow** with 6 resumes (~75 s each). Choosing fewer resumes per
+  job (Settings → Resumes, 14b) helps most.
