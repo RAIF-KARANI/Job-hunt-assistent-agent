@@ -53,6 +53,21 @@ export function ReviewPanel({ payload, summary, busy, onAnswer }: Props) {
         </div>
       )}
 
+      {!!payload.notices?.length && (
+        <div className="notice notice-warn" role="status">
+          <WarnIcon />
+          {payload.notices.length === 1 ? (
+            <span>{payload.notices[0]}</span>
+          ) : (
+            <ul className="notice-list">
+              {payload.notices.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {summary.fit_score !== undefined && (
         <details className="why">
           <summary>

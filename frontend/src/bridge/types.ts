@@ -127,6 +127,7 @@ export interface ReviewPayload {
   kind: "approval";
   draft: string;
   warnings: string[];
+  notices?: string[]; // 15f: a project at the wrong employer, stock phrases (full sentences)
   revision: number;
   word_count: number;
 }

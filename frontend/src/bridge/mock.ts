@@ -321,6 +321,7 @@ function fakeRun(emit: (event: AgentEvent) => void) {
             revision,
             word_count: 96,
             warnings: revision === 1 ? ["40%"] : [],
+            notices: revision === 1 ? ["“JobLens” is a project in your resume, not work at Acme: check this sentence."] : [],
             draft:
               "Dear Northwind Labs team,\n\nYour applied-AI team is building agents that read insurance documents, and that is the work I have been doing. " +
               "I built JobLens, a LangGraph agent that reads job postings, checks every claim against a source, and pauses for human approval before saving anything.\n\n" +

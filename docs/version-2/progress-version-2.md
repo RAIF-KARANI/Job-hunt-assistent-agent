@@ -2051,3 +2051,58 @@ With the real tag "(Fictional)", Nexora and Vertex aren't searched at all.
   proves it's the same Vertex.
 - A result that names only a product (e.g. TikTok, not ByteDance) is
   dropped, so a little real research is lost.
+
+## 15f — Better cover notes ✅ (3 Nov 2026)
+
+### What was done
+- **`job_agent/achievements.py`** (pure code):
+  - `resume_entries` splits a resume into its projects, jobs and studies,
+    with the sentences that belong to each: wrapped PDF lines joined, tech
+    lines skipped, the role line of a job kept. It's heuristic, and was
+    tuned on the 6 real resumes in `data/` (yours and two friends').
+  - `pick_achievements` picks the 2–3 entries whose sentences best match
+    this job's verified requirements, with their best sentences. A quote the
+    fit step verified counts extra.
+  - `placement_notices` flags a sentence that names a project together
+    with an employer, a role, a school ("At my university") or an unnamed
+    job ("At my last role") the resume doesn't connect it to.
+- **The cover note** gets "ACHIEVEMENTS TO USE", each labelled with where it
+  belongs ("Project "CodeLens" (personal / academic, not done at any
+  employer)", "Work: Tap Academy, as Software Engineering Intern"), instead
+  of the whole resume and the talking points.
+  - The whole resume is added only for a rewrite, which may ask for
+    something else.
+  - If the resume can't be split, the old prompt is used.
+- **Stock phrases** are named in the prompt and flagged at review: "I'm
+  excited to apply/contribute", "aligns with my passion", "I am confident in
+  my ability", "deeply impressed".
+- **The review panel** shows these notices (a misplaced project, a stock
+  phrase) next to the number warnings.
+- `evals/cover_notes.py` drafts a note for every saved job with the old
+  and the new prompt and measures projects used, misplaced projects, stock
+  phrases, unverified numbers and length.
+- 8 new tests (`tests/test_achievements.py`); 351 pass.
+
+### Measured (the 11 saved jobs in the repo tracker; 7 yours, 4 friend A's)
+| | Old prompt | New prompt |
+|---|---|---|
+| Notes with a stock phrase | **10 of 11** | **3 of 11** (all "deeply impressed") |
+| Misplaced projects (the check) | 0 | 0 |
+| Projects used in your 7 notes | CodeLens ×5, QueryCraft, my-rag | CodeLens ×6, my-rag ×2, RAG Document Assistant ×2, QueryCraft, LinkedOut |
+| Unverified numbers | 0 | 0 |
+| Words | 152 | 149 |
+
+- **The placement check on your installed app's 36 notes** (read only)
+  flags 3: "As a Software Engineering Intern, I built CodeLens" and two
+  "At my university, I developed CodeLens". It can't catch a sentence that
+  names neither the project nor an employer ("At Tap Academy, I built a
+  code review tool").
+- **The first new run wrote "At my last role, I developed a RAG Document
+  Assistant"** (Intel). The check now knows unnamed-job phrases, and the
+  prompt says to write a project as "I built <project>". The second run
+  had none.
+- **CodeLens is still in most of your notes**, now because it matches best:
+  it is your entry with the most matching tech. GitLab AI: CodeLens 9
+  against 6 for the next one; Stripe 5 against 3; Rubrik a tie; Intel picked
+  the RAG Document Assistant. More variety would need a rule across notes
+  (your decision, not made).

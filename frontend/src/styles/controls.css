@@ -239,6 +239,15 @@ textarea.input {
   font-weight: 600;
 }
 
+/* 15f: several cover-note notices at once */
+.notice-list {
+  margin: 0;
+  padding-left: 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

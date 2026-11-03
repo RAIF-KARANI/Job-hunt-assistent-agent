@@ -64,6 +64,27 @@ Rules:
 - No clichés ("I am writing to express my interest", "team player",
   "passionate"). No placeholders like [Company]."""
 
+# 15f: the achievements are picked by code for THIS job (job_agent.
+# achievements), each labelled with the project or job it belongs to. The
+# writer used to get the whole resume and put CodeLens in 23 of 35 notes,
+# sometimes at the wrong employer.
+PICKED_RULES = """
+- Paragraph 2 uses ONLY the ACHIEVEMENTS TO USE below (2-3 of them), in your
+  own words but with their facts and numbers unchanged.
+- Name each achievement with ITS label. A project is written as "I built
+  <project>, ..." - never "at my last role", "in my internship", "at
+  university" or at an employer. Only achievements labelled "Work: ..."
+  happened at that employer.
+- No stock phrases: not "I'm excited to apply/contribute", "I am writing to",
+  "aligns with my passion", "I am confident in my ability", "deeply
+  impressed". Start with the role and the specific reason; end plainly."""
+
+# Openings and phrases the drafts kept repeating (15f): flagged at review.
+STOCK_PHRASES = ("i'm excited to apply", "i am excited to apply", "i'm excited to contribute",
+                 "i am excited to contribute", "aligns with my passion", "i am writing to express",
+                 "i'm confident my", "i am confident my", "i am confident in my ability",
+                 "i'm confident in my ability", "deeply impressed")
+
 
 def draft_cover_note(
     job: JobPosting,
@@ -72,8 +93,11 @@ def draft_cover_note(
     resume_text: str,
     previous_draft: str = "",
     feedback: str = "",
+    use_picked: bool = True,  # False = the pre-15f prompt (for the evals)
 ) -> CoverNote:
     """One LLM call. On a revision, the previous draft + your feedback are included."""
+    from job_agent.achievements import achievements_text, pick_achievements, resume_entries
+
     fit = best_match.analysis
     verified = "\n".join(
         f"- {m.requirement}: \"{m.resume_evidence}\"" for m in fit.matching_skills
@@ -84,14 +108,30 @@ def draft_cover_note(
         "No reliable research about this employer. Base the reason for interest ONLY on "
         "the JOB above (the role, its product or its work); say nothing else about the company.")
 
-    prompt = (
-        f"=== JOB ===\n{job.model_dump_json(indent=2)}\n\n"
-        f"=== VERIFIED MATCHES (requirement: resume quote) ===\n{verified}\n\n"
-        f"=== SUGGESTED TALKING POINTS ===\n" + "\n".join(f"- {t}" for t in fit.talking_points)
-        + f"\n\n=== COMPANY RESEARCH ===\n{company_info}\n\n"
-        f"=== RESUME ===\n{resume_text}\n=== END RESUME ==="
-    )
-    system = WRITER_PROMPT
+    shown = fit.matching_skills + fit.partial_skills
+    picked = pick_achievements(resume_entries(resume_text), [m.requirement for m in shown],
+                               [m.resume_evidence for m in shown]) if use_picked else []
+    if picked:
+        name = next((line.strip() for line in resume_text.splitlines() if line.strip()), "")
+        prompt = (
+            f"=== JOB ===\n{job.model_dump_json(indent=2)}\n\n"
+            f"=== VERIFIED MATCHES (requirement: resume quote) ===\n{verified}\n\n"
+            f"=== ACHIEVEMENTS TO USE (picked for this job) ===\n{achievements_text(picked)}\n\n"
+            f"=== COMPANY RESEARCH ===\n{company_info}\n\n"
+            f"=== CANDIDATE ===\n{name}"
+        )
+        if feedback:  # a revision may ask for something else from the resume
+            prompt += f"\n\n=== RESUME (only if the feedback asks for it) ===\n{resume_text}\n=== END RESUME ==="
+        system = WRITER_PROMPT + PICKED_RULES
+    else:  # the resume couldn't be split into projects and jobs: as before 15f
+        prompt = (
+            f"=== JOB ===\n{job.model_dump_json(indent=2)}\n\n"
+            f"=== VERIFIED MATCHES (requirement: resume quote) ===\n{verified}\n\n"
+            f"=== SUGGESTED TALKING POINTS ===\n" + "\n".join(f"- {t}" for t in fit.talking_points)
+            + f"\n\n=== COMPANY RESEARCH ===\n{company_info}\n\n"
+            f"=== RESUME ===\n{resume_text}\n=== END RESUME ==="
+        )
+        system = WRITER_PROMPT
     if previous_draft and feedback:
         # The revision loop: the model sees what it wrote and what you want changed.
         prompt += f"\n\n=== PREVIOUS DRAFT ===\n{previous_draft}"
@@ -115,6 +155,19 @@ def draft_cover_note(
 # ---------------------------------------------------------------------------
 
 NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def note_notices(note: str, resume_text: str) -> list[str]:
+    """15f: plain-language checks shown at review: a project put at the wrong
+    employer / role / school, and stock phrases."""
+    from job_agent.achievements import placement_notices, resume_entries
+
+    notices = placement_notices(note, resume_entries(resume_text))
+    low = note.lower().replace("’", "'")
+    for phrase in STOCK_PHRASES:
+        if phrase in low:
+            notices.append(f"Stock phrase “{phrase}”: most cover notes say this; consider your own words.")
+    return notices
 
 
 def unverified_numbers(note: str, source_text: str) -> list[str]:
@@ -158,6 +211,7 @@ class CoverNoteState(TypedDict, total=False):
     # produced along the way
     draft: str
     warnings: list[str]
+    notices: list[str]   # 15f: misplaced projects, stock phrases
     revision: int
     decision: str        # "approve" | "edit" | "reject"
     feedback: str
@@ -183,6 +237,7 @@ def draft_node(state: CoverNoteState) -> dict:
     return {
         "draft": note.text,
         "warnings": unverified_numbers(note.text, sources),
+        "notices": note_notices(note.text, state["resume_text"]),
         "revision": revision,
     }
 
@@ -198,6 +253,7 @@ def review_node(state: CoverNoteState) -> dict:
             "kind": "approval",  # lets the program tell different questions apart
             "draft": state["draft"],
             "warnings": state["warnings"],
+            "notices": state.get("notices", []),
             "revision": state["revision"],
             "word_count": len(state["draft"].split()),
         }
