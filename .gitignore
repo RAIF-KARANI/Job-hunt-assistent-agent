@@ -20,3 +20,9 @@ node_modules/
 # ---- version-2 UI build output (npm run build in frontend/) ----
 desktop_web/web/
 *.tsbuildinfo
+
+# ---- desktop app runtime files (developer mode keeps them in the repo root) ----
+instance.json
+update_check.json
+follow_up_notice.txt
+updates/

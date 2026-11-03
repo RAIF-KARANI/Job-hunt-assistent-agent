@@ -1781,3 +1781,56 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.0.3
   - GitHub's SHA-256 of both uploads matches the notes
   - the updater, asked as 1.0.0 and as 1.0.2 (real API), offers v1.0.3 with
     the right checksum
+
+## 15a — Fit eval set + baseline ✅ (3 Nov 2026)
+
+### What was done
+- **`evals/fit.py`** runs only step 2 (`pick_best_resume`, exactly as the
+  app does, judge and verdict included) on fixed cases, several times each.
+  It saves nothing to the tracker or the run log and sends nothing to Langfuse.
+  - `list`, `new <name> --job <id> --resume data:<pdf>` (freezes a tracked
+    job's posting, labels blank), `run [--case] [--runs] [--model]
+    [--no-judge]`, `compare <old.json> <new.json>`
+  - results: `data/evals/results/<time>_<model>.json`, saved after every
+    case, with every raw answer kept for debugging
+- **`evals/metrics.py`** (pure code, tested) maps each answer item back to
+  one of the job's own requirements (≥ 50 % of its words). Per requirement
+  the app's answer is *proven*, *missing*, *lost* (quote check failed, never
+  scored) or *skipped* (never mentioned). Gaps that match no requirement are
+  counted as *invented*. Hand labels are proven / partial / missing;
+  *partial* stays out of accuracy until the app can say "partial" (15b).
+  "The labels would give" = today's formula applied to the labels: it
+  separates classification mistakes from the formula's own ceiling.
+- **Cases:**
+  - `evals/sample_cases/project_only`: made up and committed. A student
+    whose every skill is shown only through projects.
+  - `data/evals/cases/` (git-ignored): the friend's 4 tests (tracker jobs
+    14–17). The labels were drafted from the resume text and still need
+    your check.
+- 10 tests in `tests/test_evals.py`; 314 pass.
+
+### Baseline (qwen3:8b, judge on, Short, 3 runs per case)
+| Case | Scores | Labels would give | Accuracy | Stable | Main mistake |
+|---|---|---|---|---|---|
+| project_only (made up) | 80 80 80 | 94 | 73 % | 100 % | Docker, CI/CD, ML (all proven) called gaps |
+| fictional_nexora_full | 67 77 84 | 100 | 40 % | 79 % | 11–12 proven skills called gaps; all 9 nice-to-haves dumped as gaps; C/C++/Python lost to the quote check every run |
+| fictional_vertex_junior | 47 44 58 | 99 | 35 % | 72 % | 9–12 proven skills not counted; 12 invented gaps taken from the responsibilities and counted as *required* |
+| freshers_cranes | 27 27 27 | 69 | 60 % | 100 % | the judge rejected 5 of 7 claims each run ("Building Relationships" from a Partnerships Officer) |
+| iot_firmware_tagntrac | 43 43 29 | 40 | 40 % | 91 % | "3+ years" accepted from a student project; 4 requirements never scored |
+| **Total** | | | **50 %** | **88 %** | **57 % of proven skills not counted**; 14 % of missing skills called proven; score off by **26 points** on average; 30 s and 877 output tokens per run |
+
+The 29 you saw is this Tag-N-Trac case: the same input scored 43, 43 and 29
+in three runs.
+
+### What it confirms
+- **F1 is the biggest problem:** most errors are proven skills that never
+  count. Even a clean, made-up resume loses three.
+- **False gaps far outnumber false matches** (57 % against 14 %): the agent
+  is too strict, not too generous. Fixes should add second looks at gaps
+  (15b, 15c), not more checks on matches.
+- **F2/F3:** the C/C++/Python requirement was lost in all 3 Nexora runs.
+- **F6:** the invented gaps are real, not a mapping error. They come from
+  the responsibilities list.
+- Scores move by up to 17 points between runs of the same input.
+- The cases have few labelled-missing skills (5 real ones). A low-match
+  case should be added before the false-match rate is trusted.

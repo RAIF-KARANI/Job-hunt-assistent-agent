@@ -1,0 +1,18 @@
+{
+  "resume": "resume.txt",
+  "expected_score": [85, 100],
+  "notes": "Made-up student: every skill is shown only through projects. Spark and a cloud warehouse are the only real gaps.",
+  "labels": [
+    {"kind": "required", "requirement": "Python programming", "label": "proven", "why": "Python service, Skills"},
+    {"kind": "required", "requirement": "SQL and relational databases such as PostgreSQL", "label": "proven", "why": "PostgreSQL, SQL window queries"},
+    {"kind": "required", "requirement": "Data cleaning and transformation with pandas", "label": "proven", "why": "Cleaned and joined the data with pandas"},
+    {"kind": "required", "requirement": "Building REST APIs", "label": "proven", "why": "FastAPI REST API"},
+    {"kind": "required", "requirement": "Git and code review", "label": "proven", "why": "reviewed teammates' pull requests on GitHub"},
+    {"kind": "required", "requirement": "Writing automated tests", "label": "proven", "why": "85 pytest tests"},
+    {"kind": "nice", "requirement": "Docker", "label": "proven", "why": "deployed with Docker"},
+    {"kind": "nice", "requirement": "CI/CD pipelines", "label": "proven", "why": "GitHub Actions on every pull request"},
+    {"kind": "nice", "requirement": "Apache Spark", "label": "missing", "why": "not in the resume"},
+    {"kind": "nice", "requirement": "Cloud data warehouses such as BigQuery or Snowflake", "label": "missing", "why": "not in the resume"},
+    {"kind": "nice", "requirement": "Machine learning basics", "label": "proven", "why": "scikit-learn gradient boosting, PyTorch CNN"}
+  ]
+}

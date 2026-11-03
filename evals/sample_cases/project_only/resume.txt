@@ -1,0 +1,24 @@
+Alex Example
+Final-year Computer Engineering student · Pune, India · alex@example.com
+
+SUMMARY
+Student who builds data and web projects end to end. No full-time job yet.
+
+EDUCATION
+B.Tech, Computer Engineering, Example Institute of Technology, expected 2027 · CGPA 8.1/10
+
+PROJECTS
+Bus Arrival Predictor (solo)
+• Built a Python service that predicts city bus arrival times with scikit-learn gradient boosting, trained on 2 million GPS pings.
+• Cleaned and joined the data with pandas; stored features in PostgreSQL and wrote SQL window queries for travel-time features.
+• Served predictions through a FastAPI REST API with Pydantic validation and 85 pytest tests.
+
+Campus Events Board (team of 3)
+• Built a React and TypeScript front end with a Node.js Express back end; deployed with Docker on a small Linux VM.
+• Set up GitHub Actions to run lint and tests on every pull request; reviewed teammates' pull requests on GitHub.
+
+Handwritten Digit Classifier (course project)
+• Trained a small convolutional network in PyTorch on MNIST, reaching 98.9% test accuracy.
+
+SKILLS
+Python, SQL, TypeScript, JavaScript · pandas, scikit-learn, PyTorch · FastAPI, React, Node.js · PostgreSQL · Docker, Linux, Git, GitHub Actions, pytest

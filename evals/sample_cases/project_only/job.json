@@ -1,0 +1,29 @@
+{
+  "title": "Junior Data Engineer",
+  "company": "Example Analytics (made up for the evals)",
+  "location": "Pune, India",
+  "employment_type": "Full-time",
+  "seniority": "Entry level",
+  "salary": "Not specified",
+  "summary": "Build and maintain data pipelines and small APIs that serve analytics to internal teams. Fresh graduates with strong projects are welcome.",
+  "required_skills": [
+    "Python programming",
+    "SQL and relational databases such as PostgreSQL",
+    "Data cleaning and transformation with pandas",
+    "Building REST APIs",
+    "Git and code review",
+    "Writing automated tests"
+  ],
+  "nice_to_have_skills": [
+    "Docker",
+    "CI/CD pipelines",
+    "Apache Spark",
+    "Cloud data warehouses such as BigQuery or Snowflake",
+    "Machine learning basics"
+  ],
+  "responsibilities": [
+    "Build and maintain batch data pipelines",
+    "Expose cleaned data through internal APIs",
+    "Write tests and review teammates' code"
+  ]
+}
