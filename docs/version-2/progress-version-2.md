@@ -2162,3 +2162,41 @@ With the real tag "(Fictional)", Nexora and Vertex aren't searched at all.
   is left, in use by your installed 1.0.3. The leak itself was real (one
   folder per start, private mode); the installed app's next version stops
   it and removes older leftovers.
+
+## v1.1.0 prepared ✅ (4 Nov 2026, D3)
+Phase 15 is done (15a–15h). Version **1.1.0** (`job_agent/__init__.py`).
+
+### Added for the release
+- **Saved jobs are re-scored once at the first start** with the 15d formula
+  (`tracker.rescore_all`, code only; a marker file `score_formula.txt` in
+  the data folder).
+  - It uses the new `tracker.update_score`, which leaves `updated_at`
+    alone, so the follow-up clock (D31) doesn't restart.
+  - Found while doing this: `main.py rescore` used `save_job`, which bumps
+    `updated_at`, so re-scoring restarted every applied job's follow-up
+    clock. It now uses `update_score` too.
+- README: what v1.1.0 changes, the evals, 363 tests.
+
+### Checks (no CI, D3)
+1. **Tests:** 363 passed, with SyntaxWarnings as errors.
+2. **Front end from a clean `npm ci`:** 0 vulnerabilities, tsc exit 0,
+   production build, no dev mock in the bundle.
+3. **The app from source** (`--smoke` with a screenshot):
+   - version 1.1.0, 5 menu items, the Dashboard drawn
+   - saved jobs re-scored at start
+4. **`build_installer.py --test-install`:**
+   - the frozen app's self-test PASS (incl. a real web search and a real
+     Ollama call) and its window test 1.1.0
+   - the test build installed silently, its installed copy passed both
+     tests, and it uninstalled clean (no files, no registry entry)
+   - your real JobLens (1.0.3) was untouched
+5. **The release build** (`build_installer.py`): self-test PASS, window
+   test 1.1.0.
+   - `JobLens-Setup-1.1.0.exe`: 59 MB, SHA-256 `0c700444…0303c`
+   - portable zip: 72 MB, SHA-256 `ced29825…b4794`
+6. **Privacy:**
+   - no `.env`, databases, PDFs, instance or update files, names, emails
+     or phone numbers in the app folder
+   - your friends' first names had crept into two progress entries; they
+     are now "friend A" / "friend B"
+7. **Merge:** `main` is an ancestor of `version-2` (fast-forward).
