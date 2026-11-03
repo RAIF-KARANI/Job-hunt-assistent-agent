@@ -2200,3 +2200,22 @@ Phase 15 is done (15a–15h). Version **1.1.0** (`job_agent/__init__.py`).
    - your friends' first names had crept into two progress entries; they
      are now "friend A" / "friend B"
 7. **Merge:** `main` is an ancestor of `version-2` (fast-forward).
+
+## Release v1.1.0 ✅ (4 Nov 2026)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.1.0
+- **Contents:** Phase 15 (output quality, measured with the evals), plus
+  the one-time re-score of saved jobs.
+- **Before pushing:** your friends' first names were in two of the 10
+  unpushed commits. Those commits were rewritten ("friend A" / "friend B")
+  before anything left this PC; no force-push was needed, and the final
+  files were identical. The local backup was deleted after the push.
+- You published it with `gh release create`. The first try failed in Git
+  Bash: the `\` in `dist\...` is an escape character there, so use `/`.
+- **Checked after publishing:**
+  - Latest; not a draft or pre-release; tag → `6946340`, the commit `main`
+    and `version-2` point at
+  - GitHub's SHA-256 of both uploads matches the notes (`0c700444…0303c`,
+    `ced29825…b4794`)
+  - JobLens's updater (real API), asked as 1.0.3 and as 1.0.0, offers
+    v1.1.0 with `JobLens-Setup-1.1.0.exe` and the right checksum; asked as
+    1.1.0, it offers nothing
