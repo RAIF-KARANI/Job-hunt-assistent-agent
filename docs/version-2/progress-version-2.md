@@ -2290,3 +2290,32 @@ pystray problem was found.
 - The release build: self-test PASS. No private files in the app folder.
   - `JobLens-Setup-1.1.1.exe`: 59 MB, SHA-256 `3e513fea…add7`
   - portable zip: 72 MB, SHA-256 `b2b68db1…5149`
+
+## Release v1.1.1 ✅ (6 Nov 2026, D42)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.1.1
+- You published it with `gh release create`.
+- **Checked after publishing:**
+  - Latest; not a draft or pre-release; tag → `85a9371`, the commit `main`
+    and `version-2` point at
+  - GitHub's SHA-256 of both uploads matches the notes
+  - the updater (real API), asked as 1.0.3 and as 1.1.0, offers v1.1.1 with
+    the right checksum; asked as 1.1.1, it offers nothing
+- **The first real update, your installed 1.0.3 from Settings → Updates,
+  worked on the first try:** 22 s from Install now to the new JobLens
+  (15 s of it waiting for the old version, which was then ended). Windows
+  shows 1.1.1, the window opened by itself, and your tracker, resumes and
+  cover notes are in place. The log was kept as `last_update.log`.
+
+## The real update test is kept ✅ (6 Nov 2026, D3 step 4)
+`scripts/check_real_update.py` is the test that found the 1.1.1 bug, now in the
+repo and part of the checks before every release. It really updates the
+separate Test Build and fails with exit code 1 if anything goes wrong.
+- **Four checks, all passed on the 1.1.1 build:** an old 1.0.3 updates to it;
+  it updates to the next version and quits by itself; Setup run by hand while
+  JobLens is in the tray; a failed update reopens the old JobLens and says so.
+- **It can fail:** pointed at the broken 1.0.3 → 1.1.0 update, it stopped at
+  "a new JobLens opened by itself", which is the bug you hit.
+- Your JobLens stayed running through all of it. pytest: 374 passed.
+- **Still not tested:** a real Windows shutdown with JobLens open. Only the
+  installer's close request was. And `dist/` is git-ignored, so the 1.0.3 Test
+  Build the first check needs lives only on this PC.

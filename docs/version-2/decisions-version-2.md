@@ -23,6 +23,8 @@ merge into `main`:
 1. `python -m pytest`, all green
 2. for UI changes, run the app and look at it
 3. for packaging changes, `python scripts/build_installer.py` (it includes the self-test)
+4. before a release, `python scripts/check_real_update.py` on that build: it really
+   updates a Test Build, which pytest can't do (added 6 Nov 2026, after D42)
 
 Then merge locally (`git merge`) and push. Don't wait for CI.
 
