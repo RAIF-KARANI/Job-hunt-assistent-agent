@@ -146,6 +146,7 @@ class Api:
         self._updates = UpdateChecker(paths.APP_HOME, __version__)  # 13b
         self._update_lock = threading.Lock()  # 13d: one download at a time
         self._update_file = None
+        self._install_problem = None  # 1.1.1: the last update failed (set by app.py at start)
         self._http_get = None  # None = requests.get; tests serve a stand-in
         self._quit = None  # set by app.py
         self._hotkey = None  # 14f: the shortcut listener, set by app.py
@@ -560,7 +561,7 @@ class Api:
         """The last update check's answer (no network): for the sidebar."""
         from desktop_web import updates
 
-        return {**self._updates.status(), "enabled": updates.enabled()}
+        return {**self._updates.status(), "enabled": updates.enabled(), "install_problem": self._install_problem}
 
     def check_for_updates(self) -> dict:
         """Ask GitHub now ("Check now" in Settings, 13c), even if the switch is off."""
@@ -569,7 +570,7 @@ class Api:
         result = self._updates.check(force=True)
         if result.get("newer"):  # the sidebar shows it too
             self._emit({"type": "update_available", "latest": result["latest"], "page": result["page"]})
-        return {**result, "enabled": updates.enabled()}
+        return {**result, "enabled": updates.enabled(), "install_problem": self._install_problem}
 
     def download_update(self) -> dict:
         """13d: download the newer installer and verify it (size + SHA-256

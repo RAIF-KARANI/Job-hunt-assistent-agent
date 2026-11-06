@@ -3,6 +3,7 @@ Tests for the update check (13b). GitHub is replaced by a stand-in, so no
 network is used; the release data has the shape the real API returns.
 """
 
+from pathlib import Path
 import json
 import threading
 
@@ -326,3 +327,67 @@ def test_old_downloads_are_cleaned_up(tmp_path):
     (tmp_path / "JobLens-Setup-1.0.0.exe.part").write_bytes(b"half")
     updates.clean_downloads(tmp_path)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_a_file_the_installer_still_holds_doesnt_stop_the_app(tmp_path, monkeypatch):
+    held = tmp_path / "JobLens-Setup-1.1.1.exe"
+    held.write_bytes(b"x")
+    other = tmp_path / "install.log"
+    other.write_text("x")
+    real_unlink = Path.unlink
+
+    def unlink(self, missing_ok=False):
+        if self == held:
+            raise PermissionError("in use")
+        real_unlink(self, missing_ok=missing_ok)
+    monkeypatch.setattr(Path, "unlink", unlink)
+    updates.clean_downloads(tmp_path)
+    assert held.exists() and not other.exists()
+
+
+# The real log of the failed update on 6 Nov 2026 (shortened).
+FAILED_LOG = """\ufeff2026-11-06 11:45:04.582   Log opened. (Time zone: UTC+05:30)
+2026-11-06 11:45:04.582   Original Setup EXE: C:\\Users\\x\\AppData\\Local\\JobLens\\updates\\JobLens-Setup-1.1.0.exe
+2026-11-06 11:45:05.570   Shutting down applications using our files.
+2026-11-06 11:45:06.267   Some applications could not be shut down.
+2026-11-06 11:45:06.268   User canceled the installation process.
+2026-11-06 11:45:07.830   Log closed.
+"""
+
+
+def write_log(folder, text):
+    folder.mkdir(exist_ok=True)
+    (folder / "install.log").write_text(text, encoding="utf-8")
+    return folder
+
+
+def test_a_failed_update_is_reported_and_its_log_kept(tmp_path):
+    folder = write_log(tmp_path / "updates", FAILED_LOG)
+    problem = updates.review_last_install(folder, "1.0.3", keep_in=tmp_path)
+    assert problem == {"version": "1.1.0", "reason": "JobLens couldn't be closed, so the installer stopped."}
+    assert "could not be shut down" in (tmp_path / updates.KEPT_LOG).read_text(encoding="utf-8")
+
+
+def test_any_other_stop_is_reported_too(tmp_path):
+    log = FAILED_LOG.replace("Some applications could not be shut down.", "Disk full.")
+    problem = updates.review_last_install(write_log(tmp_path / "updates", log), "1.0.3")
+    assert problem["reason"] == "The installer stopped before it finished."
+
+
+def test_a_worked_update_reports_nothing(tmp_path):
+    folder = write_log(tmp_path / "updates", FAILED_LOG)
+    assert updates.review_last_install(folder, "1.1.0") is None    # we ARE that version now
+    assert updates.review_last_install(tmp_path / "nothing", "1.0.3") is None
+
+
+def test_the_page_is_told_about_a_failed_update(tmp_path, monkeypatch):
+    a, _ = newer_api(tmp_path, monkeypatch)
+    assert a.update_status()["install_problem"] is None
+    a._install_problem = {"version": "1.0.0", "reason": "x"}
+    assert a.update_status()["install_problem"]["version"] == "1.0.0"
+    assert a.check_for_updates()["install_problem"]["version"] == "1.0.0"
+
+
+def test_a_finished_install_is_never_called_failed(tmp_path):
+    log = FAILED_LOG.replace("User canceled the installation process.", "Installation process succeeded.")
+    assert updates.review_last_install(write_log(tmp_path / "updates", log), "1.0.3") is None

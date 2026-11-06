@@ -2219,3 +2219,74 @@ https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.1.0
   - JobLens's updater (real API), asked as 1.0.3 and as 1.0.0, offers
     v1.1.0 with `JobLens-Setup-1.1.0.exe` and the right checksum; asked as
     1.1.0, it offers nothing
+
+## 1.1.1: in-app updates failed every time ✅ (6 Nov 2026, D42)
+
+### What you saw
+You clicked update, a setup window came for a few seconds and closed, and
+JobLens showed "Installing…" but stayed on the old version. 1.0.3 → 1.1.0
+failed more than three times, even when left overnight. 1.0.0 → 1.0.3 had
+also taken several tries.
+
+### Cause (watched live on your PC, with `install.log` saved)
+- Install now started the installer, and JobLens "closed" with
+  `window.destroy`. That goes through the X button's handler, which hides
+  JobLens to the tray while the shortcut is on (D37). JobLens kept running.
+- 1.2 s after starting, the installer asked JobLens to close; 0.7 s later:
+  `Some applications could not be shut down`. With message boxes suppressed,
+  the default answer is Abort, so it rolled back.
+- Reopening JobLens brought back the same hidden window, still saying
+  "Installing…". The download and its checks were fine: not the network.
+- The next start deleted `install.log` unread, so nothing was left to see.
+- **Found while fixing it:** the tray alone also blocked every polite close.
+  pystray answers 0 ("no") to `WM_QUERYENDSESSION`, because it answers 0 to
+  every message it doesn't know. The Windows log shows JobLens vetoing a
+  shutdown on 4 Nov, very likely the same thing.
+- **1.0.0 → 1.0.3** was probably a different bug with the same result: the
+  hidden quick box kept the process alive (fixed in 1.0.2). Its logs are gone.
+- **Why testing missed it:** the full upgrade test dated from 13d, before the
+  shortcut and D37. Later tests faked the close. The release checks installed
+  and uninstalled a build, but never upgraded a running one.
+
+### Done
+- `app._quit_action`: an update uses the tray's real Quit.
+- The installer waits up to 15 s for its own JobLens, then ends it
+  (`/RELAUNCH=1` only), and reopens the old version if it failed.
+- `tray._let_windows_close_us` and `app._close_when_windows_asks`: Windows and
+  installers can close JobLens; the X button still hides it.
+- `updates.review_last_install`: the log is read at start, kept as
+  `last_update.log`, and Settings → Updates says what failed.
+- `clean_downloads` no longer crashes on a file the installer still holds.
+- 374 tests pass (11 new).
+
+### Checked with real upgrades (Test Build, your JobLens untouched)
+Real old Test Build installers, the real tray and shortcut, the real
+download, verify and install code; only GitHub was a local stand-in.
+
+| Scenario | Result |
+|---|---|
+| 1.0.3 → old 1.1.0 installer | **Fails exactly as on your PC** (same log lines): the test reproduces the bug |
+| 1.0.3 → new 1.1.1 installer | Works: ended after 15 s, installed, reopened as 1.1.1, data kept |
+| 1.1.1 → 1.1.2 | Works: JobLens quit by itself in about 5 s, installed in 11 s, reopened, data kept |
+| Hand-run installer, JobLens in the tray | Works (failed before the pystray fix) |
+| An install that fails (read-only file) | JobLens reopens on the old version and Settings explains it, data kept |
+
+The first run of the hand-run scenario failed. A direct question to each
+window showed the tray's hidden window answering "no", which is how the
+pystray problem was found.
+
+### Lessons
+- **A fake close hid the bug:** a test that replaces the risky step proves
+  nothing about that step. Reproduce the failure first, then show the fix.
+- **Don't delete the only evidence:** a log has to be read before clean-up.
+- A new feature (keeping JobLens in the tray) can break an old one (updates)
+  far from where you changed the code, so a release needs a real upgrade test.
+
+## v1.1.1 prepared ✅ (6 Nov 2026, D3)
+- 374 tests pass; typecheck clean; the five real upgrade scenarios above.
+- `build_installer.py --test-install`: self-test PASS and window test 1.1.1
+  for the build and its installed copy; it uninstalled clean; your JobLens
+  (1.0.3) was untouched.
+- The release build: self-test PASS. No private files in the app folder.
+  - `JobLens-Setup-1.1.1.exe`: 59 MB, SHA-256 `3e513fea…add7`
+  - portable zip: 72 MB, SHA-256 `b2b68db1…5149`

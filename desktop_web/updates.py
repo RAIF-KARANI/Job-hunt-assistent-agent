@@ -214,11 +214,44 @@ def launch_installer(path: Path, installer: dict, run=None) -> None:
 
 
 def clean_downloads(folder: Path, keep: str | None = None) -> None:
-    """Delete old installers (after an update they're no longer needed)."""
+    """Delete old installers (after an update they're no longer needed). A file
+    the installer still holds (it may reopen JobLens before it has exited)
+    stays until next time: tidying up must never stop the app from opening."""
     if folder.exists():
         for f in folder.iterdir():
             if f.name != keep:
-                f.unlink(missing_ok=True)
+                try:
+                    f.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+
+_LOG_TARGET = re.compile(r"JobLens(?:-TestBuild)?-Setup-(\d+\.\d+\.\d+)\.exe")
+KEPT_LOG = "last_update.log"  # in the data folder, for troubleshooting
+
+
+def review_last_install(folder: Path, current: str, keep_in: Path | None = None) -> dict | None:
+    """1.1.1: did the update started last time work? Call at start, BEFORE
+    clean_downloads: install.log is the only record of what the installer did.
+    It used to be deleted unread, so a failed update looked like nothing had
+    happened. A copy stays in `keep_in` as last_update.log.
+    Returns {"version", "reason"} if this JobLens is still older than the
+    version the installer was installing, else None."""
+    try:
+        text = (folder / "install.log").read_text(encoding="utf-8-sig", errors="replace")
+    except OSError:
+        return None
+    if keep_in is not None:
+        try:
+            (keep_in / KEPT_LOG).write_text(text, encoding="utf-8")
+        except OSError:
+            pass
+    target = _LOG_TARGET.search(text)
+    if not target or not is_newer(target.group(1), current) or "Installation process succeeded" in text:
+        return None
+    reason = ("JobLens couldn't be closed, so the installer stopped." if "could not be shut down" in text
+              else "The installer stopped before it finished.")
+    return {"version": target.group(1), "reason": reason}
 
 
 def enabled() -> bool:

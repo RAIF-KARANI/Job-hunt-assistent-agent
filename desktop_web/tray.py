@@ -87,6 +87,7 @@ def status_text(state: RunState) -> str:
 
 
 NIN_BALLOONUSERCLICK = 0x0405  # WM_USER + 5: you clicked our notification (shellapi.h)
+WM_QUERYENDSESSION = 0x0011  # Windows, or an installer, asks: may this app close?
 
 # Which screen a notification opens when you click it (the page's #/<route>).
 NOTE_PAGES = {"Cover note ready": "analyze", "JobLens needs you": "analyze", "Run failed": "analyze",
@@ -164,7 +165,17 @@ class Tray:
         )
         self._icon = pystray.Icon("JobLens", Image.open(self._icon_path), "JobLens", menu)
         self._catch_notification_clicks()
+        self._let_windows_close_us()
         self._icon.run_detached()  # its own thread and Windows message loop
+
+    def _let_windows_close_us(self) -> None:
+        """pystray answers 0 to every message it doesn't know, and 0 to
+        WM_QUERYENDSESSION means "don't close". So the tray's hidden window
+        alone refused every shutdown and every installer's polite close."""
+        try:
+            self._icon._message_handlers[WM_QUERYENDSESSION] = lambda wparam, lparam: 1
+        except Exception:  # another pystray backend or version
+            pass
 
     def _catch_notification_clicks(self) -> None:
         """pystray ignores a click on its notification (NIN_BALLOONUSERCLICK
@@ -195,6 +206,10 @@ class Tray:
             self._icon = None
 
     # -- the window --
+    def quit(self) -> None:
+        """Really quit, whatever the close button would do (the menu's Quit, an update)."""
+        self._quit()
+
     def open(self) -> None:
         self.hidden = False
         self._show()

@@ -137,3 +137,14 @@ def test_a_wrong_token_is_ignored(tmp_path):
 def test_a_stale_file_from_a_crash_doesnt_block_starting(tmp_path):
     (tmp_path / "instance.json").write_text(json.dumps({"port": 1, "token": "old"}))
     assert SingleInstance(tmp_path).ask_running_copy_to_show() is False
+
+
+def test_the_tray_never_refuses_a_close_from_windows():
+    # pystray answers 0 ("don't close") to messages it doesn't know: on 6 Nov
+    # that alone blocked an installer, and the Windows log shows a shutdown veto.
+    from desktop_web.tray import WM_QUERYENDSESSION, Tray
+
+    tray = Tray("icon.png", show=lambda: None, stop_run=lambda: None, quit_app=lambda: None)
+    tray._icon = type("Icon", (), {"_message_handlers": {}})()
+    tray._let_windows_close_us()
+    assert tray._icon._message_handlers[WM_QUERYENDSESSION](0, 1) == 1

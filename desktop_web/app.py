@@ -187,9 +187,13 @@ def main(argv=None) -> int:
     hotkey = _start_quick_box(url, window, api, tray)
     instance.listen(on_show=lambda: _bring_back(window, tray))
     _check_for_updates_later(window, api)
+    _close_when_windows_asks(window)
     # 13d: the installer takes over -> close (never during a run: refused before)
-    api._on_quit(window.destroy)
+    api._on_quit(_quit_action(window, tray))
     from desktop_web import updates
+    from job_agent import __version__
+    # 1.1.1: read the installer's log first: it says whether the last update worked.
+    api._install_problem = updates.review_last_install(paths.APP_HOME / "updates", __version__, paths.APP_HOME)
     updates.clean_downloads(paths.APP_HOME / "updates")  # last update's installer, no longer needed
     from desktop_web import housekeeping
     if paths.IS_INSTALLED:  # a run from source never touches the installed app's leftovers
@@ -207,6 +211,44 @@ def main(argv=None) -> int:
         instance.close()
         _free_the_gpu(api, tidy=True)
     return 0
+
+
+def _quit_action(window, tray):
+    """What really ends JobLens. Not plain window.destroy: that goes through
+    the same `closing` handler as the X button, and since 1.0.3 that handler
+    hides to the tray while the shortcut is on. So "close for the update" only
+    hid the window, the installer met a running JobLens and gave up (6 Nov,
+    install.log: "Some applications could not be shut down")."""
+    return tray.quit if tray else window.destroy
+
+
+def windows_is_closing_us(reason) -> bool:
+    """A close that hiding must not refuse: Windows shutting down, or an
+    installer asking through Restart Manager. Both arrive as WM_QUERYENDSESSION,
+    which WinForms reports as WindowsShutDown."""
+    return str(reason) == "WindowsShutDown"
+
+
+def _close_when_windows_asks(window) -> None:
+    """Hiding to the tray is for the X button. It happens in pywebview's handler
+    (the `closing` event isn't told the reason), so a second handler on the
+    form, which runs after it, takes the refusal back."""
+    attached = threading.Event()
+
+    def on_form_closing(sender, args):
+        if windows_is_closing_us(args.CloseReason):
+            args.Cancel = False
+
+    def attach():
+        if attached.is_set():  # `loaded` fires again on every page reload
+            return
+        attached.set()
+        try:
+            window.native.FormClosing += on_form_closing
+        except Exception as e:  # never worth breaking the app
+            print(f"! closing for Windows: {e}")
+
+    window.events.loaded += attach
 
 
 def _clean_temp() -> None:

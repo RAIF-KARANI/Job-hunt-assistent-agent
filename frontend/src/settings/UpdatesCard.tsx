@@ -154,6 +154,14 @@ export function UpdatesCard({ enabled, onToggle }: { enabled: boolean; onToggle(
         {status?.error && ` · ${plainError(status.error)}`}
       </p>
 
+      {/* 1.1.1: the update started last time didn't happen: never leave that unsaid. */}
+      {status?.install_problem && (
+        <p className="error" role="alert">
+          The update to v{status.install_problem.version} didn't finish. {status.install_problem.reason} Nothing was
+          changed and your data is safe. You can try again.
+        </p>
+      )}
+
       {/* Right under "Version X is available": the one thing to do next. */}
       {status?.newer && status.installer && <InstallUpdate status={status} />}
 

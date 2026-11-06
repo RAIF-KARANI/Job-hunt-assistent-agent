@@ -102,7 +102,12 @@ Filename: "{app}\JobLens.exe"; Flags: nowait; Check: RelaunchAfterUpdate
   half-way ("MoveFile failed; code 3"). Found by the 10d install test. }
 const
   MaxInstallDirLength = 140;
+  CloseWaitSeconds = 15;
   WebView2Key = 'Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
+
+var
+  AppExe: String;      { set in PrepareToInstall, once the install folder is known }
+  Installed: Boolean;  { the files were copied }
 
 { Same check as desktop_web/app.py: the runtime's version under one of three keys. }
 function HasVersion(Root: Integer; Key: String): Boolean;
@@ -126,6 +131,61 @@ begin
     Log('WebView2 Runtime not found: it will be installed.')
   else
     Log('WebView2 Runtime found: nothing to install.');
+end;
+
+{ 1.1.1: an in-app update starts this installer and JobLens quits a moment
+  later, so without waiting the two race: on 6 Nov Setup asked JobLens to close
+  1.2 s after it started and gave up 0.7 s later. And JobLens 1.0.3-1.1.0 never
+  quit at all (it hid to the tray). So: wait for it, then end it. That's safe:
+  the app refuses to start an update during a run. Only the JobLens in this
+  install folder, and only with /RELAUNCH=1: a hand-run Setup force-closes nothing. }
+procedure WaitForJobLensToClose;
+var
+  ExePath, Script: String;
+  ResultCode: Integer;
+begin
+  ExePath := AppExe;
+  StringChangeEx(ExePath, '''', '''''', True);  { PowerShell: a ' inside '...' is written twice }
+  Script := '$exe = ''' + ExePath + '''; ' +
+            'function Find { @(Get-Process -Name JobLens -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $exe }) }; ' +
+            '$end = (Get-Date).AddSeconds(' + IntToStr(CloseWaitSeconds) + '); ' +
+            'while ((Find).Count -gt 0 -and (Get-Date) -lt $end) { Start-Sleep -Milliseconds 300 }; ' +
+            '$left = Find; if ($left.Count -gt 0) { $left | Stop-Process -Force; Start-Sleep -Seconds 2; exit 2 }; exit 0';
+  if Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+          '-NoProfile -NonInteractive -Command "' + Script + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    if ResultCode = 2 then
+      Log('JobLens did not quit in ' + IntToStr(CloseWaitSeconds) + ' s: it was ended.')
+    else
+      Log('JobLens is closed (check result ' + IntToStr(ResultCode) + ').');
+  end
+  else
+    Log('Could not check whether JobLens is closed: ' + SysErrorMessage(ResultCode));
+end;
+
+{ Runs before Setup's own "close the applications" step. }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  AppExe := ExpandConstant('{app}\JobLens.exe');
+  if RelaunchAfterUpdate and FileExists(AppExe) then
+    WaitForJobLensToClose;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    Installed := True;
+end;
+
+{ 1.1.1: JobLens quit for this update, so if it failed, don't leave you with
+  nothing open: start the old version again, which then says what went wrong. }
+procedure DeinitializeSetup;
+var
+  ResultCode: Integer;
+begin
+  if RelaunchAfterUpdate and (not Installed) and (AppExe <> '') and FileExists(AppExe) then
+    Exec(AppExe, '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;

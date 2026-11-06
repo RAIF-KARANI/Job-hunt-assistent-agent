@@ -56,3 +56,73 @@ def test_closing_the_main_window_also_closes_the_quick_box(monkeypatch):
     for handler in main.events.closed:
         handler()
     assert box.destroyed
+
+
+class ClosableWindow:
+    """Like pywebview: destroy() asks the `closing` handlers first, and any of
+    them can refuse. That's what made the update's "close" only hide JobLens."""
+
+    def __init__(self):
+        self.events = type("Events", (), {})()
+        self.events.closing = FakeEvent()
+        self.events.loaded = FakeEvent()
+        self.hidden = self.destroyed = False
+
+    def hide(self):
+        self.hidden = True
+
+    def destroy(self):
+        if all(handler() for handler in self.events.closing):
+            self.destroyed = True
+
+
+def tray_with_shortcut_on(monkeypatch):
+    from desktop_web import autostart, tray as tray_module
+
+    monkeypatch.setattr(tray_module.Tray, "start", lambda self: setattr(self, "_icon", object()))
+    monkeypatch.setattr(tray_module.Tray, "_refresh", lambda self: None)
+    monkeypatch.setattr(tray_module.Tray, "notify", lambda self, *a: None)
+    monkeypatch.setattr(autostart, "enabled", lambda: False)
+    window = ClosableWindow()
+    api = type("Api", (), {"stop_run": None, "_hotkey": type("Hotkey", (), {"key": "Ctrl+Alt+J"})()})()
+    return window, app._start_tray(window, api, {"send": lambda event: None})
+
+
+def test_the_x_button_hides_but_quitting_for_an_update_really_closes(monkeypatch):
+    # 6 Nov: Install now hid JobLens instead of closing it, so the installer
+    # met a running JobLens and gave up, on every try.
+    window, tray = tray_with_shortcut_on(monkeypatch)
+    window.destroy()                             # the X button: same path as window.destroy
+    assert window.hidden and not window.destroyed
+
+    app._quit_action(window, tray)()             # what install_update calls
+    assert window.destroyed
+
+
+def test_without_a_tray_quitting_is_just_closing():
+    window = ClosableWindow()
+    app._quit_action(window, None)()
+    assert window.destroyed
+
+
+def test_only_windows_itself_overrules_hiding_to_the_tray():
+    assert app.windows_is_closing_us("WindowsShutDown")
+    assert not app.windows_is_closing_us("UserClosing")
+    assert not app.windows_is_closing_us("None")
+
+
+def test_a_shutdown_takes_the_refusal_back(monkeypatch):
+    window = ClosableWindow()
+    form_closing = FakeEvent()
+    window.native = type("Form", (), {"FormClosing": form_closing})()
+    app._close_when_windows_asks(window)
+    for _ in range(2):                           # `loaded` fires on every reload
+        for handler in window.events.loaded:
+            handler()
+    assert len(form_closing) == 1
+    args = type("Args", (), {"CloseReason": "WindowsShutDown", "Cancel": True})()
+    form_closing[0](None, args)
+    assert args.Cancel is False
+    args = type("Args", (), {"CloseReason": "UserClosing", "Cancel": True})()
+    form_closing[0](None, args)
+    assert args.Cancel is True                   # the X button still hides

@@ -41,6 +41,8 @@ before and after every change: the fit check went from 50 % to 85 %
 accuracy, research ignores other companies with the same name, cover notes
 use the achievements that fit the job, Stop and Quit free the GPU at once,
 and JobLens cleans up after itself.
+**v1.1.1** fixes in-app updates, which failed while JobLens stayed in the
+tray: every older version can update to it from Settings → Updates.
 
 ---
 
@@ -248,7 +250,7 @@ To use a cloud model, `pip install` its LangChain package (see
 python -m pytest
 ```
 
-The 363 tests cover:
+The 374 tests cover:
 - the code-only safety nets: evidence and URL/date verification, number checks, the tracker, the approval guardrail
 - the fit step: one answer per requirement, the second look, the years rule, the score formula, the verdict
 - research about the right employer, cover-note achievements and the misplaced-project check

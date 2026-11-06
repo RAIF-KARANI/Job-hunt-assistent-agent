@@ -229,6 +229,7 @@ export interface UpdateStatus {
   checked_at: number | null; // seconds
   error: string | null;
   enabled: boolean; // the UPDATE_CHECK setting
+  install_problem?: { version: string; reason: string } | null; // 1.1.1: the last update failed
 }
 
 /** Installing Ollama or downloading a model (12g). Not part of an agent run. */

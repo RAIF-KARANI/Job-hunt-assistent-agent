@@ -449,7 +449,7 @@ running the real installer.
   entry; a plain silent install doesn't start the app). Windows' Restart
   Manager is not allowed to restart it too (`RestartApplications=no`).
 - **Downloads are cleaned up** at the next start; the installer's log stays
-  next to it until then.
+  next to it until then (since 1.1.1 it's read first and kept, D42).
 - **The flow:** the sidebar's "Update available" goes to Settings →
   Updates: "Download and install v… (58 MB)" → progress → "✓ Downloaded and
   verified" → "Install now".
@@ -766,6 +766,27 @@ as the project fits the job.
   timeout, cached a minute): the run isn't traced, and it's saved as
   `langfuse_down`. Evals shows "no trace (Langfuse wasn't running)" instead
   of a link to a missing session, and no score is sent for it.
+
+## D42 — 1.1.1: an update must be able to close JobLens ✅ (6 Nov 2026, your OK: "go ahead and build the fix")
+In-app updates failed on every try. Amends D27 and D37.
+- **An update really quits.** It uses the tray's Quit, not `window.destroy`:
+  that one passes through the X button's handler, which has hidden JobLens
+  to the tray since 1.0.3.
+- **The installer waits.** With `/RELAUNCH=1` it waits up to 15 s for the
+  JobLens in its own install folder to exit, and then ends it.
+  - Safe because the app refuses to start an update during a run.
+  - Only that path, so a Test Build or another copy is never hit.
+  - A hand-run installer force-closes nothing.
+  - This also means **1.0.x and 1.1.0 can update themselves to 1.1.1**, though
+    their own code never quits: no hand install is needed.
+- **Windows may always close JobLens.** The X button still hides it, but a
+  close from Windows or an installer (`WM_QUERYENDSESSION`) isn't refused.
+  Two things refused it: the hide, and pystray, which answers 0 ("no") to
+  messages it doesn't know.
+- **A failed update says so.** `install.log` is read at the next start, before
+  the clean-up, and kept as `last_update.log` in the data folder. Settings →
+  Updates shows what happened. If the installer fails after JobLens quit, it
+  opens the old version again, so you aren't left with nothing.
 
 ## Open questions ❓
 - (none)
