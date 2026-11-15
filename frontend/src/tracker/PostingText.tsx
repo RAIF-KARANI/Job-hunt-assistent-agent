@@ -4,6 +4,7 @@
 // offered here (the app already tried once by itself).
 
 import { useState } from "react";
+import { copy as copyText } from "../app/clipboard";
 import { errorMessage, getApi } from "../bridge/bridge";
 
 const PROBLEMS: Record<string, string> = {
@@ -48,13 +49,9 @@ export function PostingText({ jobId, text, readable, canFetch }: Props) {
 
   const copy = async () => {
     if (!shown) return;
-    try {
-      await navigator.clipboard.writeText(shown);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* no clipboard: the text can still be selected */
-    }
+    await copyText(shown); // works in WebView2 without the clipboard permission too
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
   };
 
   return (

@@ -2431,3 +2431,27 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
   page (13,000 characters for 3,700 of job). Giving it the tidy text would
   make "Read posting" faster, but it changes what the AI sees, so it needs
   your OK and a before/after check.
+
+## 16f interview prep sheet ✅ (15 Nov 2026)
+- **What it is** (`job_agent/interview_prep.py`, no AI): one page per job
+  with the role and duties, what they ask for, what your resume proves
+  (with its exact words), what is shown only in part, what isn't in your
+  resume (with the saved reason), points worth bringing up, the company
+  research with its sources, the cover note you approved, your notes, and
+  the job description.
+- **Where:** an "Interview prep" button in every job's details; it is the
+  highlighted button once the job is in Interviewing.
+- **Save as** PDF, Word or text, and "Copy all".
+- **Built for 3 real jobs** in the real window and as files: AiPrise (6
+  proven, 9 gaps), Amazon (3 proven, no gaps; a 4-page PDF), Vertex (5
+  proven, 5 gaps, no job description saved: it says so).
+- **A test reads every line of the sheet's text** and fails if one isn't in
+  the saved job, analysis, research, cover note, notes or posting.
+- **Fixed on the way, a bug from 16e:** the new "Job description" section
+  had the same React key as the notes section, so a job's details could
+  draw "Your notes" two or three times. Each has its own key now.
+- pytest: 416 passed (5 new); typecheck and build clean.
+- **Limit:** the sheet shows the analysis as it was saved. Jobs analyzed
+  before 1.1.0 have gaps without reasons, and some gaps the newer checks
+  would no longer call gaps (AiPrise lists MongoDB as a gap though the
+  resume has it). Analyzing the job again refreshes it.

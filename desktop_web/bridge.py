@@ -298,6 +298,37 @@ class Api:
         self._exported.add(str(path))
         return {"path": str(path)}
 
+    # ---- interview prep (16f) ---------------------------------------------------
+
+    def _prep_sheet(self, job_id: int) -> dict:
+        from job_agent import interview_prep
+
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        notes = tracker.get_cover_notes(job["id"])
+        return interview_prep.sheet_for(job, notes[0]["text"] if notes else None)
+
+    def interview_prep(self, job_id: int) -> dict:
+        """Everything saved about one job on one page, for an interview.
+        Plain code: no AI call, every line comes from the tracker."""
+        return to_json(self._prep_sheet(job_id))
+
+    def export_interview_prep(self, job_id: int, fmt: str) -> dict | None:
+        """The prep sheet as .txt, .docx or .pdf. None = you cancelled."""
+        from job_agent import export
+
+        if fmt not in export.FORMATS:
+            raise ValueError(f"Format must be one of {', '.join(export.FORMATS)}")
+        sheet = self._prep_sheet(job_id)
+        kinds = {"txt": "Text file (*.txt)", "docx": "Word document (*.docx)", "pdf": "PDF document (*.pdf)"}
+        path = self._save_path(export.file_name("Interview prep", sheet["company"], sheet["title"], ext=fmt), kinds[fmt])
+        if not path:
+            return None
+        export.export_cover_note(path, fmt, sheet["text"], title=f"Interview prep: {sheet['title']} at {sheet['company']}")
+        self._exported.add(str(path))
+        return {"path": str(path)}
+
     def show_in_folder(self, path: str) -> None:
         """Open Explorer at a file JobLens just exported (never any other path)."""
         if str(path) not in self._exported or not Path(path).exists():

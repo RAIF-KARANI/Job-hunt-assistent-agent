@@ -101,6 +101,27 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       const job = jobs.find((j) => j.id === id);
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
+    interview_prep: async (id) => {
+      const row = jobs.find((j) => j.id === id) ?? jobs[0];
+      return {
+        job_id: row.id, title: row.title, company: row.company,
+        facts: [{ label: "Location", value: "Remote" }, { label: "Interview", value: "2026-11-04 10:30" }],
+        summary: "Build and evaluate LLM agents for data teams.",
+        responsibilities: ["Design agent workflows", "Write evals"],
+        required: ["Python", "LangGraph"], nice_to_have: ["Kubernetes"],
+        resume: row.best_resume, fit_score: row.fit_score, verdict: "Apply: the core skills are proven.",
+        proven: [{ requirement: "Python", evidence: "Built a LangGraph agent in Python with 300+ tests" }],
+        partial: [{ requirement: "LangGraph", evidence: "LangChain, LangGraph" }],
+        gaps: [{ requirement: "Kubernetes", reason: "Docker only; no orchestration shown" }],
+        talking_points: ["Cut DB latency from 1.2 s to 9 ms"],
+        research: { what_they_do: "Northwind Labs builds software for teams that work with data.", size_and_stage: "Series B, 120 people",
+          products: ["Northwind Agents"], recent_news: ["Launched an agent platform (Sep 2026)"], culture_and_values: ["Remote-first"],
+          hooks: [], sources: ["https://northwind.example/about"] },
+        cover_note: "Dear Northwind team,\n\nI built...", notes: row.notes, description: "AI Engineer at Northwind Labs\n\nAbout the role...",
+        url: `https://jobs.example/${row.id}`, text: "Interview prep: " + row.title,
+      };
+    },
+    export_interview_prep: async (_id, fmt) => ({ path: `C:\\Users\\you\\Documents\\Interview prep.${fmt}` }),
     fetch_posting_text: async (id) =>
       id % 2
         ? { result: "gone", posting_text: null, posting_readable: null }

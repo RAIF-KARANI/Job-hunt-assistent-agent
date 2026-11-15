@@ -315,6 +315,42 @@ export interface DashboardData {
   pass_rate: number | null; // share of fit claims the evidence check kept
 }
 
+/** 16f: Api.interview_prep(): everything saved about one job, for an interview. */
+export interface PrepSheet {
+  job_id: number;
+  title: string;
+  company: string;
+  facts: { label: string; value: string }[];
+  summary: string;
+  responsibilities: string[];
+  required: string[];
+  nice_to_have: string[];
+  resume: string;
+  fit_score: number;
+  verdict: string;
+  /** A requirement and the resume's own words that prove it. */
+  proven: { requirement: string; evidence: string }[];
+  partial: { requirement: string; evidence: string }[];
+  gaps: { requirement: string; reason: string }[];
+  talking_points: string[];
+  /** null = no reliable research was found for this employer. */
+  research: {
+    what_they_do: string;
+    size_and_stage: string;
+    products: string[];
+    recent_news: string[];
+    culture_and_values: string[];
+    hooks: string[];
+    sources: string[];
+  } | null;
+  cover_note: string | null;
+  notes: string | null;
+  description: string | null;
+  url: string;
+  /** The whole sheet as plain text (Copy all, and the exported files). */
+  text: string;
+}
+
 /** 16i: yes = move to Applied; not_yet = ask again in 24 hours; ignore = never ask again. */
 export type ApplyAnswer = "yes" | "not_yet" | "ignore";
 
@@ -415,6 +451,9 @@ export interface PyApi {
   set_langfuse_secret(key: string): Promise<Settings>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
+  /** 16f: the interview prep sheet; and saving it as a file (null = cancelled). */
+  interview_prep(jobId: number): Promise<PrepSheet>;
+  export_interview_prep(jobId: number, fmt: "txt" | "docx" | "pdf"): Promise<{ path: string } | null>;
   /** 16e: one try to fetch the description of a job saved without one. */
   fetch_posting_text(jobId: number): Promise<{ result: string; posting_text: string | null; posting_readable: string | null }>;
   /** 16i: your answer to "Did you apply?". */

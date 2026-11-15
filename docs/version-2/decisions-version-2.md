@@ -838,6 +838,13 @@ In-app updates failed on every try. Amends D27 and D37.
   background after the first start of 1.2.0, one page every 2 seconds. A
   page is kept only if it names the job and the employer and has at least
   half of the skills and duties the agent once read from it.
+- **The interview prep sheet is built by code, with no AI call** (16f, my
+  choice; say so if you want more). It is for a real interview, so every
+  line is copied from what was saved and checked when the job was analyzed:
+  nothing is newly written, so nothing can be invented. For a gap it shows
+  the gap and the saved reason, and leaves "what will I say" to you.
+  **Not built: AI-written practice questions and answers.** They would need
+  a model run and their own checks; it is a possible later step.
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

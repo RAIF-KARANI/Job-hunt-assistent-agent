@@ -12,6 +12,7 @@ import { errorMessage, getApi } from "../bridge/bridge";
 import type { ApplyAnswer, JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
 import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
+import { InterviewPrep } from "./InterviewPrep";
 import { PostingText } from "./PostingText";
 import type { FollowUpAction } from "./useJobs";
 
@@ -41,6 +42,7 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
   const [draftProblem, setDraftProblem] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false); // 14g
+  const [prepOpen, setPrepOpen] = useState(false); // 16f
   const [confirmDelete, setConfirmDelete] = useState(false); // 1.0.1
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null); // 14i: where the export went
@@ -173,8 +175,12 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
               <button type="button" className="btn btn-ghost" onClick={() => setPromptOpen(true)}>
                 Resume prompt
               </button>
+              <button type="button" className={current === "interviewing" ? "btn btn-primary" : "btn btn-ghost"} onClick={() => setPrepOpen(true)}>
+                Interview prep
+              </button>
             </div>
             {promptOpen && <ResumePrompt jobId={job.id} onClose={() => setPromptOpen(false)} />}
+            {prepOpen && <InterviewPrep jobId={job.id} onClose={() => setPrepOpen(false)} />}
             {draftProblem && (
               <p className="hint" role="status">
                 {draftProblem}
@@ -383,7 +389,8 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
               </section>
             )}
 
-            <PostingText key={job.id} jobId={job.id} text={job.posting_text} readable={job.posting_readable} canFetch={isWebLink(job.url)} />
+            {/* its own key: the same key as NotesSection above made React draw the notes twice */}
+            <PostingText key={`posting-${job.id}`} jobId={job.id} text={job.posting_text} readable={job.posting_readable} canFetch={isWebLink(job.url)} />
 
             <p className="hint sheet-foot">
               Added {parseUtc(job.created_at).toLocaleDateString()} · status changed {ago(job.updated_at)} · job #{job.id}
