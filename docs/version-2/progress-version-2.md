@@ -2455,3 +2455,30 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
   before 1.1.0 have gaps without reasons, and some gaps the newer checks
   would no longer call gaps (AiPrise lists MongoDB as a gap though the
   resume has it). Analyzing the job again refreshes it.
+
+## 16g follow-up email, only when you ask ✅ (15 Nov 2026)
+- **Where:** "Draft a follow-up email" on the "Time to follow up?" box, and
+  "Follow-up email" in the details of an Applied or Interviewing job.
+  Nothing is written until you click; looking at a job never asks the model
+  (tested).
+- **The dialog:** subject and email (you can change every word), Copy,
+  "I sent it" (marks the job as followed up) and "Write again".
+- **Who writes what** (`job_agent/follow_up_email.py`): code writes the
+  subject, greeting, opening (role, company, date applied), the question
+  about next steps and the sign-off with your name; the model writes one
+  sentence about your work, from the cover note.
+- **Code checks that sentence:** one sentence, starts with "I", no number
+  that isn't in the cover note, no claim to fit their business, no
+  placeholder. Failing twice, it is left out and the note says why.
+- **Measured with qwen3:8b on 10 real applied jobs:** the sentence was used
+  in 10 of 10; 3–4 s each.
+- **Always an email:** if the agent is busy with a run or the model isn't
+  ready, you get the email without the sentence, and it says so.
+- **Checked in the real window:** HTC Global Services, from the reminder
+  box and from the details; "I sent it" closed it and cleared the reminder.
+- pytest: 434 passed (18 new); typecheck and build clean.
+- **Not in the run log:** this model call isn't counted in Evals (tokens,
+  time). It can be, in 16d, if you want it there.
+- **Test data changed:** HTC Global Services (#38) had a snooze copied from
+  your installed app; I cleared it to see the reminder, then pressed
+  "I sent it", so it is marked as followed up today.

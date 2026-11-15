@@ -845,6 +845,17 @@ In-app updates failed on every try. Amends D27 and D37.
   the gap and the saved reason, and leaves "what will I say" to you.
   **Not built: AI-written practice questions and answers.** They would need
   a model run and their own checks; it is a possible later step.
+- **In the follow-up email the AI writes one sentence; code writes the
+  rest** (16g, measured). Letting the model write the whole email went
+  wrong on 6 real jobs: the company's name was missing in 2, it wrote "I'm
+  applying ... on 13 November" for a job already applied to, and once
+  claimed an installer "aligns well with your focus on seamless payment
+  experiences". So code states the role, company, date and your name, and
+  the model adds one sentence about your work from the cover note, which
+  code checks. A sentence that fails twice is left out.
+  - After an interview, and for a second follow-up, there is no such
+    sentence and the model isn't asked.
+  - JobLens sends nothing. The draft isn't saved: "Write again" makes a new one.
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

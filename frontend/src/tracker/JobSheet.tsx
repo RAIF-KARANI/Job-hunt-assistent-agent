@@ -12,6 +12,7 @@ import { errorMessage, getApi } from "../bridge/bridge";
 import type { ApplyAnswer, JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
 import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
+import { FollowUpEmail } from "./FollowUpEmail";
 import { InterviewPrep } from "./InterviewPrep";
 import { PostingText } from "./PostingText";
 import type { FollowUpAction } from "./useJobs";
@@ -43,6 +44,7 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
   const [following, setFollowing] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false); // 14g
   const [prepOpen, setPrepOpen] = useState(false); // 16f
+  const [emailOpen, setEmailOpen] = useState(false); // 16g: only when you ask
   const [confirmDelete, setConfirmDelete] = useState(false); // 1.0.1
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null); // 14i: where the export went
@@ -175,12 +177,18 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
               <button type="button" className="btn btn-ghost" onClick={() => setPromptOpen(true)}>
                 Resume prompt
               </button>
+              {(current === "applied" || current === "interviewing") && (
+                <button type="button" className="btn btn-ghost" onClick={() => setEmailOpen(true)}>
+                  Follow-up email
+                </button>
+              )}
               <button type="button" className={current === "interviewing" ? "btn btn-primary" : "btn btn-ghost"} onClick={() => setPrepOpen(true)}>
                 Interview prep
               </button>
             </div>
             {promptOpen && <ResumePrompt jobId={job.id} onClose={() => setPromptOpen(false)} />}
             {prepOpen && <InterviewPrep jobId={job.id} onClose={() => setPrepOpen(false)} />}
+            {emailOpen && <FollowUpEmail jobId={job.id} onSent={() => onFollowUp(job.id, "done")} onClose={() => setEmailOpen(false)} />}
             {draftProblem && (
               <p className="hint" role="status">
                 {draftProblem}
@@ -231,7 +239,10 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
                   </p>
                 </div>
                 <div className="follow-up-actions">
-                  <button type="button" className="btn btn-primary btn-sm" disabled={following} onClick={() => void followUp("done")}>
+                  <button type="button" className="btn btn-primary btn-sm" disabled={following} onClick={() => setEmailOpen(true)}>
+                    Draft a follow-up email
+                  </button>
+                  <button type="button" className="btn btn-secondary btn-sm" disabled={following} onClick={() => void followUp("done")}>
                     I followed up
                   </button>
                   <button type="button" className="btn btn-ghost btn-sm" disabled={following} onClick={() => void followUp("snooze")}>

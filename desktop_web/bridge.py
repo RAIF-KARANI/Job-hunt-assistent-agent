@@ -298,6 +298,28 @@ class Api:
         self._exported.add(str(path))
         return {"path": str(path)}
 
+    # ---- follow-up email (16g) ----------------------------------------------------
+
+    def draft_follow_up_email(self, job_id: int) -> dict:
+        """A follow-up email for one job, written because you clicked (never by
+        itself). The model adds one sentence; while the agent is busy with a run,
+        or the model isn't ready, the email comes without it."""
+        from job_agent import follow_up_email
+
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        notes = tracker.get_cover_notes(job["id"])
+        reason = ""
+        if self._runner.busy:
+            reason = "The agent is working on another job"  # one model, one task at a time
+        else:
+            ok, message = llm_status()
+            if not ok:
+                reason = f"The AI model isn't ready ({message})"
+        return to_json(follow_up_email.draft(job, notes[0]["text"] if notes else None,
+                                             use_model=not reason, no_model_reason=reason))
+
     # ---- interview prep (16f) ---------------------------------------------------
 
     def _prep_sheet(self, job_id: int) -> dict:

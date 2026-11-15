@@ -101,6 +101,16 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       const job = jobs.find((j) => j.id === id);
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
+    draft_follow_up_email: async (id) => {
+      const row = jobs.find((j) => j.id === id) ?? jobs[0];
+      await new Promise((r) => setTimeout(r, 900));
+      const strength = "I cut DB latency from 1.2 s to 9 ms.";
+      return {
+        subject: `Following up: ${row.title} application`,
+        text: `Dear Hiring Team,\n\nI am following up on my application for the ${row.title} role at ${row.company}, which I sent on 21 October. ${strength}\n\nIs there an update, or a timeline for the next steps? I am happy to send anything else you need.\n\nBest regards,\nAlex Doe`,
+        strength, note: "", warnings: [],
+      };
+    },
     interview_prep: async (id) => {
       const row = jobs.find((j) => j.id === id) ?? jobs[0];
       return {

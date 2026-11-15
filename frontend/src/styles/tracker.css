@@ -667,7 +667,27 @@
 
 .follow-up-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/* the follow-up email dialog (16g) */
+.follow-subject {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.follow-subject .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.follow-email-area {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  line-height: 1.6;
 }
 
 /* ---- your notes (14h) ---- */

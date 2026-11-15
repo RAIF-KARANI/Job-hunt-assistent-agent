@@ -315,6 +315,18 @@ export interface DashboardData {
   pass_rate: number | null; // share of fit claims the evidence check kept
 }
 
+/** 16g: Api.draft_follow_up_email(): a follow-up email to copy into your own mail. */
+export interface FollowUpDraft {
+  subject: string;
+  text: string;
+  /** The one sentence the model wrote ("" when it has none). */
+  strength: string;
+  /** Why there is no such sentence, in plain words ("" when there is one). */
+  note: string;
+  /** Things to check before sending. */
+  warnings: string[];
+}
+
 /** 16f: Api.interview_prep(): everything saved about one job, for an interview. */
 export interface PrepSheet {
   job_id: number;
@@ -451,6 +463,8 @@ export interface PyApi {
   set_langfuse_secret(key: string): Promise<Settings>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
+  /** 16g: written when you click, never by itself. */
+  draft_follow_up_email(jobId: number): Promise<FollowUpDraft>;
   /** 16f: the interview prep sheet; and saving it as a file (null = cancelled). */
   interview_prep(jobId: number): Promise<PrepSheet>;
   export_interview_prep(jobId: number, fmt: "txt" | "docx" | "pdf"): Promise<{ path: string } | null>;
