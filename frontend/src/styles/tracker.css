@@ -484,6 +484,24 @@
   line-height: 1.65;
 }
 
+/* ---- the job description (16e) ---- */
+
+.posting-text summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.posting-text[open] summary {
+  margin-bottom: var(--space-3);
+}
+
+.posting-body {
+  max-height: 60vh;
+  margin-top: var(--space-3);
+  overflow: auto;
+  font-size: var(--text-sm);
+}
+
 .sheet-foot {
   margin: 0;
   padding-top: var(--space-4);

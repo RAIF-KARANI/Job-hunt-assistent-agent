@@ -218,6 +218,8 @@ def main(argv=None) -> int:
     api._install_problem = updates.review_last_install(paths.APP_HOME / "updates", __version__, paths.APP_HOME)
     updates.clean_downloads(paths.APP_HOME / "updates")  # last update's installer, no longer needed
     from desktop_web import housekeeping
+    # 16e: once, in the background: the job descriptions of the jobs saved before 1.2.0
+    threading.Thread(target=_keep_old_descriptions, name="joblens-descriptions", daemon=True).start()
     if paths.IS_INSTALLED:  # a run from source never touches the installed app's leftovers
         threading.Thread(target=_clean_temp, name="joblens-clean-temp", daemon=True).start()
     try:
@@ -272,6 +274,21 @@ def _close_when_windows_asks(window) -> None:
             print(f"! closing for Windows: {e}")
 
     window.events.loaded += attach
+
+
+def _keep_old_descriptions() -> None:
+    """16e: a single try to fetch the job description of every job saved
+    before JobLens kept them. Slow on purpose (a pause between pages), in
+    the background, and never again after it ran once."""
+    from job_agent import posting_archive
+
+    time.sleep(30)  # startup, the page and the update check go first
+    try:
+        counts = posting_archive.backfill()
+        if counts:
+            print("  job descriptions of older jobs: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
+    except Exception as e:  # never worth a crash
+        print(f"! keeping old job descriptions: {e}")
 
 
 def _clean_temp() -> None:

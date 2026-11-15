@@ -58,6 +58,7 @@ class JobHuntState(CoverNoteState, total=False):
     all_matches: list[ResumeMatch]
     research_checks: dict  # Phase 11b: invented URLs / dates removed by verification
     resumes: list[str] | None  # 14b: the resumes to compare (None = the default set)
+    posting_text: str     # 16e: the posting as read (page text or what you pasted), saved with the job
 
 
 def _step(n: int, text: str) -> None:
@@ -112,7 +113,9 @@ def read_posting(state: JobHuntState) -> dict:
         text = interrupt({"kind": "paste_posting", "reason": str(e)})
     job = extract_job_posting(text)
     print(f"  -> {job.title} @ {job.company} ({job.location})")
-    return {"job": job}
+    # 16e: the text goes on to the tracker: once the company removes the
+    # posting, this is the only copy of the job description.
+    return {"job": job, "posting_text": text}
 
 
 def analyze_fit(state: JobHuntState) -> dict:
@@ -154,7 +157,8 @@ def research(state: JobHuntState) -> dict:
 
 def save_to_tracker(state: JobHuntState) -> dict:
     _step(4, "Saving to the job tracker...")
-    job_id = save_job(state["url"], state["job"], state["best_match"], state["company_brief"])
+    job_id = save_job(state["url"], state["job"], state["best_match"], state["company_brief"],
+                      posting_text=state.get("posting_text"))
     print(f"  -> job #{job_id}")
     return {"job_id": job_id}
 

@@ -12,6 +12,7 @@ import { errorMessage, getApi } from "../bridge/bridge";
 import type { ApplyAnswer, JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
 import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
+import { PostingText } from "./PostingText";
 import type { FollowUpAction } from "./useJobs";
 
 interface Props {
@@ -381,6 +382,8 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
                 )}
               </section>
             )}
+
+            <PostingText key={job.id} jobId={job.id} text={job.posting_text} readable={job.posting_readable} canFetch={isWebLink(job.url)} />
 
             <p className="hint sheet-foot">
               Added {parseUtc(job.created_at).toLocaleDateString()} · status changed {ago(job.updated_at)} · job #{job.id}

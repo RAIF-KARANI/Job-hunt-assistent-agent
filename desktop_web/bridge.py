@@ -245,7 +245,22 @@ class Api:
         for raw in ("job_json", "fit_json", "company_json"):  # already parsed below
             job.pop(raw, None)
         job["cover_notes"] = tracker.get_cover_notes(job["id"])
+        from job_agent import posting_archive
+
+        # 16e: the saved page text without sign-in forms and other companies' jobs
+        job["posting_readable"] = posting_archive.readable(job.get("posting_text"))
         return to_json(job)
+
+    def fetch_posting_text(self, job_id: int) -> dict:
+        """16e: one try, on your click, to fetch the description of a job saved
+        without one. Returns {"result": saved / gone / unreadable / not a link /
+        already saved, "posting_text": the text or None}."""
+        from job_agent import posting_archive
+
+        result = posting_archive.fetch_for_job(int(job_id))
+        job = tracker.get_job(int(job_id))
+        text = job.get("posting_text") if job else None
+        return {"result": result, "posting_text": text, "posting_readable": posting_archive.readable(text)}
 
     def set_status(self, job_id: int, status: str) -> None:
         tracker.update_status(int(job_id), status)  # rejects unknown statuses

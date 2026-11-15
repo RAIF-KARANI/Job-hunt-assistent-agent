@@ -173,6 +173,27 @@ def save_job(
     return row["id"]
 
 
+def set_posting_text(job_id: int, text: str) -> None:
+    """16e: keep a posting's full text for a job saved without one. Like
+    update_score, `updated_at` is left alone: this is not news about the
+    application."""
+    init_db()
+    with _db() as conn:
+        cur = conn.execute("UPDATE jobs SET posting_text = ? WHERE id = ?", (text, job_id))
+    if cur.rowcount == 0:
+        raise ValueError(f"No job with id {job_id}")
+
+
+def jobs_without_posting_text() -> list[int]:
+    """16e: ids of the jobs whose posting text was never saved, newest first
+    (the newest postings are the likeliest to still be online)."""
+    init_db()
+    with _db() as conn:
+        rows = conn.execute("SELECT id FROM jobs WHERE posting_text IS NULL OR posting_text = '' "
+                            "ORDER BY created_at DESC, id DESC").fetchall()
+    return [row["id"] for row in rows]
+
+
 def update_score(job_id: int, best: ResumeMatch) -> None:
     """Store a re-computed score (and its breakdown) for a job. Unlike
     save_job, this leaves `updated_at` alone: a new formula is not news about

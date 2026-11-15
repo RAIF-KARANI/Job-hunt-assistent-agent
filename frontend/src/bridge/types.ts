@@ -79,6 +79,10 @@ export interface JobDetail {
   status: JobStatus;
   created_at: string; // UTC "YYYY-MM-DD HH:MM:SS"
   updated_at: string;
+  /** 16e: the posting's full text as the agent read it; null for jobs saved before 1.2.0. */
+  posting_text?: string | null;
+  /** 16e: the same without sign-in forms, buttons and other companies' jobs: what the details show. */
+  posting_readable?: string | null;
   job: {
     title: string;
     company: string;
@@ -411,6 +415,8 @@ export interface PyApi {
   set_langfuse_secret(key: string): Promise<Settings>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
+  /** 16e: one try to fetch the description of a job saved without one. */
+  fetch_posting_text(jobId: number): Promise<{ result: string; posting_text: string | null; posting_readable: string | null }>;
   /** 16i: your answer to "Did you apply?". */
   apply_answer(jobId: number, answer: ApplyAnswer): Promise<void>;
   /** 16a: no more reminders for this job until its status changes. */

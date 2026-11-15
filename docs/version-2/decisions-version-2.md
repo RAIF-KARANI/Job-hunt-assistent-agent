@@ -829,6 +829,15 @@ In-app updates failed on every try. Amends D27 and D37.
   - "Ready to apply" leaves out a job you pressed Ignore on, but keeps one
     whose question simply ran out: you never said no.
   - There is no setting to turn it off (the period is fixed, as you asked).
+- **The job description is saved whole and shown tidied** (16e). The page
+  text is the only copy once a posting is removed, so nothing is cut from
+  what is stored. The job's details show it without sign-in forms, buttons
+  and other companies' jobs (a LinkedIn page: ~13,700 characters, ~3,700 of
+  them the job), with "Show the whole page" beside it.
+- **Old jobs get one automatic try** to fetch their description, in the
+  background after the first start of 1.2.0, one page every 2 seconds. A
+  page is kept only if it names the job and the employer and has at least
+  half of the skills and duties the agent once read from it.
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

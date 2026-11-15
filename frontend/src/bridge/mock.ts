@@ -101,6 +101,10 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       const job = jobs.find((j) => j.id === id);
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
+    fetch_posting_text: async (id) =>
+      id % 2
+        ? { result: "gone", posting_text: null, posting_readable: null }
+        : { result: "saved", posting_text: "Sign in\nAI Engineer\n\nWhat you will do\n- Build agents", posting_readable: "AI Engineer\n\nWhat you will do\n- Build agents" },
     apply_answer: async (id, answer) => {
       const job = jobs.find((j) => j.id === id);
       if (!job) return;
@@ -415,6 +419,7 @@ function mockJob(row: JobRow): JobDetail {
   return {
     ...row,
     url: `https://jobs.example/${row.id}`,
+    posting_text: row.id === 1 ? "AI Engineer at Northwind Labs\n\nAbout the role\nYou will build and evaluate LLM agents.\n\nRequirements\n- Python\n- LangGraph" : null,
     location: "Remote",
     seniority: "Mid",
     salary: "Not specified",

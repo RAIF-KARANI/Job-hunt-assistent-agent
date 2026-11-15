@@ -2403,3 +2403,31 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
   save; show it in the job's details; the one-time fetch for saved jobs
   whose link still works; tests for all of it.
 - pytest: 399 passed (1 new).
+
+## 16e the job description is kept ✅ (15 Nov 2026)
+- **New runs** save the posting's full text with the job (the page, or what
+  you pasted). A re-analysis keeps it.
+- **The job's details** have a "Job description" section: the text without
+  the page's clutter, Copy, and "Show the whole page".
+- **Jobs from before** (`job_agent/posting_archive.py`): one try for all of
+  them in the background, once ever (`data/posting_backfill.txt`), and a
+  "Try to fetch it now" button on a job that still has none.
+- **Measured on the 33 jobs in the repo's tracker** (104 s): **29 saved, 4
+  unreadable** (3 Indeed links answer 403, 1 Oracle page needs JavaScript).
+  5 of the 29 say "No longer accepting applications" and still show the
+  description, which is exactly the case this is for.
+- **Readable text on those 29:** LinkedIn pages shrink to 25–55 % (Amazon:
+  13,740 → 3,724 characters); the 2 GitLab pages (Greenhouse) stay as they
+  are, they have no clutter.
+- **Checked in the real window:** the Amazon job shows its description;
+  the toggle switches 3,724 ↔ 13,740 characters; a job without one says so,
+  and its button reports "The page couldn't be read" for an Indeed link.
+- pytest: 411 passed (12 new); typecheck and build clean.
+- **Not seen for real:** a removed posting. No saved link was one, so
+  "the page isn't the posting any more" is tested on made-up pages only.
+- **Not done:** a full run with the model to see a new job save its text
+  (the two steps involved are tested without it).
+- **Noticed, not changed:** the agent's first step reads the same cluttered
+  page (13,000 characters for 3,700 of job). Giving it the tidy text would
+  make "Read posting" faster, but it changes what the AI sees, so it needs
+  your OK and a before/after check.
