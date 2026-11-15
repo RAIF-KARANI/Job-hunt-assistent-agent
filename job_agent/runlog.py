@@ -86,7 +86,8 @@ FEEDBACK_OPTIONS = {
 # CREATE TABLE IF NOT EXISTS never changes an existing table, so databases
 # made by an older JobLens version need these added - a tiny "migration".
 MIGRATIONS = [("runs", "decision", "TEXT"), ("runs", "tracing", "TEXT"),
-              ("runs", "dismissed", "INTEGER DEFAULT 0")]  # 14d: Discard pressed
+              ("runs", "dismissed", "INTEGER DEFAULT 0"),  # 14d: Discard pressed
+              ("runs", "tool_empty", "INTEGER DEFAULT 0")]  # 16b: searches that found nothing
 
 
 def init_db() -> None:
@@ -164,6 +165,7 @@ class RunRecorder(BaseCallbackHandler):
         self.llm_calls: list[tuple[str | None, str, int, int, float, str]] = []
         self.tool_calls = 0
         self.tool_failures = 0
+        self.tool_empty = 0  # 16b: the search worked but found nothing
 
     # --- chains (graph + nodes) ---
     def on_chain_start(self, serialized, inputs, *, run_id, parent_run_id=None,
@@ -243,8 +245,11 @@ class RunRecorder(BaseCallbackHandler):
         text = getattr(output, "content", output)
         with self._lock:
             self.tool_calls += 1
-            if "search failed" in str(text).lower()[:200]:
+            start = str(text).lower()[:200]
+            if "search failed" in start:
                 self.tool_failures += 1  # tools return errors as text (Phase 3)
+            elif start.startswith("no results found"):
+                self.tool_empty += 1  # 16b: not an error: nothing to find, or the engines gave nothing
 
     # --- writing ---
     def _write(self, seconds: float, values: dict, error: str | None = None,
@@ -256,16 +261,17 @@ class RunRecorder(BaseCallbackHandler):
                 steps, calls = list(self.steps), list(self.llm_calls)
                 self.steps.clear()
                 self.llm_calls.clear()
-                tools, failures = self.tool_calls, self.tool_failures
-                self.tool_calls = self.tool_failures = 0
+                tools, failures, empty = self.tool_calls, self.tool_failures, self.tool_empty
+                self.tool_calls = self.tool_failures = self.tool_empty = 0
             status = status or ("error" if error else status_from_state(values))
             with tracker._db() as conn:
                 decision = values.get("decision") if status == "done" else None
                 conn.execute(
                     """INSERT INTO runs (run_id, started_at, updated_at, interface, provider, model,
                                          job_id, status, decision, segments, agent_seconds, llm_calls,
-                                         input_tokens, output_tokens, tool_calls, tool_failures, error, tracing)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
+                                         input_tokens, output_tokens, tool_calls, tool_failures, error, tracing,
+                                         tool_empty)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                        ON CONFLICT(run_id) DO UPDATE SET
                            updated_at = excluded.updated_at,
                            job_id = COALESCE(excluded.job_id, runs.job_id),
@@ -278,6 +284,7 @@ class RunRecorder(BaseCallbackHandler):
                            output_tokens = runs.output_tokens + excluded.output_tokens,
                            tool_calls = runs.tool_calls + excluded.tool_calls,
                            tool_failures = runs.tool_failures + excluded.tool_failures,
+                           tool_empty = COALESCE(runs.tool_empty, 0) + excluded.tool_empty,
                            error = excluded.error,
                            tracing = COALESCE(runs.tracing, excluded.tracing)""",
                     # started_at: only used for the first segment (the INSERT); a
@@ -286,7 +293,7 @@ class RunRecorder(BaseCallbackHandler):
                      self.interface, self.provider, self.model,
                      values.get("job_id"), status, decision, seconds, len(calls),
                      sum(c[2] for c in calls), sum(c[3] for c in calls), tools, failures, error,
-                     self.tracing))
+                     self.tracing, empty))
                 conn.executemany("INSERT INTO run_steps VALUES (?, ?, ?, ?)",
                                  [(self.run_id, s, sec, t) for s, sec, t in steps])
                 conn.executemany("INSERT INTO run_llm_calls VALUES (?, ?, ?, ?, ?, ?, ?)",

@@ -22,7 +22,9 @@ After the loop, one more LLM call turns the research notes into a
 structured CompanyBrief, and code verifies the source URLs.
 """
 
+import os
 import re
+import time
 from datetime import date
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
@@ -37,6 +39,21 @@ from job_agent.models import CompanyBrief
 # Without it, a confused model could search forever.
 MAX_TOOL_CALLS = 5
 
+# 16b: two more limits, so research can never hold a run up.
+# (1) Searches that keep finding nothing: stop asking. The free search finds
+#     little for small companies, and every extra try costs an LLM call.
+MAX_EMPTY_SEARCHES = 2
+
+
+def max_seconds() -> float:
+    """(2) The longest the search loop may take (RESEARCH_MAX_SECONDS, default
+    3 minutes). It is checked between steps, so the real limit is this plus
+    the one LLM call or search that is under way."""
+    try:
+        return max(float(os.getenv("RESEARCH_MAX_SECONDS", "180")), 10.0)
+    except ValueError:
+        return 180.0
+
 
 # ---------------------------------------------------------------------------
 # 1. TOOLS
@@ -49,18 +66,69 @@ MAX_TOOL_CALLS = 5
 from ddgs import DDGS
 
 
+# 16b: the company being researched, so a search that finds nothing can be
+# tried again with just its name. Set by research_company(); one run at a time.
+_company = ""
+
+NO_RESULTS = "No results found. Try a different query."
+
+
+def _one_search(kind: str, query: str) -> tuple[list, Exception | None]:
+    """One search (kind: "text" or "news"). Returns (results, error).
+    The library reports "nothing found" as an error too; here that is just
+    an empty list, and `error` is kept for real problems (timeout, blocked)."""
+    try:
+        return list(getattr(DDGS(), kind)(query, max_results=5) or []), None
+    except Exception as e:
+        return [], (None if "no results" in str(e).lower() else e)
+
+
+def search_with_fallbacks(kind: str, query: str, company: str = "") -> tuple[list, str, Exception | None]:
+    """16b: search, and if nothing comes back try easier searches before giving up.
+
+    Measured 15 Nov 2026: a third of all searches found nothing (82 of 247).
+    The library already asks every free engine; most of them return nothing.
+    Shorter queries do better ("AiPrise funding": nothing; "AiPrise": found).
+    So: 1. the query as asked; 2. the company name alone; 3. the other kind
+    of search (web <-> news) with the name. Returns (results, the kind that
+    found them, error). `error` is set only if EVERY try had a real error.
+    """
+    name = core_name(company) if company else ""
+    other = "news" if kind == "text" else "text"
+    tries = [(kind, query)]
+    if name:
+        tries += [(kind, name), (other, name if other == "news" else f"{name} news")]
+    done, errors = set(), []
+    for try_kind, try_query in tries:
+        key = (try_kind, try_query.strip().lower())
+        if key in done:
+            continue  # the query already was the name
+        done.add(key)
+        results, error = _one_search(try_kind, try_query)
+        if results:
+            return results, try_kind, None
+        if error is not None:
+            errors.append(error)
+    return [], kind, (errors[-1] if len(errors) == len(done) else None)
+
+
+def _search_tool(kind: str, query: str, label: str) -> str:
+    results, found_kind, error = search_with_fallbacks(kind, query, _company)
+    if error is not None:
+        # Never let a tool crash the agent: return the error as text so the
+        # LLM can read it and adapt (e.g. try a different query).
+        return f"{label} failed ({error}). Try a simpler or different query."
+    if found_kind == "news":
+        return _format_results(results, url_key="url", text_key="body", date_key="date")
+    return _format_results(results, url_key="href", text_key="body")
+
+
 @tool
 def web_search(query: str) -> str:
     """Search the web. Use for general facts: what a company does, its
     products, size, founding, mission and culture. Returns titles, URLs and
     short snippets."""
-    try:
-        results = DDGS().text(query, max_results=5)
-    except Exception as e:
-        # Never let a tool crash the agent: return the error as text so the
-        # LLM can read it and adapt (e.g. try a different query).
-        return f"Search failed ({e}). Try a simpler or different query."
-    return _format_results(results, url_key="href", text_key="body")
+    return _search_tool("text", query, "Search")
 
 
 @tool
@@ -68,11 +136,7 @@ def news_search(query: str) -> str:
     """Search recent news articles. Use for recent events: product launches,
     funding, acquisitions, earnings, layoffs. Returns dates, titles, URLs and
     short snippets."""
-    try:
-        results = DDGS().news(query, max_results=5)
-    except Exception as e:
-        return f"News search failed ({e}). Try a simpler or different query."
-    return _format_results(results, url_key="url", text_key="body", date_key="date")
+    return _search_tool("news", query, "News search")
 
 
 # ---- Alternative backend: Tavily (better results, needs a free API key) ----
@@ -87,7 +151,7 @@ def news_search(query: str) -> str:
 def _format_results(results, url_key, text_key, date_key=None) -> str:
     """Turn search results into compact text the LLM can read."""
     if not results:
-        return "No results found. Try a different query."
+        return NO_RESULTS
     blocks = []
     for r in results:
         date_line = f"Date: {r.get(date_key, '')[:10]}\n" if date_key else ""
@@ -253,15 +317,25 @@ def research_company(company: str, role_context: str = "", stats: dict | None = 
         request += f" The applicant is applying for: {role_context}."
 
     graph = build_research_graph()
+    global _company
+    _company = company  # 16b: lets an empty search be retried with just the name
 
     # stream(..., stream_mode="updates") yields after every node runs, so we
     # can print each step of the agent loop as it happens.
     messages = [HumanMessage(content=request)]
+    started, limit = time.monotonic(), max_seconds()
     for update in graph.stream({"messages": messages}, stream_mode="updates"):
         for node_name, output in update.items():
             for msg in output["messages"]:
                 messages.append(msg)
                 _print_step(node_name, msg)
+        # 16b: never let research hold the run up. Leaving the loop ends the
+        # agent; what was found so far is still used below.
+        why = stop_reason(messages, time.monotonic() - started, limit)
+        if why:
+            print(f"  [research] stopping the search: {why}")
+            stats["stopped_early"] = why
+            break
 
     # Everything the tools returned is our "evidence" - but only the results
     # that name this employer (15e). The agent's own notes are left out: they
@@ -301,6 +375,21 @@ def research_company(company: str, role_context: str = "", stats: dict | None = 
 
 
 # Pure functions (no LLM, no network) -> easy to unit-test. See tests/.
+
+
+def stop_reason(messages: list, seconds: float, limit: float) -> str | None:
+    """16b: should the search loop end now? None = carry on.
+    Only asked after a tool answered: the agent's own last turn (its notes)
+    already ends the loop by itself."""
+    if not messages or not isinstance(messages[-1], ToolMessage):
+        return None
+    if seconds >= limit:
+        return f"it took over {limit:.0f} seconds"
+    answers = [m for m in messages if isinstance(m, ToolMessage)]
+    last = answers[-MAX_EMPTY_SEARCHES:]
+    if len(last) == MAX_EMPTY_SEARCHES and all("URL:" not in str(m.content) for m in last):
+        return f"{MAX_EMPTY_SEARCHES} searches in a row found nothing"
+    return None
 
 
 def verify_sources(sources: list[str], tool_outputs: str) -> list[str]:

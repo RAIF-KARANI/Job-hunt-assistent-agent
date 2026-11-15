@@ -104,3 +104,109 @@ def test_a_fictional_employer_is_never_searched(monkeypatch):
     stats = {}
     assert research.research_company(NEXORA, stats=stats) is None
     assert stats["skipped"] == "not a real company name"
+
+
+# ---- 16b: a search that finds nothing tries easier searches, then gives up ----
+
+class FakeSearch:
+    """Stands in for the search library: `found` maps (kind, query) to results;
+    anything else raises what the library raises."""
+    asked: list = []
+    found: dict = {}
+    error = "No results found."
+
+    def _run(self, kind, query):
+        FakeSearch.asked.append((kind, query))
+        if (kind, query) in FakeSearch.found:
+            return FakeSearch.found[(kind, query)]
+        raise RuntimeError(FakeSearch.error)
+
+    def text(self, query, max_results=5):
+        return self._run("text", query)
+
+    def news(self, query, max_results=5):
+        return self._run("news", query)
+
+
+def fake_search(monkeypatch, found, error="No results found."):
+    FakeSearch.asked, FakeSearch.found, FakeSearch.error = [], found, error
+    monkeypatch.setattr(research, "DDGS", FakeSearch)
+
+
+def test_the_first_search_that_finds_something_wins(monkeypatch):
+    fake_search(monkeypatch, {("text", "AiPrise funding"): [{"title": "AiPrise", "href": "https://aiprise.com", "body": "KYC"}]})
+    results, kind, error = research.search_with_fallbacks("text", "AiPrise funding", "AiPrise Inc.")
+    assert len(results) == 1 and kind == "text" and error is None
+    assert FakeSearch.asked == [("text", "AiPrise funding")]              # no extra searches
+
+
+def test_nothing_found_tries_the_name_then_the_other_kind(monkeypatch):
+    fake_search(monkeypatch, {("news", "AiPrise"): [{"title": "AiPrise raises", "url": "https://news.example/a", "body": "x", "date": "2026-10-01T00:00"}]})
+    results, kind, error = research.search_with_fallbacks("text", "AiPrise funding", "AiPrise Inc.")
+    assert FakeSearch.asked == [("text", "AiPrise funding"), ("text", "AiPrise"), ("news", "AiPrise")]
+    assert kind == "news" and error is None and results[0]["url"] == "https://news.example/a"
+    # and the tool formats what it got the news way (the URL is under "url", with a date)
+    monkeypatch.setattr(research, "_company", "AiPrise Inc.")
+    assert "URL: https://news.example/a" in research.web_search.invoke({"query": "AiPrise funding"})
+
+
+def test_nothing_anywhere_is_no_results_not_a_failure(monkeypatch):
+    fake_search(monkeypatch, {})
+    monkeypatch.setattr(research, "_company", "AiPrise Inc.")
+    assert research.news_search.invoke({"query": "AiPrise news"}) == research.NO_RESULTS
+    assert FakeSearch.asked == [("news", "AiPrise news"), ("news", "AiPrise"), ("text", "AiPrise news")]
+
+
+def test_a_real_error_on_every_try_is_a_failure(monkeypatch):
+    fake_search(monkeypatch, {}, error="operation timed out")
+    monkeypatch.setattr(research, "_company", "")                         # no name: one try only
+    answer = research.web_search.invoke({"query": "anything"})
+    assert answer.startswith("Search failed (operation timed out)") and len(FakeSearch.asked) == 1
+
+
+def test_the_same_query_is_not_searched_twice(monkeypatch):
+    fake_search(monkeypatch, {})
+    research.search_with_fallbacks("text", "AiPrise", "AiPrise")          # the query already is the name
+    assert FakeSearch.asked == [("text", "AiPrise"), ("news", "AiPrise")]
+
+
+def tool(text):
+    return ToolMessage(content=text, tool_call_id="1", name="web_search")
+
+
+def test_research_stops_when_searches_keep_finding_nothing():
+    found, nothing = tool(block("Acme", "https://acme.example", "anvils")), tool(research.NO_RESULTS)
+    assert research.stop_reason([nothing], 5, 180) is None                # one empty search: try again
+    assert research.stop_reason([nothing, nothing], 5, 180) == "2 searches in a row found nothing"
+    assert research.stop_reason([nothing, found], 5, 180) is None
+    assert research.stop_reason([found, nothing, nothing], 5, 180) is not None
+    assert research.stop_reason([nothing, nothing, AIMessage(content="notes")], 5, 180) is None  # the agent ended it
+
+
+def test_research_stops_at_the_time_limit(monkeypatch):
+    found = tool(block("Acme", "https://acme.example", "anvils"))
+    assert research.stop_reason([found], 179, 180) is None
+    assert research.stop_reason([found], 181, 180) == "it took over 180 seconds"
+    monkeypatch.setenv("RESEARCH_MAX_SECONDS", "60")
+    assert research.max_seconds() == 60
+    monkeypatch.setenv("RESEARCH_MAX_SECONDS", "soon")                    # nonsense: the default
+    assert research.max_seconds() == 180
+
+
+def test_a_stopped_search_still_uses_what_it_found(monkeypatch):
+    class SlowGraph:
+        def stream(self, state, stream_mode):
+            yield {"tools": {"messages": [tool(block("Nexora Embedded", "https://nexora-embedded.in", "Nexora Embedded builds sensor nodes"))]}}
+            yield {"tools": {"messages": [tool("should never be reached")]}}
+
+    class Summary:
+        def invoke(self, messages):
+            return CompanyBrief(what_they_do="Builds sensor nodes", products=[], size_and_stage="Unknown", recent_news=[],
+                                culture_and_values=[], cover_note_hooks=[], sources=["https://nexora-embedded.in"])
+    monkeypatch.setattr(research, "build_research_graph", lambda: SlowGraph())
+    monkeypatch.setattr(research, "structured_llm", lambda schema: Summary())
+    monkeypatch.setattr(research, "max_seconds", lambda: 0.0)             # the limit is already over
+    stats = {}
+    brief = research.research_company("Nexora Embedded Technologies Pvt. Ltd.", stats=stats)
+    assert stats["stopped_early"] == "it took over 0 seconds"
+    assert brief is not None and brief.sources == ["https://nexora-embedded.in"]

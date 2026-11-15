@@ -815,6 +815,13 @@ In-app updates failed on every try. Amends D27 and D37.
   - Answers: Yes, I applied / Not yet (asks again in 24 hours) / Ignore.
   - **No answer within 24 hours of the reminder counts as Ignore** (your
     choice): a reminder must not stay pending.
+- **Web search stays free** (your choice, 15 Nov: "first one is good"). No
+  search service with a key (Tavily) for now. Instead a search that finds
+  nothing is retried with easier queries.
+- **Research can't hold a run up** (your request): it stops after 2 empty
+  searches in a row or 3 minutes, whichever comes first, and the cover note
+  then uses what was found, or only the posting. The limit is checked
+  between steps, so one AI call that is already running still finishes.
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

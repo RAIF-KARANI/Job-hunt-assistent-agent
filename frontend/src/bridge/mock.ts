@@ -241,6 +241,7 @@ function mockEvals(model: string | null): EvalsData {
       tokens_out_per_run: 4800,
       tool_calls: 26,
       tool_failures: 1,
+      tool_empty: 4,
       unfinished: 2,
       unfinished_seconds: 1490,
     },

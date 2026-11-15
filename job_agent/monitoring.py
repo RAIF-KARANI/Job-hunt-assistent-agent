@@ -450,6 +450,8 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
         "tokens_out_per_run": _num(full["output_tokens"].mean()) if len(full) else None,
         "tool_calls": int(runs["tool_calls"].sum()),
         "tool_failures": int(runs["tool_failures"].sum()),
+        # 16b: searches that worked but found nothing (older runs: not recorded)
+        "tool_empty": int(runs["tool_empty"].fillna(0).sum()) if "tool_empty" in runs else 0,
         # 12j: runs that never finished (closed app, Stop, error) and their time
         "unfinished": int(runs["status"].isin(UNFINISHED).sum()),
         "unfinished_seconds": float(sum(_seconds(r) for _, r in runs[runs["status"].isin(UNFINISHED)].iterrows())),

@@ -180,3 +180,15 @@ def test_cover_note_outcome_suggests_a_rating():
     assert runlog.cover_note_outcome("approve", "AI text", "AI text", 1) == "usable as is"
     assert runlog.cover_note_outcome("approve", "AI text", "My edited text", 1) == "needed edits"
     assert runlog.cover_note_outcome("approve", "AI text", "AI text", 3) == "needed edits"  # rewrites
+
+
+def test_a_search_that_found_nothing_is_not_a_failure():                  # 16b
+    recorder = runlog.RunRecorder("run-s", "desktop", "ollama", "qwen3:8b")
+    for text in ("Title: Acme\nURL: https://acme.example\nSnippet: makes anvils",
+                 "No results found. Try a different query.",
+                 "Search failed (timed out). Try a simpler or different query.",
+                 "No results found. Try a different query."):
+        recorder.on_tool_end(text, run_id=None)
+    recorder._write(1.0, {})
+    run = rows("SELECT tool_calls, tool_failures, tool_empty FROM runs")[0]
+    assert (run["tool_calls"], run["tool_failures"], run["tool_empty"]) == (4, 1, 2)

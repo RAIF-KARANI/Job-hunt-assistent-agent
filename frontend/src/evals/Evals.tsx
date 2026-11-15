@@ -195,7 +195,12 @@ export function Evals() {
             <div className="tile">
               <span className="tile-label">Tool failures</span>
               <span className="tile-value">{k ? pct(share(k.tool_failures, k.tool_calls)) : "–"}</span>
-              <span className="tile-note">{k ? `${k.tool_failures} of ${k.tool_calls} ${k.tool_calls === 1 ? "search" : "searches"} failed` : " "}</span>
+              <span className="tile-note">
+                {k
+                  ? `${k.tool_failures} of ${k.tool_calls} ${k.tool_calls === 1 ? "search" : "searches"} failed` +
+                    (k.tool_empty ? ` · ${k.tool_empty} found nothing` : "")
+                  : " "}
+              </span>
             </div>
             <div className="tile">
               <span className="tile-label">Unfinished runs</span>

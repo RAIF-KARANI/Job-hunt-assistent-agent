@@ -2347,3 +2347,25 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
 - **Found for 16b:** 82 of 247 web searches failed, in 38 of 90 runs. The
   DuckDuckGo and Brave backends returned nothing for every query tried.
 - **Found for 16e:** the posting's full text isn't saved, only its summary.
+
+## 16a checked by you ✅, 16b web search ✅ (15 Nov 2026)
+- You ran the source version: "the app was good".
+- **What the search problem really was.** The plan said "try the other
+  engines". The library already does: every search asks all 7 free engines.
+  Asked one by one, most returned nothing (only Yahoo found Barclays; none
+  found "AiPrise funding"). The library is on its newest version (9.16.1).
+- **The fix** (`research.search_with_fallbacks`): the query as asked → the
+  company's name alone → the other kind of search (web ↔ news) with the name.
+- **Measured, no AI involved:** 4 typical queries for each of 10 real
+  companies (AiPrise, Jobgether, Heizen, Zycus, Secfix, Brahman Studios,
+  One75mb, HTC Global Services, Barclays, ServiceNow). Found something:
+  **20 of 40 before, 40 of 40 after**; 38 had a result naming the company.
+  About 3 s per search on average.
+- **Limits** (`research.stop_reason`): 2 empty searches in a row, or 3
+  minutes (`RESEARCH_MAX_SECONDS`). What was found until then is still used.
+- **Counting:** the run log has a new column, `tool_empty`. Evals shows
+  "1 of 7 searches failed · 4 found nothing". Runs before today counted
+  both as failed; they stay as they are.
+- pytest: 386 passed (9 new); typecheck and build clean.
+- **Not done:** a full run with the model on a small company. The numbers
+  above are the search alone.

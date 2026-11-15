@@ -331,6 +331,7 @@ export interface EvalsData {
     tokens_out_per_run: number | null;
     tool_calls: number;
     tool_failures: number;
+    tool_empty: number; // 16b: searches that found nothing
     unfinished: number; // closed app, Stop or error (12j)
     unfinished_seconds: number;
   };
