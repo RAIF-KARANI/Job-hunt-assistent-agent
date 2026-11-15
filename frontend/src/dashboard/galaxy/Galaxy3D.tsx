@@ -2,9 +2,13 @@
 // so with 3D off three.js is never even downloaded into the page.
 
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { declutterLabels } from "./declutter";
 import type { Placed } from "./layout";
 import { NodeButton } from "./NodeButton";
 import { CORE_ID, GalaxyScene } from "./scene";
+
+/** 16a: labels are re-checked for overlap this often while the galaxy moves (ms). */
+const DECLUTTER_EVERY = 200;
 
 interface Props {
   nodes: Placed[]; // already in Tab order
@@ -24,7 +28,15 @@ export default function Galaxy3D({ nodes, selectedId, labeled, onSelect, animate
   latest.current = { nodes, selectedId, onFail };
 
   useLayoutEffect(() => {
+    // 16a: every frame moves the labels; measuring them every frame would be
+    // slow, so one check is booked and the frames until then share it.
+    let booked = 0;
+    const declutter = () => {
+      booked = 0;
+      if (host.current) declutterLabels(host.current);
+    };
     const place = (id: number, x: number, y: number, near: number) => {
+      if (!booked) booked = window.setTimeout(declutter, DECLUTTER_EVERY);
       const el = buttons.current.get(id);
       if (!el) return;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
@@ -47,6 +59,7 @@ export default function Galaxy3D({ nodes, selectedId, labeled, onSelect, animate
     const observer = new MutationObserver(() => s.recolor(latest.current.nodes, latest.current.selectedId));
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => {
+      window.clearTimeout(booked);
       observer.disconnect();
       s.dispose();
       scene.current = null;
@@ -54,7 +67,10 @@ export default function Galaxy3D({ nodes, selectedId, labeled, onSelect, animate
   }, []);
 
   useEffect(() => scene.current?.setJobs(nodes, latest.current.selectedId), [nodes]);
-  useEffect(() => scene.current?.setSelected(selectedId), [selectedId]);
+  useEffect(() => {
+    scene.current?.setSelected(selectedId);
+    if (host.current) declutterLabels(host.current); // the selected job keeps its label
+  }, [selectedId]);
   useEffect(() => scene.current?.setAnimate(animate), [animate]);
 
   const keep = (id: number) => (el: HTMLElement | null) => {

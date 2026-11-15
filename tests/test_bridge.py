@@ -590,6 +590,17 @@ def test_recent_runs_newest_first_with_results_and_trace():
     assert recent[0]["job"]["company"] == "Acme" and recent[0]["pass_rate"] == pytest.approx(0.9)
 
 
+def test_recent_runs_show_more_and_all():                                 # 16a
+    seed_two_models()
+    api = Api(send=lambda e: None)
+    two = api.evals(None, 2)
+    assert [r["run_id"] for r in two["recent"]] == ["c1", "q3"] and two["recent_total"] == 4
+    assert len(api.evals(None, 0)["recent"]) == 4                         # 0 = all
+    assert len(api.evals(None, None)["recent"]) == 4
+    one_model = api.evals("qwen3:8b", 1)                                  # the total follows the model filter
+    assert len(one_model["recent"]) == 1 and one_model["recent_total"] == 3
+
+
 def test_evals_with_an_empty_run_log():
     data = Api(send=lambda e: None).evals(None)
     assert data["kpis"]["runs"] == 0 and data["kpis"]["pass_rate"] is None

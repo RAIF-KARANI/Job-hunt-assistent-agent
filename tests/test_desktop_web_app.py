@@ -126,3 +126,16 @@ def test_a_shutdown_takes_the_refusal_back(monkeypatch):
     args = type("Args", (), {"CloseReason": "UserClosing", "Cancel": True})()
     form_closing[0](None, args)
     assert args.Cancel is True                   # the X button still hides
+
+
+def test_a_second_copy_takes_the_next_page_port():                       # 16a
+    """Two copies of JobLens must not share a port: the second one's window
+    would show the first one's page."""
+    import socket
+
+    with socket.socket() as taken:
+        taken.bind(("127.0.0.1", 0))
+        taken.listen()
+        first = taken.getsockname()[1]
+        assert app.free_page_port(first) != first                        # somebody is serving there
+    assert app.free_page_port(first) == first                            # closed again: free

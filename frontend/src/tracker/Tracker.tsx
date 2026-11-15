@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Exported } from "../app/Exported";
+import { hashParam } from "../app/routes";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobStatus } from "../bridge/types";
 import { Board } from "./Board";
@@ -55,6 +56,21 @@ export function Tracker() {
   }, [view]);
 
   useEffect(() => () => window.clearTimeout(undoTimer.current), []);
+
+  // 16a: #/tracker?job=12 opens that job's details ("Open in the Tracker").
+  // The id is then taken out of the address, so a reload after closing the
+  // details doesn't open them again.
+  useEffect(() => {
+    const openFromHash = () => {
+      const id = Number(hashParam("job"));
+      if (!Number.isInteger(id) || id <= 0) return;
+      setOpenId(id);
+      window.history.replaceState(null, "", "#/tracker");
+    };
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, []);
 
   const changeStatus = async (id: number, to: JobStatus) => {
     const done = await move(id, to);

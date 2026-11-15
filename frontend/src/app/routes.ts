@@ -15,8 +15,19 @@ export type PageId = (typeof PAGES)[number]["id"];
 /** A page, or the setup wizard (#/setup: full screen, not in the sidebar). */
 export type Route = PageId | "setup";
 
+/** 16a: a page may carry values after "?", e.g. #/tracker?job=12. */
+function hashParts(): { id: string; query: string } {
+  const [id, query = ""] = window.location.hash.replace(/^#\/?/, "").split("?");
+  return { id, query };
+}
+
+/** The value of `name` in the hash (#/tracker?job=12 -> "12"), or null. */
+export function hashParam(name: string): string | null {
+  return new URLSearchParams(hashParts().query).get(name);
+}
+
 function fromHash(): Route {
-  const id = window.location.hash.replace(/^#\/?/, "");
+  const { id } = hashParts();
   return id === "setup" || PAGES.some((p) => p.id === id) ? (id as Route) : "dashboard";
 }
 

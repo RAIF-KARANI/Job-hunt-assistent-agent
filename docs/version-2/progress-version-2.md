@@ -2319,3 +2319,31 @@ separate Test Build and fails with exit code 1 if anything goes wrong.
 - **Still not tested:** a real Windows shutdown with JobLens open. Only the
   installer's close request was. And `dist/` is git-ignored, so the 1.0.3 Test
   Build the first check needs lives only on this PC.
+
+## Phase 16 started: 16a small fixes 🚧 (15 Nov 2026, D43)
+Plan: Phase 16 in the plan. Done in code, not yet checked by you:
+- **Wide screens:** the page is centred and up to 1760 px wide (was 1280 px,
+  pinned left). Checked in a 2555 px wide browser window.
+- **Ignore** on "Time to follow up?": saved as the job's status at that
+  moment (`follow_up_ignored`), so a status change brings reminders back.
+- **"Open in the Tracker"** opens that job's details (`#/tracker?job=12`).
+- **Tracker order:** the List opens on Updated, newest first; the Board's
+  columns too (both were best fit first).
+- **Recent runs:** "Show more" (15 at a time), "All" and "Show fewer", with
+  "Showing 15 of 90 runs".
+- **Trace column** is hidden when no shown run has a trace.
+- **Galaxy labels:** a label that would cover another is hidden; the
+  selected job and the better fit keep theirs (`galaxy/declutter.ts`).
+  Checked in the real window with 33 jobs: 15 labels wanted, 8 hidden,
+  none overlap.
+- **Found while checking, and fixed: two copies of JobLens shared a port.**
+  The installed app and a run from source both listened on 42001 (Windows
+  allows it), so the source window showed the INSTALLED app's old page on
+  top of the new code. The app now takes the first free port from 42001
+  (`app.free_page_port`). The installed app alone still gets 42001.
+- **Test data:** 22 jobs of every fit band and status were copied from the
+  installed app into the repo's `data/jobs.db` (now 33 jobs, 36 runs).
+- pytest: 377 passed (3 new); typecheck and build clean.
+- **Found for 16b:** 82 of 247 web searches failed, in 38 of 90 runs. The
+  DuckDuckGo and Brave backends returned nothing for every query tried.
+- **Found for 16e:** the posting's full text isn't saved, only its summary.

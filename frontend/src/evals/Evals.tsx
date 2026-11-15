@@ -72,6 +72,11 @@ function TraceLink({ run, status }: { run: EvalsData["recent"][number]; status: 
   return <span className="muted">off</span>;
 }
 
+/** 16a: Recent runs shows this many, and "Show more" adds as many again. */
+const RECENT_STEP = 15;
+/** A run that could have a trace link: tracing was on and reached its server. */
+const hasTrace = (run: EvalsData["recent"][number]) => run.tracing === "langfuse" || run.tracing === "langsmith";
+
 function correlationNote(c: EvalsData["correlation"]): string | null {
   if (c.output === null || c.input === null) return null;
   const r = (v: number) => v.toFixed(2);
@@ -87,15 +92,17 @@ export function Evals() {
   const [tracing, setTracing] = useState<TracingStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [recentCount, setRecentCount] = useState(RECENT_STEP); // 16a: 0 = all runs
+
   const load = useCallback(() => {
     getApi()
-      .then((api) => api.evals(model || null))
+      .then((api) => api.evals(model || null, recentCount))
       .then((d) => {
         setData(d);
         setError(null);
       })
       .catch((e) => setError(errorMessage(e)));
-  }, [model]);
+  }, [model, recentCount]);
 
   useEffect(() => {
     load();
@@ -115,6 +122,7 @@ export function Evals() {
   const slowest = Math.max(0, ...(data?.steps ?? []).map((s) => s.avg_seconds));
   const note = data ? correlationNote(data.correlation) : null;
   const delta = k?.pass_rate_delta ?? null;
+  const showTrace = data?.recent.some(hasTrace) ?? false; // 16a: an all-empty column is noise
 
   return (
     <div className="page evals">
@@ -328,7 +336,11 @@ export function Evals() {
 
           <section className="card chart-card" aria-labelledby="recent-title">
             <h2 id="recent-title">Recent runs</h2>
-            <p className="hint">Trace links appear for runs recorded while Langfuse or LangSmith tracing was on.</p>
+            <p className="hint">
+              {showTrace
+                ? "Trace links appear for runs recorded while Langfuse or LangSmith tracing was on."
+                : "None of these runs has a trace. Start Langfuse before a run (or turn tracing on in Settings) to get trace links."}
+            </p>
             <div className="table-wrap flat">
               <table className="eval-table">
                 <thead>
@@ -349,7 +361,7 @@ export function Evals() {
                     <th scope="col" className="num">
                       Evidence
                     </th>
-                    <th scope="col">Trace</th>
+                    {showTrace && <th scope="col">Trace</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -376,14 +388,38 @@ export function Evals() {
                       <td className="num">{r.llm_calls}</td>
                       <td className="num">{kilo(r.tokens)}</td>
                       <td className="num">{pct(r.pass_rate)}</td>
-                      <td>
-                        <TraceLink run={r} status={tracing} />
-                      </td>
+                      {showTrace && (
+                        <td>
+                          <TraceLink run={r} status={tracing} />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {data && (
+              <div className="recent-more">
+                <span className="hint" aria-live="polite">
+                  Showing {data.recent.length} of {data.recent_total} runs
+                </span>
+                {data.recent.length < data.recent_total && (
+                  <>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setRecentCount((n) => n + RECENT_STEP)}>
+                      Show more
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRecentCount(0)}>
+                      All
+                    </button>
+                  </>
+                )}
+                {data.recent.length > RECENT_STEP && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRecentCount(RECENT_STEP)}>
+                    Show fewer
+                  </button>
+                )}
+              </div>
+            )}
           </section>
         </>
       )}

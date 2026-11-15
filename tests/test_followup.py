@@ -121,6 +121,21 @@ def test_a_status_change_restarts_the_clock():
     assert followup.due_jobs() == []
 
 
+def test_ignore_ends_the_reminder_until_the_status_changes():          # 16a
+    job_id = save()
+    tracker.update_status(job_id, "applied")
+    set_dates(job_id, at(9))
+    assert [j["id"] for j in followup.due_jobs(NOW)] == [job_id]
+    followup.ignore(job_id)
+    assert followup.due_jobs(NOW) == []
+    assert followup.due_jobs(NOW + timedelta(days=365)) == []          # not a snooze: it never comes back by itself
+    tracker.update_status(job_id, "interviewing")
+    set_dates(job_id, at(9))
+    assert [j["id"] for j in followup.due_jobs(NOW)] == [job_id]       # a new status: reminders are back
+    with pytest.raises(ValueError):
+        followup.ignore(999)
+
+
 # ---- the bridge ------------------------------------------------------------------
 
 def test_the_page_gets_a_follow_up_flag_and_can_answer_it():
@@ -132,6 +147,12 @@ def test_the_page_gets_a_follow_up_flag_and_can_answer_it():
     assert api.list_jobs()[0]["follow_up"] is True
     api.snooze_follow_up(job_id)
     assert api.list_jobs()[0]["follow_up"] is False and api.list_jobs()[0]["snoozed_until"]
+    set_dates(job_id, "2020-01-01 00:00:00")
+    with tracker._db() as conn:
+        conn.execute("UPDATE jobs SET snoozed_until = NULL WHERE id = ?", (job_id,))
+    assert api.list_jobs()[0]["follow_up"] is True
+    api.ignore_follow_up(job_id)                                        # 16a
+    assert api.list_jobs()[0]["follow_up"] is False and api.list_jobs()[0]["follow_up_ignored"] == "applied"
     api.save_settings({"FOLLOW_UP_DAYS": "off"})
     with pytest.raises(ValueError):
         api.save_settings({"FOLLOW_UP_DAYS": "2"})

@@ -790,5 +790,38 @@ In-app updates failed on every try. Amends D27 and D37.
   Updates shows what happened. If the installer fails after JobLens quit, it
   opens the old version again, so you aren't left with nothing.
 
+## D43 — 1.2.0 is one release; version 3 comes after ✅ (15 Nov 2026, your choice)
+- **One release, not two.** "Lets release all in one go": 1.1.1 has no bug
+  that needs a quick fix release. The steps are Phase 16 in the plan.
+- **Order after 1.2.0:** the UI redesign (version 3), then a short Rust/Tauri
+  spike. Rust is not decided: the agent stays Python, so it would be a
+  second runtime (D7 option D), and the spike has to show a clear win.
+- **Galaxy:** only the label overlap is fixed now. Its colours and layout
+  wait for the redesign.
+- **Follow-up emails are written only on a click.** A draft made by itself
+  on the follow-up date would be wasted on jobs you mean to ignore.
+- **Ignore** stops reminders for a job until its status changes (my
+  assumption; say so if it should be for good).
+- **The tracker's date sort** is by last updated, newest first (my assumption).
+- **Recent runs stay a table for judging the agent.** No link from a run to
+  its job: the tracker already sorts and searches.
+- **Resume comparison** may get faster only if the eval numbers don't change.
+- **Cost** uses prices you enter, because prices change and aren't in the
+  run log.
+- **"Did you apply?" after 24 hours** (your choice): a job shouldn't sit in
+  "Cover note ready" for long, because postings close. The period is fixed
+  at 24 hours from the cover note's approval. The dashboard's "Ready to
+  apply" list shows best-fit jobs only (fit 75+).
+  - Answers: Yes, I applied / Not yet (asks again in 24 hours) / Ignore.
+  - **No answer within 24 hours of the reminder counts as Ignore** (your
+    choice): a reminder must not stay pending.
+- **Test data:** 22 jobs of every fit band and status, with their cover
+  notes and run log, were copied from the installed app into the repo's
+  `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.
+- **Git for Phase 16** (your choice): commit and push to `version-2` after
+  each step; before each commit, check the branch against `main` and for
+  open pull requests. After the last step: merge into `main`, then release.
+
 ## Open questions ❓
-- (none)
+- Ignore: until the status changes, or for good?
+- Tracker date sort: last updated, or date added?

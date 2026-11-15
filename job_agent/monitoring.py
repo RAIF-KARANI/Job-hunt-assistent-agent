@@ -405,9 +405,10 @@ def _seconds(run) -> float:
 
 def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
                 calls: pd.DataFrame, feedback: pd.DataFrame, jobs: pd.DataFrame,
-                model: str | None = None, recent: int = 15, trend: int = 20) -> dict:
+                model: str | None = None, recent: int | None = 15, trend: int = 20) -> dict:
     """Everything the Evals screen shows. `model` filters all of it except
-    the model comparison (which always shows every model)."""
+    the model comparison (which always shows every model). `recent`: how
+    many runs the Recent runs table gets; None = all of them (16a)."""
     runs = runs.sort_values("started_at").reset_index(drop=True)
     rates_all = quality[quality["check_name"] == "evidence_pass_rate"].set_index("run_id")["value"]
 
@@ -485,7 +486,8 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
     # ---- recent runs ----
     names = jobs.set_index("id")[["company", "title"]]
     recent_rows = []
-    for _, r in runs.iloc[::-1].head(recent).iterrows():
+    newest = runs.iloc[::-1]
+    for _, r in (newest if recent is None else newest.head(recent)).iterrows():
         job_id = int(r["job_id"]) if pd.notna(r["job_id"]) else None
         recent_rows.append({
             "run_id": r["run_id"], "started_at": r["started_at"], "model": r["model"],
@@ -501,10 +503,11 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
 
     return {"model": model, "models": models, "kpis": kpis, "trend": trend_rows,
             "ratings": build_feedback(feedback).to_dict("records"),
-            "checks": checks, "steps": time_rows, "correlation": corr, "recent": recent_rows}
+            "checks": checks, "steps": time_rows, "correlation": corr, "recent": recent_rows,
+            "recent_total": int(len(runs))}
 
 
-def local_evals(model: str | None = None) -> dict:
+def local_evals(model: str | None = None, recent: int | None = 15) -> dict:
     return build_evals(
         _local("SELECT * FROM runs"),
         _local("SELECT run_id, check_name, value FROM run_quality"),
@@ -512,5 +515,5 @@ def local_evals(model: str | None = None) -> dict:
         _local("SELECT run_id, step, model, input_tokens, output_tokens, seconds FROM run_llm_calls"),
         _local("SELECT run_id, aspect, rating FROM run_feedback"),
         _local("SELECT id, company, title FROM jobs"),
-        model,
+        model, recent,
     )

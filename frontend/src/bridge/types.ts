@@ -41,6 +41,8 @@ export interface JobRow {
   updated_at: string; // last status change
   followed_up_at: string | null; // 14e: you marked "I followed up"
   snoozed_until: string | null;
+  /** 16a: the status the job had when you pressed Ignore; reminders stay off while it has it. */
+  follow_up_ignored?: string | null;
   /** 14e: Applied/Interviewing with no change for FOLLOW_UP_DAYS, not snoozed. */
   follow_up: boolean;
   notes: string | null; // 14h
@@ -349,6 +351,8 @@ export interface EvalsData {
     tracing: string; // what was on during that run: off / langfuse / langsmith
     job: { id: number; company: string; title: string } | null;
   }[];
+  /** 16a: how many runs there are in all (`recent` may hold fewer). */
+  recent_total: number;
 }
 
 export interface TracingStatus {
@@ -397,6 +401,8 @@ export interface PyApi {
   set_langfuse_secret(key: string): Promise<Settings>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
+  /** 16a: no more reminders for this job until its status changes. */
+  ignore_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;
   set_autostart(on: boolean): Promise<Autostart>;
   quick_key_status(): Promise<QuickKeyStatus>;
@@ -417,7 +423,8 @@ export interface PyApi {
   set_status(jobId: number, status: JobStatus): Promise<void>;
   open_link(url: string): Promise<void>;
   dashboard(days: number | null): Promise<DashboardData>;
-  evals(model: string | null): Promise<EvalsData>;
+  /** `recent`: how many runs the Recent runs table gets; 0 = all (16a). */
+  evals(model: string | null, recent?: number): Promise<EvalsData>;
   tracing_status(): Promise<TracingStatus>;
   list_resumes(): Promise<Resume[]>;
   add_resumes(): Promise<string[]>;

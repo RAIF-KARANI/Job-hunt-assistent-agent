@@ -4,7 +4,7 @@
 import { useState, type DragEvent } from "react";
 import type { JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
-import { cardNote, fitLevel, interviewAhead, interviewLabel, STATUSES } from "./status";
+import { cardNote, fitLevel, interviewAhead, interviewLabel, parseUtc, STATUSES } from "./status";
 
 interface Props {
   jobs: JobRow[];
@@ -32,7 +32,10 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
     <div className="board-scroll">
       <div className="board">
         {STATUSES.map((status) => {
-          const cards = jobs.filter((j) => j.status === status.id);
+          // 16a: newest change on top (was best fit first), like the List.
+          const cards = jobs
+            .filter((j) => j.status === status.id)
+            .sort((a, b) => parseUtc(b.updated_at).getTime() - parseUtc(a.updated_at).getTime());
           return (
             <section
               key={status.id}

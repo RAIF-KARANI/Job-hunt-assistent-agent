@@ -42,7 +42,7 @@ interface Props {
 }
 
 export function JobList({ jobs, onOpen, onMove }: Props) {
-  const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: "fit_score", desc: true });
+  const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: "updated_at", desc: true }); // 16a: newest first
   const rows = [...jobs].sort((a, b) => {
     if (sort.key === "interview_at" && !a.interview_at !== !b.interview_at) return a.interview_at ? -1 : 1;
     return compare(a, b, sort.key) * (sort.desc ? -1 : 1);

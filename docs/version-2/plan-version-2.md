@@ -121,3 +121,42 @@ about the test postings another AI wrote, not about JobLens.
 Order: 15a → 15b, 15c, 15d (re-run the evals after each) → 15e → 15f;
 15g and 15h are independent and can go any time. Step 2 will get slower
 with 15b; the evals measure by how much, and the batch size is tuned on them.
+
+## Phase 16 — v1.2.0: fixes + features in one release 🚧 (agreed 15 Nov 2026, D43)
+**Why:** your list from daily use of 1.1.1 (screenshots in `referance/`), plus
+the ideas you picked. One release, on the current stack. Version 3 (UI
+redesign, then a Rust/Tauri spike) comes after it.
+
+### What the code and data showed (checked, 15 Nov)
+| # | Finding | Evidence |
+|---|---|---|
+| G1 | Every page is capped at 1280 px and pinned left, so a large monitor is half empty | `frontend/src/styles/app.css:159` |
+| G2 | "Open in tracker" is a plain link to the tracker, with no job | `frontend/src/analyze/ResultPanel.tsx:39` |
+| G3 | The List opens sorted by fit score; the database also returns jobs by fit score | `tracker/JobList.tsx:45`, `job_agent/tracker.py:211` |
+| G4 | Recent runs is fixed at 15 | `job_agent/monitoring.py:408` |
+| G5 | OpenAI and Gemini exist in `get_llm()` but can't be used: packages not installed or bundled, no key field in Settings, no key check, never run on the evals | `job_agent/llm.py:122-134`, `requirements.txt:9-10` |
+| G6 | **A third of web searches "fail": 82 of 247 tool calls, in 38 of 90 runs.** The library raises "No results found" as an error. Tried live: the DuckDuckGo and Brave backends returned nothing for every query; Google and Bing worked for some. The app uses the default backend and never tries another | copy of the installed run log; `ddgs` 9.16.1; `job_agent/research.py:58,72` |
+| G7 | **The job description isn't kept.** Only the extracted summary, skills and responsibilities are saved, not the page text. Once a company removes the posting, the full text is gone | `job_agent/tracker.py` (`job_json`), `models.JobPosting` |
+| G8 | Galaxy labels in the centre overlap and can't be read | `referance/Screenshot 2026-11-15 110856.png` |
+
+### Steps
+| Step | What | Done when |
+|---|---|---|
+| 16a | **Small fixes.** (1) Wide screens: the page is centred and grows wider; cards stretch (G1). (2) **Ignore** on "Time to follow up?": no more reminders for that job until its status changes. (3) "Open in tracker" opens that job's details (G2). (4) The List opens sorted by Updated, newest first (G3). (5) Recent runs: "Show more" and "All" under the table (G4). (6) Galaxy labels no longer overlap; no colour or layout change (G8). (7) The Trace column is hidden when no run has a trace | each checked in the running app; tests for the new bridge calls |
+| 16b | **Web search that gives up later** (G6). Try the other backends in order before reporting a failure; "no results" and "search error" are counted separately in the run log and on the dashboard | failed searches per run drops on 10 real companies, small ones included |
+| 16c | **OpenAI and Gemini** (G5). Packages in the build; both in Settings with a key field; the key is checked; the fit evals run on each | a full run works with each; eval numbers recorded; the installer's size change recorded |
+| 16d | **Evals: more graphs + cost.** Tokens per run and run time over time; time against tokens; evidence pass rate per model over time. Cost: you enter the price per million tokens (in and out) for a cloud model in Settings; Evals shows cost per run and in total | charts match the run log; cost matches a hand sum |
+| 16e | **Keep the job description** (G7). New runs save the posting's full text; the job's details show it. One-time try to fetch it for saved jobs whose link still works; the others say "not saved" | a new job shows its full text with the link offline |
+| 16f | **Interview prep sheet.** For a job in Interviewing (or on request): the job description, the company research, your proven matches to talk about, and your gaps with what to say about each. Saved with the job | built for 3 real jobs; every claim comes from the saved data |
+| 16g | **Follow-up email, only when you ask.** A "Draft a follow-up email" button on the follow-up reminder and in the job's details. Nothing is written by itself; Ignore (16a) skips it | draft made only on a click; uses the saved cover note and job |
+| 16i | **"Did you apply?"** (1) A reminder 24 hours after a cover note is approved, if the job is still "Cover note ready": **Yes, I applied** (moves it to Applied), **Not yet** (asks again in 24 hours), **Ignore** (never asks again for that job). **No answer within 24 hours of the reminder counts as Ignore.** (2) A dashboard list, "Ready to apply", of the **best-fit jobs only** (fit 75+, the galaxy's top band) with a cover note and not applied, oldest first | a job approved 24 h ago shows the reminder once; unanswered for 24 h, it is gone for good; a job under 75 is never in the list |
+| 16h | **Faster resume comparison, only if the output is unchanged.** Measure where the 40–50 s per resume goes; try running the resumes side by side. Kept only if the eval numbers are the same | evals equal before and after, or the change is dropped |
+| then | **v1.2.0** after the D3 checks and `scripts/check_real_update.py`, **plus the test that was left out of 1.1.1: a real Windows shutdown with JobLens open** | |
+
+Order: 16a → 16b → 16i → 16e → 16f → 16g → 16c → 16d → 16h. 16i follows
+16a because it reuses the follow-up reminder and its Ignore. 16e comes before
+16f because the prep sheet needs the saved description. 16c comes before 16d
+because cost only matters once a cloud model can run.
+
+Not in 1.2.0: opening a job from Recent runs (Evals is for judging the
+agent, not for browsing jobs).

@@ -6,9 +6,11 @@ Interviewing for a week deserves a short "any news?" email.
                AND FOLLOW_UP_DAYS have passed since the last change
                    (the status change, or your "I followed up")
                AND it isn't snoozed
+               AND you didn't press Ignore while it had this status (16a)
 
 Marking "I followed up" starts the clock again; a status change does too
-(update_status() sets updated_at). Snooze hides it for a few days.
+(update_status() sets updated_at). Snooze hides it for a few days. Ignore
+ends the reminders for this job until its status changes.
 
 NO LLM here: plain dates. The rule is a pure function (is_due), so it is
 tested without a database (tests/test_followup.py).
@@ -48,6 +50,8 @@ def is_due(job, days: int | None, now: datetime | None = None) -> bool:
     """`job`: a tracker row (or dict) with status, updated_at, followed_up_at, snoozed_until."""
     if days is None or job["status"] not in FOLLOW_UP_STATUSES:
         return False
+    if "follow_up_ignored" in job.keys() and job["follow_up_ignored"] == job["status"]:
+        return False  # 16a: ignored while it had this status
     now = now or _now()
     snoozed = _parse(job["snoozed_until"])
     if snoozed and snoozed > now:
@@ -76,3 +80,12 @@ def mark_followed_up(job_id: int, now: datetime | None = None) -> None:
 
 def snooze(job_id: int, days: int = SNOOZE_DAYS, now: datetime | None = None) -> None:
     _set(job_id, "snoozed_until", ((now or _now()) + timedelta(days=days)).strftime(_FORMAT))
+
+
+def ignore(job_id: int) -> None:
+    """16a: no more reminders for this job until its status changes. The
+    status is stored, not a flag, so moving the job on brings reminders back."""
+    job = tracker.get_job(job_id)
+    if job is None:
+        raise ValueError(f"No job with id {job_id}")
+    _set(job_id, "follow_up_ignored", job["status"])

@@ -101,6 +101,10 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       const job = jobs.find((j) => j.id === id);
       if (job) Object.assign(job, { follow_up: false, snoozed_until: "2026-11-03 10:00:00" });
     },
+    ignore_follow_up: async (id) => {
+      const job = jobs.find((j) => j.id === id);
+      if (job) Object.assign(job, { follow_up: false, follow_up_ignored: job.status });
+    },
     autostart_status: async () => autostart,
     delete_job: async (id) => {
       const i = jobs.findIndex((j) => j.id === id);
@@ -271,6 +275,7 @@ function mockEvals(model: string | null): EvalsData {
       { run_id: "r10", started_at: "2026-10-20 10:00:00", model: "qwen3:8b", result: "not finished", agent_seconds: 160, llm_calls: 9, tokens: 18200, pass_rate: 0.72, tracing: "off", job: { id: 3, company: "Peregrine AI", title: "Applied Scientist" } },
       { run_id: "r9", started_at: "2026-10-19 10:00:00", model: "claude-haiku-5-5", result: "rejected", agent_seconds: 48, llm_calls: 8, tokens: 17800, pass_rate: 0.74, tracing: "off", job: { id: 6, company: "Atlas Freight", title: "Full-stack Engineer" } },
     ],
+    recent_total: 3,
   };
 }
 

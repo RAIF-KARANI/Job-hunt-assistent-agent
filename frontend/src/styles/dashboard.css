@@ -303,6 +303,13 @@
   pointer-events: none;
 }
 
+/* 16a: this label would cover another one (declutter.ts). Hover, focus or
+   selecting the job still shows it. */
+.galaxy-node[data-crowded]:not(.selected):not(:hover):not(:focus-visible) .galaxy-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .galaxy-node:hover .galaxy-label,
 .galaxy-node.selected .galaxy-label {
   opacity: 1;

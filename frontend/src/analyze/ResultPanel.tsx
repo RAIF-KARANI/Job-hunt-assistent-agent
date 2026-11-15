@@ -36,8 +36,9 @@ export function ResultPanel({ result, onAnother }: Props) {
         <p className="lead">Nothing was saved. The job and its analysis are still in your tracker.</p>
       )}
       <div className="actions">
-        <a className="btn btn-secondary" href="#/tracker">
-          Open the Tracker
+        {/* 16a: straight to this job's details, not just the Tracker */}
+        <a className="btn btn-secondary" href={result.job_id !== null ? `#/tracker?job=${result.job_id}` : "#/tracker"}>
+          {result.job_id !== null ? "Open in the Tracker" : "Open the Tracker"}
         </a>
         {result.job_id !== null && (
           <button type="button" className="btn btn-secondary" onClick={() => setPromptOpen(true)}>

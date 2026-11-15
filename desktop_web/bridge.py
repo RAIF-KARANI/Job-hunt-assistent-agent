@@ -339,6 +339,10 @@ class Api:
     def snooze_follow_up(self, job_id: int) -> None:
         followup.snooze(int(job_id))
 
+    def ignore_follow_up(self, job_id: int) -> None:
+        """16a: stop reminding about this job until its status changes."""
+        followup.ignore(int(job_id))
+
     def open_link(self, url: str) -> None:
         """Open a web link in your browser, never inside the app window.
         Only http(s): the page shows links from the web, and a file:// or
@@ -373,12 +377,14 @@ class Api:
 
     # ---- evals --------------------------------------------------------------
 
-    def evals(self, model: str | None = None) -> dict:
+    def evals(self, model: str | None = None, recent: int | None = 15) -> dict:
         """How well the agent did (Evals screen, D9), from the run log.
-        `model` = one model's runs only; None = all."""
+        `model` = one model's runs only; None = all. `recent` = how many
+        runs the Recent runs table gets; 0 or None = all (16a)."""
         from job_agent import monitoring as m
 
-        return to_json(m.local_evals(model or None))
+        count = max(int(recent), 1) if recent else None
+        return to_json(m.local_evals(model or None, count))
 
     def tracing_status(self) -> dict:
         """Langfuse / LangSmith state, for trace links. Separate from evals()

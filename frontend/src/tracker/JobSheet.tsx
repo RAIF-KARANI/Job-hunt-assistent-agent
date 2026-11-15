@@ -12,6 +12,7 @@ import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
 import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
+import type { FollowUpAction } from "./useJobs";
 
 interface Props {
   jobId: number;
@@ -19,7 +20,7 @@ interface Props {
   /** The job's row in the list (14e: is a follow-up due?). */
   row: JobRow | undefined;
   onMove(id: number, to: JobStatus): void;
-  onFollowUp(id: number, action: "done" | "snooze"): Promise<void>;
+  onFollowUp(id: number, action: FollowUpAction): Promise<void>;
   /** 14h: notes saved: refresh the cards. */
   onChanged(): void;
   /** 1.0.1: the job was deleted. */
@@ -63,7 +64,7 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
     }
   };
 
-  const followUp = async (action: "done" | "snooze") => {
+  const followUp = async (action: FollowUpAction) => {
     setFollowing(true);
     try {
       await onFollowUp(jobId, action);
@@ -183,6 +184,15 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
                   </button>
                   <button type="button" className="btn btn-ghost btn-sm" disabled={following} onClick={() => void followUp("snooze")}>
                     Remind me in 3 days
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={following}
+                    title="No more reminders for this job until its status changes"
+                    onClick={() => void followUp("ignore")}
+                  >
+                    Ignore
                   </button>
                 </div>
               </section>

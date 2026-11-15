@@ -27,6 +27,28 @@ WEB_DIR = paths.resource_path("desktop_web/web")
 BACKGROUND = {"dark": "#0A0F1C", "light": "#F4F6FA"}  # = --bg in tokens.css: no white flash
 
 
+PAGE_PORT = 42001  # pywebview's fixed port: the same address every start keeps the page's saved choices
+
+
+def free_page_port(first: int = PAGE_PORT, tries: int = 20) -> int:
+    """16a: the first port from `first` that no program is serving on.
+
+    Found 15 Nov 2026: two copies of JobLens (the installed one and a run from
+    source, or a Test Build) both took port 42001, because Windows lets two
+    programs listen on one port. The second copy's window then got its page
+    from the FIRST copy: an old UI on top of new code. So the port is asked,
+    not assumed: a copy that starts second takes the next one.
+    """
+    import socket
+
+    for port in range(first, first + tries):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(0.3)
+            if sock.connect_ex(("127.0.0.1", port)) != 0:  # nobody answers: free
+                return port
+    return first  # all taken (very unlikely): as before
+
+
 def _background() -> str:
     theme = settings.read_settings().get("UI_THEME", "system")
     return BACKGROUND["light" if theme == "light" else "dark"]
@@ -202,7 +224,8 @@ def main(argv=None) -> int:
         # 15h: one fixed browser profile instead of a new temporary one per start
         # (pywebview's private mode left 162 MB of them in %TEMP%).
         webview.start(gui="edgechromium", debug=args.dev,  # debug = F12 dev tools
-                      private_mode=False, storage_path=str(housekeeping.WEBVIEW_DIR))
+                      private_mode=False, storage_path=str(housekeeping.WEBVIEW_DIR),
+                      http_port=free_page_port())
     finally:
         if tray:
             tray.stop()  # its thread would otherwise keep the process alive
