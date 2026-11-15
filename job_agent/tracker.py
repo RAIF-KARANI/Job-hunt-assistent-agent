@@ -72,6 +72,7 @@ MIGRATIONS = (
     ("apply_asked_at", "TEXT"),       # 16i: when "Did you apply?" was first shown
     ("apply_snoozed_until", "TEXT"),  # 16i: "Not yet": ask again then
     ("apply_ignored_at", "TEXT"),     # 16i: "Ignore" (or no answer in 24 hours)
+    ("posting_text", "TEXT"),         # 16e: the posting's full text, as read (companies take postings down)
 )
 
 # 14h: what you may write about a job, and how long it may be.
@@ -102,16 +103,28 @@ def init_db() -> None:
         for name, kind in MIGRATIONS:
             if name not in have:
                 conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {kind}")  # names are ours, not user input
+                if name == "apply_asked_at":
+                    # 16i (your choice, 15 Nov): the jobs that were already waiting
+                    # when "Did you apply?" arrived are NOT asked about (43 of them:
+                    # nobody remembers). They are marked as asked a day ago, so the
+                    # question counts as run out; they stay in "Ready to apply". A
+                    # cover note from the last two days still gets its question.
+                    conn.execute("UPDATE jobs SET apply_asked_at = datetime('now', '-1 day') "
+                                 "WHERE status = 'cover_note_ready'")
 
 
 def save_job(
-    url: str, job: JobPosting, best: ResumeMatch, company: CompanyBrief | None
+    url: str, job: JobPosting, best: ResumeMatch, company: CompanyBrief | None,
+    posting_text: str | None = None,
 ) -> int:
     """Insert a job, or update it if this URL is already tracked. Returns its id.
 
     This is an "upsert" (update-or-insert). Running the agent twice on the
     same URL must not create a duplicate row - that property is called
     idempotency, and it matters for agents because they get re-run a lot.
+
+    posting_text (16e): the posting's full text as the agent read it. None
+    keeps what is already saved (a re-analysis must not erase it).
     """
     init_db()
     values = {
@@ -126,6 +139,7 @@ def save_job(
         "job_json": job.model_dump_json(),
         "fit_json": best.model_dump_json(),
         "company_json": company.model_dump_json() if company else None,
+        "posting_text": posting_text or None,
     }
     with _db() as conn:
         # The ? / :name placeholders let sqlite3 insert values safely.
@@ -134,9 +148,9 @@ def save_job(
         row = conn.execute(
             """
             INSERT INTO jobs (url, title, company, location, seniority, salary,
-                              fit_score, best_resume, job_json, fit_json, company_json)
+                              fit_score, best_resume, job_json, fit_json, company_json, posting_text)
             VALUES (:url, :title, :company, :location, :seniority, :salary,
-                    :fit_score, :best_resume, :job_json, :fit_json, :company_json)
+                    :fit_score, :best_resume, :job_json, :fit_json, :company_json, :posting_text)
             ON CONFLICT(url) DO UPDATE SET
                 title = excluded.title,
                 company = excluded.company,
@@ -148,6 +162,7 @@ def save_job(
                 job_json = excluded.job_json,
                 fit_json = excluded.fit_json,
                 company_json = excluded.company_json,
+                posting_text = COALESCE(excluded.posting_text, jobs.posting_text),
                 updated_at = CURRENT_TIMESTAMP
                 -- status is NOT overwritten: re-analysing a job you already
                 -- applied to must not reset it back to 'researched'.

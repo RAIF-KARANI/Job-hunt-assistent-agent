@@ -152,3 +152,20 @@ def test_the_notification_names_one_job_or_counts_several():
     title, text = apply_notice([{"company": "Acme", "title": "Engineer"}])
     assert title == "Did you apply?" and "Acme" in text and NOTE_PAGES[title] == "tracker"
     assert apply_notice([{"company": "A"}, {"company": "B"}])[1].startswith("2 cover notes")
+
+
+def test_jobs_already_waiting_when_the_feature_arrives_are_not_asked():
+    """Your choice (15 Nov): 43 old cover notes: nobody remembers. An old
+    database gets the new columns, and its waiting jobs count as run out."""
+    tracker.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with tracker._db() as conn:
+        conn.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT UNIQUE NOT NULL, "
+                     "title TEXT NOT NULL, company TEXT NOT NULL, location TEXT, seniority TEXT, salary TEXT, "
+                     "fit_score INTEGER, best_resume TEXT, status TEXT NOT NULL DEFAULT 'researched', job_json TEXT, "
+                     "fit_json TEXT, company_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, "
+                     "updated_at TEXT DEFAULT CURRENT_TIMESTAMP)")
+        conn.execute("INSERT INTO jobs (url, title, company, fit_score, status, updated_at) "
+                     "VALUES ('u', 'Old job', 'Acme', 90, 'cover_note_ready', datetime('now', '-20 days'))")
+    job = tracker.list_jobs()[0]                                    # init_db() migrates
+    assert ar.state(job) == "expired" and ar.due_jobs() == [] and ar.new_jobs() == []
+    assert ar.in_ready_list(job)                                    # still in "Ready to apply"

@@ -2391,3 +2391,15 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
 - pytest: 398 passed (12 new); typecheck and build clean.
 - **Not checked:** the tray notification itself (it needs the window hidden
   for up to half an hour); its text and the once-only rule are tested.
+
+## 16i changed: old jobs are not asked about ✅; 16e started 🚧 (15 Nov 2026)
+- **Your choice:** "I don't remember and can't check 43 jobs". Jobs that are
+  already "Cover note ready" when 1.2.0 is installed are never asked "Did you
+  apply?". They stay in "Ready to apply". Only a cover note approved in the
+  two days before the update, or later, gets its question.
+- **16e, done so far:** the tracker has a `posting_text` column and
+  `save_job()` can store the posting's full text (a re-analysis keeps it).
+- **16e, still to do:** pass the text from the "read posting" step to the
+  save; show it in the job's details; the one-time fetch for saved jobs
+  whose link still works; tests for all of it.
+- pytest: 399 passed (1 new).
