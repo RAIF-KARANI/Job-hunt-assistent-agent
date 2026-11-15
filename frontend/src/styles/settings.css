@@ -4,6 +4,18 @@
   max-width: 880px;
 }
 
+/* 16d: the two prices of a cloud model, side by side */
+.price-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.price-row .field {
+  flex: 1 1 140px;
+  max-width: 220px;
+}
+
 .settings-card {
   display: flex;
   flex-direction: column;

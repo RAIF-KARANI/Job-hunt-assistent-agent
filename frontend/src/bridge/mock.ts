@@ -43,6 +43,10 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       settings = { ...settings, [flag]: Boolean(key) };
       return settings;
     },
+    set_model_price: async (model, priceIn, priceOut) => {
+      settings = { ...settings, MODEL_PRICES: priceIn === null ? "" : `${model}=${priceIn}/${priceOut}` };
+      return settings;
+    },
     list_models: async (provider, key) =>
       key === "bad"
         ? { ok: false, message: "OpenAI didn't accept this key.", models: [] }
@@ -272,7 +276,7 @@ function mockEvals(model: string | null): EvalsData {
     model,
     models: [
       { model: "qwen3:8b", provider: "ollama", runs: 10, pass_rate: 0.6, approved: 6, decided: 9, median_seconds: 182, tokens_per_run: 19400 },
-      { model: "claude-haiku-5-5", provider: "anthropic", runs: 2, pass_rate: 0.74, approved: 2, decided: 2, median_seconds: 48, tokens_per_run: 17800 },
+      { model: "claude-haiku-5-5", provider: "anthropic", runs: 2, pass_rate: 0.74, approved: 2, decided: 2, median_seconds: 48, tokens_per_run: 17800, cost_per_run: 0.034 },
     ],
     kpis: {
       runs: local ? 10 : 2,
@@ -290,6 +294,9 @@ function mockEvals(model: string | null): EvalsData {
       tool_empty: 4,
       unfinished: 2,
       unfinished_seconds: 1490,
+      cost_total: 0.068,
+      cost_runs: 2,
+      cost_per_run: 0.034,
     },
     trend: (local ? rates : [0.7, 0.78]).map((rate, i) => ({ run_id: `r${i}`, started_at: `2026-10-${String(10 + i).padStart(2, "0")} 10:00:00`, rate })),
     ratings: [
@@ -321,8 +328,17 @@ function mockEvals(model: string | null): EvalsData {
       { run_id: "r11", started_at: "2026-10-21 10:00:00", model: "qwen3:8b", result: "approved", agent_seconds: 182, llm_calls: 9, tokens: 19400, pass_rate: 0.58, tracing: "langfuse", job: { id: 1, company: "Northwind Labs", title: "AI Engineer" } },
       { run_id: "r10", started_at: "2026-10-20 10:00:00", model: "qwen3:8b", result: "not finished", agent_seconds: 160, llm_calls: 9, tokens: 18200, pass_rate: 0.72, tracing: "off", job: { id: 3, company: "Peregrine AI", title: "Applied Scientist" } },
       { run_id: "r9", started_at: "2026-10-19 10:00:00", model: "claude-haiku-5-5", result: "rejected", agent_seconds: 48, llm_calls: 8, tokens: 17800, pass_rate: 0.74, tracing: "off", job: { id: 6, company: "Atlas Freight", title: "Full-stack Engineer" } },
-    ],
+    ].map((r) => ({ ...r, cost: r.model.startsWith("claude") ? 0.031 : null })) as EvalsData["recent"],
     recent_total: 3,
+    run_points: rates.map((rate, i) => ({
+      run_id: `p${i}`, started_at: `2026-10-${String(10 + i).padStart(2, "0")} 10:00:00`, model: i % 5 === 4 ? "claude-haiku-5-5" : "qwen3:8b",
+      seconds: i % 5 === 4 ? 48 : 150 + rate * 120, tokens_in: 12000 + i * 900, tokens_out: 3600 + Math.round(rate * 4000), cost: i % 5 === 4 ? 0.034 : null,
+    })),
+    model_trend: [
+      { model: "qwen3:8b", runs: 10, points: rates.slice(0, 10).map((rate, i) => ({ run_id: `m${i}`, started_at: `2026-10-${String(10 + i).padStart(2, "0")} 10:00:00`, rate })) },
+      { model: "claude-haiku-5-5", runs: 2, points: [0.7, 0.78].map((rate, i) => ({ run_id: `c${i}`, started_at: `2026-10-${String(18 + i).padStart(2, "0")} 12:00:00`, rate })) },
+    ],
+    models_not_charted: 0,
   };
 }
 

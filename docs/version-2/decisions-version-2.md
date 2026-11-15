@@ -863,6 +863,14 @@ In-app updates failed on every try. Amends D27 and D37.
 - **The setup wizard still offers "this PC" or Claude only.** OpenAI and
   Gemini are chosen in Settings. Adding them to the wizard waits for the
   version 3 redesign.
+- **Cost counts every run of a priced model, also the ones that failed or
+  were stopped** (16d): the provider billed those tokens too. "Per full
+  run" is the average over runs that did the whole analysis.
+- **The new charts show full runs only** (the whole analysis). A 10-second
+  cover-note-only run beside a 4-minute analysis would say nothing about
+  tokens or time.
+- **Two measures never share one chart with two scales.** Tokens and time
+  each get their own chart, and a third shows one against the other.
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

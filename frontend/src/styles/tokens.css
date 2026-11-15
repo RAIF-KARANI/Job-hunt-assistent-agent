@@ -98,6 +98,13 @@
 
   /* ratings (12f2): good / mixed / bad, checked with the dataviz palette
      validator against --surface (color-blind and normal-vision separation pass) */
+  /* 16d: one colour per model in "Evidence pass rate by model" (4 at most).
+     Checked with the dataviz palette validator against --surface: every check passes. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+
   --rate-good: #3987e5;
   --rate-mixed: #199e70;
   --rate-bad: #d95926;
@@ -153,6 +160,13 @@
   --galaxy-sky-edge: #e9eff8;
   --galaxy-star: #8b9ab3;
   --galaxy-label: rgba(255, 255, 255, 0.88);
+
+  /* 16d: same four on white. Aqua and yellow are under 3:1 on white, so the
+     legend names every line and the numbers are in a table too. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
 
   --rate-good: #2a78d6;
   --rate-mixed: #1baf7a; /* 2.8:1 on white: the legend always names it */

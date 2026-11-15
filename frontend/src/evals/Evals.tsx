@@ -8,11 +8,18 @@ import type { EvalsData, TracingStatus } from "../bridge/types";
 import { seconds, STEP_LABELS } from "../dashboard/Charts";
 import { parseUtc } from "../tracker/status";
 import { PassRateChart } from "./PassRateChart";
+import { correlation, ModelTrend, niceMinutes, RunLine, RunScatter } from "./RunCharts";
 import { Ratings } from "./Ratings";
 
 const pct = (v: number | null) => (v === null ? "–" : `${Math.round(v * 100)}%`);
 const kilo = (n: number | null) => (n === null ? "–" : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n)));
 const share = (part: number, whole: number) => (whole ? part / whole : null);
+/** 16d: axis labels: "50k" not "50.0k", "5 min" not "5m 00s". */
+const axisKilo = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10}k` : String(Math.round(n)));
+const axisMinutes = (s: number) => (s === 0 ? "0" : `${Math.round(s / 6) / 10} min`);
+/** 16d: a cost in dollars: enough digits to tell a tenth of a cent from a cent. */
+const money = (v: number | null | undefined) =>
+  v === null || v === undefined ? "–" : v >= 100 ? `$${Math.round(v)}` : v >= 0.1 ? `$${v.toFixed(2)}` : v >= 0.01 ? `$${v.toFixed(3)}` : `$${v.toFixed(4)}`;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const where = (provider: string) => (provider === "ollama" ? "local · this PC" : "API · your key"); // 16c: any cloud provider
 
@@ -123,6 +130,11 @@ export function Evals() {
   const note = data ? correlationNote(data.correlation) : null;
   const delta = k?.pass_rate_delta ?? null;
   const showTrace = data?.recent.some(hasTrace) ?? false; // 16a: an all-empty column is noise
+  // 16d: cost is shown once there is a cloud model in the run log (a local model costs nothing)
+  const hasCloud = data?.models.some((m) => m.provider !== "ollama") ?? false;
+  const showCost = data?.recent.some((r) => r.cost !== null) ?? false;
+  const points = data?.run_points ?? [];
+  const r = correlation(points.map((p) => p.tokens_in + p.tokens_out), points.map((p) => p.seconds));
 
   return (
     <div className="page evals">
@@ -202,6 +214,17 @@ export function Evals() {
                   : " "}
               </span>
             </div>
+            {hasCloud && (
+              <div className="tile">
+                <span className="tile-label">Cost</span>
+                <span className="tile-value">{money(k?.cost_total)}</span>
+                <span className="tile-note">
+                  {k?.cost_total != null
+                    ? `${plural(k.cost_runs, "run")} with a priced model` + (k.cost_per_run != null ? ` · ${money(k.cost_per_run)} per full run` : "")
+                    : "enter the model's price in Settings to see it"}
+                </span>
+              </div>
+            )}
             <div className="tile">
               <span className="tile-label">Unfinished runs</span>
               <span className="tile-value">{k ? k.unfinished : "–"}</span>
@@ -220,6 +243,61 @@ export function Evals() {
             <section className="card chart-card" aria-labelledby="ratings-title">
               <h2 id="ratings-title">Your ratings</h2>
               {data && <Ratings ratings={data.ratings} />}
+            </section>
+          </div>
+
+          {/* 16d: tokens and time run by run, and how they go together */}
+          <div className="chart-row">
+            <section className="card chart-card" aria-labelledby="tokens-title">
+              <h2 id="tokens-title">Tokens per run</h2>
+              <p className="hint">Input plus output tokens of each full run, oldest left. Hover a run for the split.</p>
+              {points.length ? (
+                <RunLine
+                  points={points}
+                  value={(p) => p.tokens_in + p.tokens_out}
+                  format={(v) => kilo(v)}
+                  axis={axisKilo}
+                  unit="tokens"
+                  detail={(p) => `${kilo(p.tokens_in)} in · ${kilo(p.tokens_out)} out` + (p.cost !== null ? ` · ${money(p.cost)}` : "")}
+                  caption="Tokens per full run"
+                />
+              ) : (
+                <p className="chart-empty">No full runs yet.</p>
+              )}
+            </section>
+            <section className="card chart-card" aria-labelledby="runtime-title">
+              <h2 id="runtime-title">Agent time per run</h2>
+              <p className="hint">Working time of each full run, oldest left. Waiting for you isn't counted.</p>
+              {points.length ? (
+                <RunLine points={points} value={(p) => p.seconds} format={(v) => seconds(v)} axis={axisMinutes} top={niceMinutes} unit="of agent time" caption="Agent time per full run" />
+              ) : (
+                <p className="chart-empty">No full runs yet.</p>
+              )}
+            </section>
+          </div>
+
+          <div className="chart-row">
+            <section className="card chart-card" aria-labelledby="scatter-title">
+              <h2 id="scatter-title">Time against tokens</h2>
+              <p className="hint">
+                One dot per full run: up = slower, right = more tokens.
+                {r !== null && ` Across these ${points.length} runs the two move together with r = ${r.toFixed(2)} (1 = perfectly, 0 = not at all).`}
+              </p>
+              {points.length ? (
+                <RunScatter points={points} formatTokens={(v) => kilo(v)} formatTime={(v) => seconds(v)} axisTokens={axisKilo} axisTime={axisMinutes} />
+              ) : (
+                <p className="chart-empty">No full runs yet.</p>
+              )}
+            </section>
+            <section className="card chart-card" aria-labelledby="model-trend-title">
+              <h2 id="model-trend-title">Evidence pass rate by model</h2>
+              <p className="hint">
+                {data && data.model_trend.length === 1
+                  ? `Run by run, oldest left, for ${data.model_trend[0].model}: the only model with analyzed runs so far. Another model gets its own line.`
+                  : "Run by run, oldest left, one line per model. Always every model, whatever is chosen above."}
+                {data && data.models_not_charted > 0 && ` ${plural(data.models_not_charted, "more model")} with fewer runs: see the table below.`}
+              </p>
+              {data?.model_trend.length ? <ModelTrend series={data.model_trend} /> : <p className="chart-empty">No analyzed runs yet.</p>}
             </section>
           </div>
 
@@ -297,7 +375,9 @@ export function Evals() {
 
           <section className="card chart-card" aria-labelledby="models-title">
             <h2 id="models-title">Models compared</h2>
-            <p className="hint">Always every model. Cost isn't shown: prices change and aren't in the run log, so compare tokens.</p>
+            <p className="hint">
+              Always every model. Cost uses the price you enter for a model in Settings; without one it shows –, and a local model costs nothing.
+            </p>
             <div className="table-wrap flat">
               <table className="eval-table">
                 <thead>
@@ -318,6 +398,9 @@ export function Evals() {
                     <th scope="col" className="num">
                       Tokens / run
                     </th>
+                    <th scope="col" className="num">
+                      Cost / run
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -332,6 +415,7 @@ export function Evals() {
                       <td className="num">{m.decided ? `${pct(share(m.approved, m.decided))} (${m.approved} of ${m.decided})` : "–"}</td>
                       <td className="num">{m.median_seconds !== null ? seconds(m.median_seconds) : "–"}</td>
                       <td className="num">{kilo(m.tokens_per_run)}</td>
+                      <td className="num">{m.provider === "ollama" ? "free" : money(m.cost_per_run)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -363,6 +447,11 @@ export function Evals() {
                     <th scope="col" className="num">
                       Tokens
                     </th>
+                    {showCost && (
+                      <th scope="col" className="num">
+                        Cost
+                      </th>
+                    )}
                     <th scope="col" className="num">
                       Evidence
                     </th>
@@ -392,6 +481,7 @@ export function Evals() {
                       <td className="num">{seconds(r.agent_seconds)}</td>
                       <td className="num">{r.llm_calls}</td>
                       <td className="num">{kilo(r.tokens)}</td>
+                      {showCost && <td className="num">{money(r.cost)}</td>}
                       <td className="num">{pct(r.pass_rate)}</td>
                       {showTrace && (
                         <td>

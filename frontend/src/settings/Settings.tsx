@@ -42,6 +42,18 @@ const FIT_DETAIL = [
   { id: "detailed", label: "Detailed" },
 ];
 
+/** 16d: "gpt-x=0.15/0.6;..." -> this model's two prices as typed text ("" = none saved). */
+function savedPrice(prices: string | undefined, model: string): { input: string; output: string } {
+  for (const part of (prices ?? "").split(";")) {
+    const at = part.indexOf("=");
+    if (at > 0 && part.slice(0, at) === model.trim()) {
+      const [input = "", output = ""] = part.slice(at + 1).split("/");
+      return { input, output };
+    }
+  }
+  return { input: "", output: "" };
+}
+
 interface Props {
   settings: SettingsData;
   theme: Theme;
@@ -63,6 +75,8 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const [provider, setProvider] = useState(settings.LLM_PROVIDER);
   const [model, setModel] = useState(settings.LLM_MODEL);
   const [key, setKey] = useState("");
+  // 16d: the price of the chosen cloud model, per million tokens (for the cost in Evals)
+  const [price, setPrice] = useState(() => savedPrice(settings.MODEL_PRICES, settings.LLM_MODEL));
   const [status, setStatus] = useState<LlmStatus | "checking" | null>(null);
   const [saving, setSaving] = useState(false);
   // Installed Ollama models: undefined = still asking, null = Ollama didn't answer.
@@ -72,7 +86,15 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [autostart, setAutostart] = useState<Autostart | null>(null);
 
-  const dirty = provider !== settings.LLM_PROVIDER || model.trim() !== settings.LLM_MODEL || key.trim() !== "";
+  const wasPrice = savedPrice(settings.MODEL_PRICES, model);
+  const priceChanged = provider !== "ollama" && (price.input.trim() !== wasPrice.input || price.output.trim() !== wasPrice.output);
+  const dirty = provider !== settings.LLM_PROVIDER || model.trim() !== settings.LLM_MODEL || key.trim() !== "" || priceChanged;
+
+  /** Another model has another price: show the one saved for it. */
+  const pickModel = (next: string) => {
+    setModel(next);
+    setPrice(savedPrice(settings.MODEL_PRICES, next));
+  };
 
   useEffect(() => {
     // Installed local models, for the model dropdown (14a).
@@ -136,7 +158,11 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
       if (!chosen) throw new Error("Choose a model first: paste your key, then press “Find my models”.");
       // The key first: if it can't be saved, the provider isn't switched to one without a key.
       if (key.trim()) await api.set_api_key(key.trim(), provider);
-      const next = await api.save_settings({ LLM_PROVIDER: provider, LLM_MODEL: chosen });
+      let next = await api.save_settings({ LLM_PROVIDER: provider, LLM_MODEL: chosen });
+      if (priceChanged) {
+        const empty = price.input.trim() === "" && price.output.trim() === "";
+        next = await api.set_model_price(chosen, empty ? null : Number(price.input), empty ? null : Number(price.output));
+      }
       setKey("");
       onSettings(next);
       await checkConnection(next.LLM_PROVIDER, next.LLM_MODEL);
@@ -171,7 +197,7 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
     setStatus(null);
     setKey(""); // a key typed for one provider must never be saved for another
     // A model name only makes sense for its own provider.
-    setModel(next === settings.LLM_PROVIDER ? settings.LLM_MODEL : DEFAULT_MODELS[next]);
+    pickModel(next === settings.LLM_PROVIDER ? settings.LLM_MODEL : DEFAULT_MODELS[next]);
   };
 
   const cloud = provider !== "ollama";
@@ -245,13 +271,33 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
             ) : (
               <>
                 {provider === "openai" || provider === "google" ? (
-                  <CloudModelPicker key={provider} provider={provider} label={who.label} value={model} typedKey={key} keySaved={keySaved} onChange={setModel} />
+                  <CloudModelPicker key={provider} provider={provider} label={who.label} value={model} typedKey={key} keySaved={keySaved} onChange={pickModel} />
                 ) : (
-                  <ModelPicker cloud={cloud} value={model} installed={local ?? null} onChange={setModel} />
+                  <ModelPicker cloud={cloud} value={model} installed={local ?? null} onChange={pickModel} />
                 )}
               </>
             )}
           </div>
+
+          {cloud && (
+            <fieldset className="plain-fieldset price-fields">
+              <legend>Price of this model, in $ per million tokens (optional)</legend>
+              <div className="price-row">
+                <label className="field">
+                  <span>Input</span>
+                  <input className="input mono" inputMode="decimal" value={price.input} onChange={(e) => setPrice((p) => ({ ...p, input: e.target.value }))} placeholder="e.g. 0.15" />
+                </label>
+                <label className="field">
+                  <span>Output</span>
+                  <input className="input mono" inputMode="decimal" value={price.output} onChange={(e) => setPrice((p) => ({ ...p, output: e.target.value }))} placeholder="e.g. 0.60" />
+                </label>
+              </div>
+              <span className="hint">
+                Copy both from {who.company}'s pricing page. JobLens only uses them to show what each run cost in Evals; prices change, so check them
+                now and then. Leave both empty to show no cost.
+              </span>
+            </fieldset>
+          )}
 
           <div className="row-actions">
             <button type="submit" className="btn btn-primary" disabled={!dirty || saving}>

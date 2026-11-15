@@ -101,6 +101,82 @@
   stroke-width: 2; /* a ring of the surface keeps dots apart from the line */
 }
 
+/* 16d: the run under the pointer, and the lines of several models */
+.line-chart .crosshair {
+  stroke: var(--border-strong);
+  stroke-dasharray: 3 3;
+}
+
+.line-chart .axis-title {
+  fill: var(--text-faint);
+}
+
+.line-chart .line.series-1 {
+  stroke: var(--series-1);
+}
+
+.line-chart .line.series-2 {
+  stroke: var(--series-2);
+}
+
+.line-chart .line.series-3 {
+  stroke: var(--series-3);
+}
+
+.line-chart .line.series-4 {
+  stroke: var(--series-4);
+}
+
+.line-chart .dot.series-1,
+.legend-swatch.series-1 {
+  fill: var(--series-1);
+  background: var(--series-1);
+}
+
+.line-chart .dot.series-2,
+.legend-swatch.series-2 {
+  fill: var(--series-2);
+  background: var(--series-2);
+}
+
+.line-chart .dot.series-3,
+.legend-swatch.series-3 {
+  fill: var(--series-3);
+  background: var(--series-3);
+}
+
+.line-chart .dot.series-4,
+.legend-swatch.series-4 {
+  fill: var(--series-4);
+  background: var(--series-4);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend .hint {
+  margin: 0;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
 .line-chart .hit {
   fill: transparent;
   cursor: default;

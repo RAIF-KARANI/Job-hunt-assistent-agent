@@ -405,12 +405,33 @@ def _seconds(run) -> float:
 
 def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
                 calls: pd.DataFrame, feedback: pd.DataFrame, jobs: pd.DataFrame,
-                model: str | None = None, recent: int | None = 15, trend: int = 20) -> dict:
+                model: str | None = None, recent: int | None = 15, trend: int = 20,
+                prices: dict | None = None, points: int = 60) -> dict:
     """Everything the Evals screen shows. `model` filters all of it except
     the model comparison (which always shows every model). `recent`: how
-    many runs the Recent runs table gets; None = all of them (16a)."""
+    many runs the Recent runs table gets; None = all of them (16a).
+    `prices` (16d): {model: (input, output)} per million tokens, from
+    Settings; a model without one has no cost. `points`: how many full runs
+    the tokens / time charts get."""
+    from job_agent import pricing
+
+    prices = prices or {}
     runs = runs.sort_values("started_at").reset_index(drop=True)
     rates_all = quality[quality["check_name"] == "evidence_pass_rate"].set_index("run_id")["value"]
+
+    def run_cost(r):
+        return pricing.cost(prices, r["model"], r["input_tokens"], r["output_tokens"])
+
+    # ---- 16d: evidence pass rate per model, over time (always every model) ----
+    started_all = runs.set_index("run_id")["started_at"]
+    model_trend = []
+    for name, group in runs.groupby("model", sort=False):
+        rated = rates_all.reindex(group["run_id"]).dropna()
+        if len(rated):
+            model_trend.append({"model": name, "runs": int(len(rated)),
+                                "points": [{"run_id": rid, "started_at": started_all[rid], "rate": float(v)}
+                                           for rid, v in rated.iloc[-40:].items()]})
+    model_trend.sort(key=lambda m: -m["runs"])
 
     models = []
     for name, group in runs.groupby("model", sort=False):
@@ -423,6 +444,9 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
             "decided": int(group["decision"].isin(["approve", "reject"]).sum()),
             "median_seconds": _median_full(group),
             "tokens_per_run": _num((full["input_tokens"] + full["output_tokens"]).mean()) if len(full) else None,
+            # 16d: with the price you entered for this model; None = no price
+            "cost_per_run": (_num(sum(run_cost(r) for _, r in full.iterrows()) / len(full))
+                             if len(full) and name in prices else None),
         })
     models.sort(key=lambda m: -m["runs"])
 
@@ -456,6 +480,19 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
         "unfinished": int(runs["status"].isin(UNFINISHED).sum()),
         "unfinished_seconds": float(sum(_seconds(r) for _, r in runs[runs["status"].isin(UNFINISHED)].iterrows())),
     }
+    # 16d: cost of the runs whose model has a price (every run counts, also unfinished ones: they were billed)
+    priced = [c for c in (run_cost(r) for _, r in runs.iterrows()) if c is not None]
+    priced_full = [c for c in (run_cost(r) for _, r in full.iterrows()) if c is not None]
+    kpis["cost_total"] = float(sum(priced)) if priced else None
+    kpis["cost_runs"] = len(priced)
+    kpis["cost_per_run"] = float(sum(priced_full) / len(priced_full)) if priced_full else None
+
+    # ---- 16d: tokens and time, run by run (full runs only: a 10-second
+    # cover-note-only run next to a 4-minute analysis would say nothing) ----
+    run_points = [{"run_id": r["run_id"], "started_at": r["started_at"], "model": r["model"],
+                   "seconds": _seconds(r), "tokens_in": int(r["input_tokens"] or 0),
+                   "tokens_out": int(r["output_tokens"] or 0), "cost": run_cost(r)}
+                  for _, r in full.iloc[-points:].iterrows()]
 
     # ---- evidence pass rate, run by run ----
     started = runs.set_index("run_id")["started_at"]
@@ -496,6 +533,7 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
             "result": _result(r), "agent_seconds": _seconds(r),
             "llm_calls": int(r["llm_calls"] or 0),
             "tokens": int((r["input_tokens"] or 0) + (r["output_tokens"] or 0)),
+            "cost": run_cost(r),  # 16d: None = no price for this model
             "pass_rate": _num(rates_all.get(r["run_id"])),
             # Runs from before 12f2 have no value: NULL -> NaN in pandas, and NaN is truthy.
             "tracing": r["tracing"] if isinstance(r.get("tracing"), str) else "off",
@@ -506,10 +544,13 @@ def build_evals(runs: pd.DataFrame, quality: pd.DataFrame, steps: pd.DataFrame,
     return {"model": model, "models": models, "kpis": kpis, "trend": trend_rows,
             "ratings": build_feedback(feedback).to_dict("records"),
             "checks": checks, "steps": time_rows, "correlation": corr, "recent": recent_rows,
-            "recent_total": int(len(runs))}
+            "recent_total": int(len(runs)),
+            "run_points": run_points, "model_trend": model_trend[:4], "models_not_charted": max(0, len(model_trend) - 4)}
 
 
 def local_evals(model: str | None = None, recent: int | None = 15) -> dict:
+    from job_agent import pricing
+
     return build_evals(
         _local("SELECT * FROM runs"),
         _local("SELECT run_id, check_name, value FROM run_quality"),
@@ -517,5 +558,5 @@ def local_evals(model: str | None = None, recent: int | None = 15) -> dict:
         _local("SELECT run_id, step, model, input_tokens, output_tokens, seconds FROM run_llm_calls"),
         _local("SELECT run_id, aspect, rating FROM run_feedback"),
         _local("SELECT id, company, title FROM jobs"),
-        model, recent,
+        model, recent, prices=pricing.saved(),
     )

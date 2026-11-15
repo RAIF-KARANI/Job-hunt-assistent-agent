@@ -2512,3 +2512,27 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
     too, so a long step could be cut off ("answer was cut off").
   - Gemini's structured output and tool calls are used the standard way
     but are untested here.
+
+## 16d Evals: four more charts, and cost ✅ (15 Nov 2026)
+- **Tokens per run** and **Agent time per run**: one point per full run,
+  oldest left, the last 60. Hover a run for its numbers (tokens in / out).
+- **Time against tokens**: one dot per run. On the 30 full runs in the
+  repo's log the two move together with r = 0.88.
+- **Evidence pass rate by model**: one line per model, the 4 with the most
+  runs, whatever model is chosen at the top. Colours checked with the
+  dataviz palette validator on both themes; with two or more models there
+  is a legend, and every chart has a table for screen readers.
+- **Cost** (`job_agent/pricing.py`): in Settings, a cloud model gets two
+  optional prices ($ per million tokens, input and output). Evals then
+  shows a Cost tile (total, and per full run), "Cost / run" in Models
+  compared, and a Cost column in Recent runs. No price = no cost shown; a
+  local model says "free".
+- **Checked against a hand sum:** 20,000 in + 5,000 out at $0.50 / $2.00 is
+  $0.02; with a second run of twice that, $0.06 in total (a test).
+- **Seen in the real window:** the four charts on the 30 real runs. **Seen
+  only in the browser preview (made-up data):** two models with a legend,
+  the Cost tile and column, and the price fields. The real log has no run
+  of a priced cloud model yet.
+- pytest: 462 passed (9 new); typecheck and build clean.
+- **Not added:** the follow-up email's model call (16g) is still not in the
+  run log, so it is in none of these numbers.

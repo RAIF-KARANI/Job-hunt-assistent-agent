@@ -12,6 +12,8 @@ export interface Settings {
   UI_THEME?: Theme;
   SETUP_DONE?: string;
   ANTHROPIC_API_KEY_SET: boolean;
+  /** 16d: "model=in/out;model=in/out", prices per million tokens. */
+  MODEL_PRICES?: string;
   /** 16c: OpenAI and Gemini keys (the page only learns that one is saved). */
   OPENAI_API_KEY_SET?: boolean;
   GOOGLE_API_KEY_SET?: boolean;
@@ -381,6 +383,7 @@ export interface EvalsData {
     decided: number;
     median_seconds: number | null;
     tokens_per_run: number | null;
+    cost_per_run?: number | null; // 16d
   }[];
   kpis: {
     runs: number;
@@ -396,6 +399,10 @@ export interface EvalsData {
     tool_calls: number;
     tool_failures: number;
     tool_empty: number; // 16b: searches that found nothing
+    /** 16d: with the prices from Settings; null = no run here has a priced model. */
+    cost_total: number | null;
+    cost_runs: number;
+    cost_per_run: number | null;
     unfinished: number; // closed app, Stop or error (12j)
     unfinished_seconds: number;
   };
@@ -414,10 +421,16 @@ export interface EvalsData {
     tokens: number;
     pass_rate: number | null;
     tracing: string; // what was on during that run: off / langfuse / langsmith
+    cost: number | null; // 16d: null = no price for this model
     job: { id: number; company: string; title: string } | null;
   }[];
   /** 16a: how many runs there are in all (`recent` may hold fewer). */
   recent_total: number;
+  /** 16d: the last full runs, oldest first: tokens, agent time and (with a price) cost. */
+  run_points: { run_id: string; started_at: string; model: string; seconds: number; tokens_in: number; tokens_out: number; cost: number | null }[];
+  /** 16d: evidence pass rate over time, per model (the 4 with the most runs; always every model). */
+  model_trend: { model: string; runs: number; points: { run_id: string; started_at: string; rate: number }[] }[];
+  models_not_charted: number;
 }
 
 export interface TracingStatus {
@@ -510,6 +523,8 @@ export interface PyApi {
   pull_model(model: string): Promise<{ ok: boolean; model: string }>;
   /** A tiny real call. `provider` defaults to Claude (16c: also "openai", "google"). */
   test_api_key(key: string | null, model: string, provider?: string): Promise<LlmStatus>;
+  /** 16d: a cloud model's price per million tokens, for the cost in Evals; both null = forget it. */
+  set_model_price(model: string, priceIn: number | null, priceOut: number | null): Promise<Settings>;
   /** 16c: the models this key can use, asked from the provider; also the key check. null = the saved key. */
   list_models(provider: string, key: string | null): Promise<LlmStatus & { models: string[] }>;
   get_settings(): Promise<Settings>;

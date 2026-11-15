@@ -644,6 +644,15 @@ class Api:
         except Exception as e:  # wrong key, no credit, no network, a model this key can't use...
             return {"ok": False, "message": str(e).replace(key, "(your key)")[:240]}
 
+    def set_model_price(self, model: str, price_in=None, price_out=None) -> dict:
+        """16d: the price of a cloud model per million tokens (input, output), for
+        the cost in Evals. Both empty = forget this model's price."""
+        from job_agent import pricing
+
+        prices = pricing.with_price(pricing.saved(), model, price_in, price_out)  # raises on nonsense
+        settings.save_settings({pricing.SETTING: pricing.dump(prices)})
+        return self.get_settings()
+
     def list_models(self, provider: str, key: str | None = None) -> dict:
         """16c: the models this key can use, asked from the provider (which also
         checks the key). `key` None = the saved key. Nothing is saved here."""
