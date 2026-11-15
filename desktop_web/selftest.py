@@ -46,8 +46,16 @@ def self_test(report_path: str) -> int:
     check("built UI bundled", web_files)
     check("icon bundled", lambda: paths.resource_path("assets/joblens.png").exists() or 1 / 0)
 
-    for module in ["webview", "langchain_ollama", "langchain_anthropic", "ddgs", "pypdf", "pandas"]:
+    for module in ["webview", "langchain_ollama", "langchain_anthropic", "langchain_openai", "langchain_google_genai",
+                   "ddgs", "pypdf", "pandas"]:
         check(f"import {module}", lambda m=module: __import__(m) and None)
+
+    def cloud_models():
+        # 16c: importing a provider's package isn't enough: building its chat model
+        # loads more of it (no call is made, and the key is not a real one).
+        from desktop_web.bridge import _test_model
+        return ", ".join(type(_test_model(p, "self-test", "not-a-key")).__name__ for p in ("anthropic", "openai", "google"))
+    check("cloud models can be built (no call made)", cloud_models)
 
     def no_console_print():
         # The windowed .exe has sys.stdout = None; the run log router must cope.

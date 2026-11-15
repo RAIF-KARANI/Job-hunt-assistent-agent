@@ -6,8 +6,8 @@ python-dotenv>=1.0      # loads settings from the .env file
 # ---- LLM provider (pick the one that matches LLM_PROVIDER in .env) ----
 langchain-ollama>=0.3   # local models via Ollama (current choice: qwen3)
 langchain-anthropic>=0.3  # optional Claude provider (API key in Settings)
-# langchain-openai      # uncomment to use OpenAI (GPT)
-# langchain-google-genai  # uncomment to use Gemini
+langchain-openai>=1.0     # optional OpenAI provider (API key in Settings), since 1.2.0
+langchain-google-genai>=4.0  # optional Gemini provider (API key in Settings), since 1.2.0
 
 # ---- Phase 1: reading job posting pages ----
 requests>=2.32          # download the web page

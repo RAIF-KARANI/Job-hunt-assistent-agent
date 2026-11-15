@@ -73,8 +73,9 @@ def save_settings(updates: dict) -> None:
 
 
 def has_api_key(provider: str) -> bool:
-    key_name = {"anthropic": "ANTHROPIC_API_KEY"}.get(provider)
-    return bool(key_name and os.getenv(key_name))
+    from job_agent import providers  # 16c: Claude, OpenAI and Gemini
+
+    return bool(providers.saved_key(provider))
 
 
 # Load once, as soon as any part of the agent imports this module.

@@ -856,6 +856,13 @@ In-app updates failed on every try. Amends D27 and D37.
   - After an interview, and for a second follow-up, there is no such
     sentence and the model isn't asked.
   - JobLens sends nothing. The draft isn't saved: "Write again" makes a new one.
+- **No OpenAI or Gemini model names are built in** (16c). They change every
+  few months; a name written into the app would be wrong soon after. "Find
+  my models" asks the provider which models your key can use (that is also
+  the key check), and you choose from that list.
+- **The setup wizard still offers "this PC" or Claude only.** OpenAI and
+  Gemini are chosen in Settings. Adding them to the wizard waits for the
+  version 3 redesign.
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

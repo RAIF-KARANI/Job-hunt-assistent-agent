@@ -39,14 +39,14 @@ from urllib.parse import urlparse
 
 import webview
 
-from job_agent import __version__, applyreminder, followup, paths, runlog, settings, tracker
+from job_agent import __version__, applyreminder, followup, paths, providers, runlog, settings, tracker
 from job_agent.llm import llm_status
 
 from desktop_web.runner import AgentRunner, Event
 
 # Settings the page may change, with the values each accepts (None = free text).
 WRITABLE_SETTINGS: dict[str, tuple | None] = {
-    "LLM_PROVIDER": ("ollama", "anthropic"),
+    "LLM_PROVIDER": providers.PROVIDERS,      # 16c: + openai, google
     "LLM_MODEL": None,
     "OLLAMA_NUM_CTX": None,
     "JUDGE_EVIDENCE": ("true", "false"),
@@ -63,7 +63,7 @@ WRITABLE_SETTINGS: dict[str, tuple | None] = {
     "LANGFUSE_HOST": None,                    # 1.0.1: a web address (checked below)
     "LANGFUSE_PUBLIC_KEY": None,              # 1.0.1: the secret key goes through set_langfuse_secret()
 }
-SECRET_SETTINGS = ("ANTHROPIC_API_KEY", "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
+SECRET_SETTINGS = (*providers.KEY_NAMES, "LANGFUSE_SECRET_KEY", "LANGSMITH_API_KEY")
 
 
 def to_json(value):
@@ -628,18 +628,26 @@ class Api:
         self._progress("pull", f"{model} is ready.", 1.0, done=True, ok=True)
         return {"ok": True, "model": model}
 
-    def test_api_key(self, key: str | None, model: str) -> dict:
-        """A 5-token test call. `key` None = the saved key. Nothing is saved here."""
-        key = (key or "").strip() or os.getenv("ANTHROPIC_API_KEY", "")
+    def test_api_key(self, key: str | None, model: str, provider: str = "anthropic") -> dict:
+        """A tiny test call with this model. `key` None = the saved key. Nothing
+        is saved here. 16c: any cloud provider, not only Claude."""
+        if not providers.is_cloud(provider):
+            raise ValueError(f"'{provider}' doesn't use an API key.")
+        key = (key or "").strip() or providers.saved_key(provider)
         if not key:
             return {"ok": False, "message": "Paste an API key first."}
+        if not (model or "").strip():
+            return {"ok": False, "message": "Choose a model first."}
         try:
-            from langchain_anthropic import ChatAnthropic
-
-            ChatAnthropic(model=model, api_key=key, max_tokens=5, timeout=20).invoke("Reply OK")
+            _test_model(provider, model.strip(), key).invoke("Reply OK")
             return {"ok": True, "message": "The key works."}
-        except Exception as e:  # wrong key, no credit, no network...
-            return {"ok": False, "message": str(e)[:240]}
+        except Exception as e:  # wrong key, no credit, no network, a model this key can't use...
+            return {"ok": False, "message": str(e).replace(key, "(your key)")[:240]}
+
+    def list_models(self, provider: str, key: str | None = None) -> dict:
+        """16c: the models this key can use, asked from the provider (which also
+        checks the key). `key` None = the saved key. Nothing is saved here."""
+        return providers.list_models(provider, key or "")
 
     def _progress(self, what: str, message: str, fraction: float | None = None,
                   done: bool = False, ok: bool | None = None) -> None:
@@ -722,7 +730,8 @@ class Api:
     def get_settings(self) -> dict:
         values = settings.read_settings()
         out = {k: v for k, v in values.items() if k not in SECRET_SETTINGS}
-        out["ANTHROPIC_API_KEY_SET"] = bool(values.get("ANTHROPIC_API_KEY"))
+        for name in providers.KEY_NAMES:  # the page learns THAT a key is saved, never the key
+            out[f"{name}_SET"] = bool(values.get(name))
         out["LANGFUSE_SECRET_KEY_SET"] = bool(values.get("LANGFUSE_SECRET_KEY"))
         return out
 
@@ -765,10 +774,32 @@ class Api:
         autostart.set_enabled(bool(on))
         return self.autostart_status()
 
-    def set_api_key(self, key: str) -> dict:
-        """Write-only: the page can set or clear the key, never read it back."""
-        settings.save_settings({"ANTHROPIC_API_KEY": (key or "").strip()})
+    def set_api_key(self, key: str, provider: str = "anthropic") -> dict:
+        """Write-only: the page can set or clear a provider's key, never read it back."""
+        name = providers.key_name(provider)
+        if not name:
+            raise ValueError(f"'{provider}' doesn't use an API key.")
+        key = (key or "").strip()
+        if any(ord(ch) < 32 for ch in key):
+            raise ValueError("An API key can't contain line breaks.")  # it would add a line to the settings file
+        settings.save_settings({name: key})
         return self.get_settings()
+
+
+def _test_model(provider: str, model: str, key: str):
+    """A chat model for one tiny call (the key check), with a given key."""
+    if provider == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+
+        return ChatAnthropic(model=model, api_key=key, max_tokens=5, timeout=20)
+    if provider == "openai":
+        from langchain_openai import ChatOpenAI
+
+        # 200, not 5: a reasoning model spends tokens thinking before it answers
+        return ChatOpenAI(model=model, api_key=key, max_tokens=200, timeout=30, max_retries=0)
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    return ChatGoogleGenerativeAI(model=model, api_key=key, max_output_tokens=200, timeout=30, max_retries=0)
 
 
 def window_sender(window) -> Callable[[Event], None]:

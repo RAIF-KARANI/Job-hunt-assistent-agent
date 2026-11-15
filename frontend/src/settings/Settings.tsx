@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
+import { CloudModelPicker } from "./CloudModelPicker";
 import { LevelPicker } from "./LevelPicker";
 import { ModelPicker } from "./ModelPicker";
 import { ResumeList } from "./ResumeList";
@@ -12,7 +13,18 @@ import { ShortcutField } from "./ShortcutField";
 import { LangfuseFields } from "./LangfuseFields";
 import { UpdatesCard } from "./UpdatesCard";
 
-const DEFAULT_MODELS: Record<string, string> = { ollama: "qwen3:8b", anthropic: "claude-haiku-5-5" };
+// 16c: no built-in model for OpenAI and Gemini: you pick one from the list your key gets.
+const DEFAULT_MODELS: Record<string, string> = { ollama: "qwen3:8b", anthropic: "claude-haiku-5-5", openai: "", google: "" };
+/** Where the AI can run. The cloud ones need an API key (16c: OpenAI and Gemini). */
+const PROVIDERS = [
+  { id: "ollama", tab: "On this PC (Ollama)", label: "Ollama", company: "", keyHint: "", keysUrl: "", keysSite: "", keySet: "" },
+  { id: "anthropic", tab: "Claude", label: "Claude", company: "Anthropic", keyHint: "sk-ant-…",
+    keysUrl: "https://console.anthropic.com/settings/keys", keysSite: "console.anthropic.com", keySet: "ANTHROPIC_API_KEY_SET" },
+  { id: "openai", tab: "OpenAI", label: "OpenAI", company: "OpenAI", keyHint: "sk-…",
+    keysUrl: "https://platform.openai.com/api-keys", keysSite: "platform.openai.com", keySet: "OPENAI_API_KEY_SET" },
+  { id: "google", tab: "Gemini", label: "Gemini", company: "Google", keyHint: "AIza…",
+    keysUrl: "https://aistudio.google.com/apikey", keysSite: "aistudio.google.com", keySet: "GOOGLE_API_KEY_SET" },
+] as const;
 const THEMES: { id: Theme; label: string }[] = [
   { id: "system", label: "Like Windows" },
   { id: "dark", label: "Dark" },
@@ -97,17 +109,18 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
       .catch(() => setCheck(null));
   }, [settings.LLM_PROVIDER, settings.LLM_MODEL]);
 
-  /** For Claude, a real 5-token call: llm_status() only sees that a key exists, not that it works. */
+  /** For a cloud model, a real tiny call: llm_status() only sees that a key exists, not that it works. */
   const checkConnection = useCallback(async (provider: string, model: string) => {
     setStatus("checking");
     try {
       const api = await getApi();
-      if (provider !== "anthropic") {
+      if (provider === "ollama") {
         setStatus(await api.llm_status());
         return;
       }
-      const test = await api.test_api_key(null, model);
-      setStatus(test.ok ? { ok: true, message: `Claude (${model}) answered with your API key.` } : test);
+      const name = PROVIDERS.find((p) => p.id === provider)?.label ?? provider;
+      const test = await api.test_api_key(null, model, provider);
+      setStatus(test.ok ? { ok: true, message: `${name} (${model}) answered with your API key.` } : test);
     } catch (e) {
       setStatus({ ok: false, message: errorMessage(e) });
     }
@@ -119,8 +132,11 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
     setError(null);
     try {
       const api = await getApi();
-      let next = await api.save_settings({ LLM_PROVIDER: provider, LLM_MODEL: model.trim() || DEFAULT_MODELS[provider] });
-      if (key.trim()) next = await api.set_api_key(key.trim());
+      const chosen = model.trim() || DEFAULT_MODELS[provider];
+      if (!chosen) throw new Error("Choose a model first: paste your key, then press “Find my models”.");
+      // The key first: if it can't be saved, the provider isn't switched to one without a key.
+      if (key.trim()) await api.set_api_key(key.trim(), provider);
+      const next = await api.save_settings({ LLM_PROVIDER: provider, LLM_MODEL: chosen });
       setKey("");
       onSettings(next);
       await checkConnection(next.LLM_PROVIDER, next.LLM_MODEL);
@@ -153,11 +169,14 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const changeProvider = (next: string) => {
     setProvider(next);
     setStatus(null);
+    setKey(""); // a key typed for one provider must never be saved for another
     // A model name only makes sense for its own provider.
     setModel(next === settings.LLM_PROVIDER ? settings.LLM_MODEL : DEFAULT_MODELS[next]);
   };
 
-  const cloud = provider === "anthropic";
+  const cloud = provider !== "ollama";
+  const who = PROVIDERS.find((p) => p.id === provider) ?? PROVIDERS[0];
+  const keySaved = who.keySet ? Boolean((settings as unknown as Record<string, unknown>)[who.keySet]) : false;
 
   return (
     <div className="page settings">
@@ -181,21 +200,41 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
         </div>
         <form onSubmit={saveModel} className="settings-form">
           <div className="segmented" role="radiogroup" aria-label="Where the AI runs">
-            {[
-              { id: "ollama", label: "On this PC (Ollama)" },
-              { id: "anthropic", label: "Claude API" },
-            ].map((p) => (
+            {PROVIDERS.map((p) => (
               <label key={p.id} className="segment">
                 <input type="radio" name="provider" checked={provider === p.id} onChange={() => changeProvider(p.id)} />
-                <span>{p.label}</span>
+                <span>{p.tab}</span>
               </label>
             ))}
           </div>
           <p className="hint">
-            {cloud
-              ? "Fast on any PC. Job text and your resume are sent to Anthropic. About $0.01 per job with Claude Haiku."
-              : "Free and private: nothing leaves this PC. Needs Ollama and about 8–16 GB of RAM."}
+            {!cloud
+              ? "Free and private: nothing leaves this PC. Needs Ollama and about 8–16 GB of RAM."
+              : provider === "anthropic"
+                ? "Fast on any PC. Job text and your resume are sent to Anthropic. About $0.01 per job with Claude Haiku."
+                : `Fast on any PC. Job text and your resume are sent to ${who.company}, and ${who.company} bills your key for each job.`}
           </p>
+
+          {/* 16c: the key comes first: the model list is asked for with it */}
+          {cloud && (
+            <label className="field">
+              <span>
+                {who.company} API key {keySaved && <span className="badge">A key is saved</span>}
+              </span>
+              <input
+                className="input mono"
+                type="password"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder={keySaved ? "Paste a new key to replace it" : who.keyHint}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <span className="hint">
+                Create one at <a href={who.keysUrl}>{who.keysSite}</a>. It's stored only in JobLens' settings file on this PC.
+              </span>
+            </label>
+          )}
 
           <div className="field">
             <span>Model</span>
@@ -204,27 +243,15 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
                 <option>{model} (checking Ollama…)</option>
               </select>
             ) : (
-              <ModelPicker cloud={cloud} value={model} installed={local ?? null} onChange={setModel} />
+              <>
+                {provider === "openai" || provider === "google" ? (
+                  <CloudModelPicker key={provider} provider={provider} label={who.label} value={model} typedKey={key} keySaved={keySaved} onChange={setModel} />
+                ) : (
+                  <ModelPicker cloud={cloud} value={model} installed={local ?? null} onChange={setModel} />
+                )}
+              </>
             )}
           </div>
-
-          {cloud && (
-            <label className="field">
-              <span>API key {settings.ANTHROPIC_API_KEY_SET && <span className="badge">A key is saved</span>}</span>
-              <input
-                className="input mono"
-                type="password"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                placeholder={settings.ANTHROPIC_API_KEY_SET ? "Paste a new key to replace it" : "sk-ant-…"}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <span className="hint">
-                Create one at <a href="https://console.anthropic.com/settings/keys">console.anthropic.com</a>. It's stored only in JobLens' settings file on this PC.
-              </span>
-            </label>
-          )}
 
           <div className="row-actions">
             <button type="submit" className="btn btn-primary" disabled={!dirty || saving}>

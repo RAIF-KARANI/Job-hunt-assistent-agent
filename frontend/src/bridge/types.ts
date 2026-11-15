@@ -12,6 +12,9 @@ export interface Settings {
   UI_THEME?: Theme;
   SETUP_DONE?: string;
   ANTHROPIC_API_KEY_SET: boolean;
+  /** 16c: OpenAI and Gemini keys (the page only learns that one is saved). */
+  OPENAI_API_KEY_SET?: boolean;
+  GOOGLE_API_KEY_SET?: boolean;
   LANGFUSE_SECRET_KEY_SET?: boolean; // 1.0.1: the key itself never reaches the page
   [key: string]: string | boolean | undefined;
 }
@@ -505,8 +508,11 @@ export interface PyApi {
   ollama_status(): Promise<OllamaStatus>;
   install_ollama(): Promise<{ ok: boolean; manual: boolean }>;
   pull_model(model: string): Promise<{ ok: boolean; model: string }>;
-  test_api_key(key: string | null, model: string): Promise<LlmStatus>;
+  /** A tiny real call. `provider` defaults to Claude (16c: also "openai", "google"). */
+  test_api_key(key: string | null, model: string, provider?: string): Promise<LlmStatus>;
+  /** 16c: the models this key can use, asked from the provider; also the key check. null = the saved key. */
+  list_models(provider: string, key: string | null): Promise<LlmStatus & { models: string[] }>;
   get_settings(): Promise<Settings>;
   save_settings(updates: Partial<Record<string, string>>): Promise<Settings>;
-  set_api_key(key: string): Promise<Settings>;
+  set_api_key(key: string, provider?: string): Promise<Settings>;
 }

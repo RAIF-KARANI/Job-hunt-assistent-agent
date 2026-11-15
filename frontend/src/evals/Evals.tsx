@@ -14,7 +14,7 @@ const pct = (v: number | null) => (v === null ? "–" : `${Math.round(v * 100)}%
 const kilo = (n: number | null) => (n === null ? "–" : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n)));
 const share = (part: number, whole: number) => (whole ? part / whole : null);
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-const where = (provider: string) => (provider === "anthropic" ? "API · your key" : "local · this PC");
+const where = (provider: string) => (provider === "ollama" ? "local · this PC" : "API · your key"); // 16c: any cloud provider
 
 const RESULT_TONE: Record<string, string> = {
   approved: "ok",
@@ -138,7 +138,7 @@ export function Evals() {
               <option value="">All models</option>
               {data?.models.map((m) => (
                 <option key={m.model} value={m.model}>
-                  {m.model} ({m.provider === "anthropic" ? "API" : "local"})
+                  {m.model} ({m.provider === "ollama" ? "local" : "API"})
                 </option>
               ))}
             </select>

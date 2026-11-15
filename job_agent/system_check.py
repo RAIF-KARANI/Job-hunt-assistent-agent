@@ -195,7 +195,7 @@ def recommend_3d(info: SystemInfo, provider: str, model: str | None) -> tuple[st
     graphics memory the model leaves, the calmer the galaxy should be. The
     page turns it off anyway if WebGL doesn't work.
     """
-    if provider == "anthropic":
+    if provider != "ollama":  # Claude, OpenAI, Gemini (16c)
         return "animated", "The AI runs in the cloud, so the graphics card is free for 3D."
     if not info.gpu_name:
         return "off", "No graphics card found: the flat map keeps the PC fast."

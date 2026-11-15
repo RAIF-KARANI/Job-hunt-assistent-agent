@@ -61,10 +61,14 @@ License). https://docs.python.org/3/license.html
 
 | Component | Version | License |
 |---|---|---|
-| LangChain (`langchain`, `langchain-core`) | 1.4.7 / 1.7.0 | MIT |
+| LangChain (`langchain`, `langchain-core`) | 1.4.7 / 1.8.0 | MIT |
 | LangGraph (`langgraph`, `langgraph-checkpoint-sqlite`) | 1.2.18 / 3.1.2 | MIT |
 | `langchain-ollama`, `ollama` | 1.1.0 / 0.6.3 | MIT |
 | `langchain-anthropic`, `anthropic` | 1.7.6 / 1.17.0 | MIT |
+| `langchain-openai`, `openai`, `tiktoken` (since 1.2.0) | 1.8.0 / 3.51.0 / 0.14.0 | MIT / Apache-2.0 / MIT, © 2022 OpenAI, Shantanu Jain |
+| `langchain-google-genai`, `google-genai`, `google-auth` (since 1.2.0) | 4.5.0 / 3.3.0 / 2.62.2 | MIT / Apache-2.0 / Apache-2.0 |
+| `cryptography`, `pyasn1`, `pyasn1_modules` (needed by `google-auth`) | 50.0.2 / 0.6.5 / 0.4.2 | Apache-2.0 OR BSD-3-Clause / BSD-2-Clause / BSD-2-Clause |
+| `regex`, `tenacity`, `filetype` | 2026.11.9 / 9.1.4 / 1.2.0 | Apache-2.0 AND CNRI-Python / Apache-2.0 / MIT |
 | `langfuse` | 5.0.4 | MIT |
 | Pydantic | 2.14.1 | MIT |
 | pandas | 3.1.0 | BSD-3-Clause |

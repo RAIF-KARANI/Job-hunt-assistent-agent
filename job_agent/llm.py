@@ -87,6 +87,18 @@ def unload_model(timeout: float = 3.0) -> bool:
         return False
 
 
+# 16c: a cloud call that hangs must end by itself (a local one is ended by Stop).
+CLOUD_TIMEOUT = 120
+
+
+def openai_temperature(model: str, temperature: float) -> dict:
+    """OpenAI's reasoning models (o1, o3, o4..., gpt-5...) refuse a temperature
+    other than their own: sending 0.2 is an error. For those, send none."""
+    import re
+
+    return {} if re.match(r"(o\d|gpt-5)", model.lower()) else {"temperature": temperature}
+
+
 def get_llm(max_tokens: int | None = None) -> BaseChatModel:
     """max_tokens: a smaller answer-length cap for one kind of call (15c: the
     requirement batches), never above the LLM_MAX_OUTPUT_TOKENS setting."""
@@ -120,19 +132,18 @@ def get_llm(max_tokens: int | None = None) -> BaseChatModel:
 
         return ChatAnthropic(model=model, temperature=temperature, max_tokens=limit)
 
-    # ---- OpenAI (GPT) ----
-    # pip install langchain-openai ; set OPENAI_API_KEY in .env
+    # ---- OpenAI (GPT) ----  16c: in the app since 1.2.0 (key in Settings)
     if provider == "openai":
         from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(model=model, temperature=temperature, max_tokens=limit)
+        return ChatOpenAI(model=model, max_tokens=limit, timeout=CLOUD_TIMEOUT, **openai_temperature(model, temperature))
 
-    # ---- Google Gemini ----
-    # pip install langchain-google-genai ; set GOOGLE_API_KEY in .env
+    # ---- Google Gemini ----  16c: in the app since 1.2.0 (key in Settings)
     if provider == "google":
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        return ChatGoogleGenerativeAI(model=model, temperature=temperature, max_output_tokens=limit)
+        return ChatGoogleGenerativeAI(model=model, temperature=temperature, max_output_tokens=limit,
+                                      timeout=CLOUD_TIMEOUT)
 
     raise ValueError(
         f"Unknown LLM_PROVIDER '{provider}'. Use: ollama, anthropic, openai, google."
@@ -154,12 +165,13 @@ class RunStopped(RuntimeError):
 
 
 # How each provider says "I stopped because of the length limit".
-_CUT_OFF = {"done_reason": "length", "stop_reason": "max_tokens", "finish_reason": "length"}
+# Ollama / Claude / OpenAI say "length" or "max_tokens"; Gemini says finish_reason "MAX_TOKENS" (16c).
+_CUT_OFF = {"done_reason": ("length",), "stop_reason": ("max_tokens",), "finish_reason": ("length", "max_tokens")}
 
 
 def was_cut_off(message) -> bool:
     meta = getattr(message, "response_metadata", None) or {}
-    return any(str(meta.get(key, "")).lower() == value for key, value in _CUT_OFF.items())
+    return any(str(meta.get(key, "")).lower() in values for key, values in _CUT_OFF.items())
 
 
 def _checked(result: dict, limit: int | None = None):
@@ -224,12 +236,17 @@ def llm_status() -> tuple[bool, str]:
     provider = os.getenv("LLM_PROVIDER", "ollama").lower()
     model = os.getenv("LLM_MODEL", "qwen3:8b")
 
-    if provider == "anthropic":
-        if not os.getenv("ANTHROPIC_API_KEY"):
-            return False, "No Anthropic API key set. Add one in Settings."
-        return True, f"Using Claude ({model}) with your API key."
+    from job_agent import providers
+
+    if providers.is_cloud(provider):  # 16c: every cloud provider needs its key and a model
+        who = providers.CLOUD[provider]
+        if not providers.saved_key(provider):
+            return False, f"No {who['company']} API key set. Add one in Settings."
+        if not model.strip():
+            return False, f"No {who['label']} model chosen. Pick one in Settings."
+        return True, f"Using {who['label']} ({model}) with your API key."
     if provider != "ollama":
-        return True, f"Using {provider} ({model})."
+        return False, f"Unknown AI provider '{provider}'. Choose one in Settings."
 
     import requests
 

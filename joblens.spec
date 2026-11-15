@@ -33,6 +33,8 @@ datas = [("desktop_web/web", "desktop_web/web"),   # the built React UI (12h)
 for package in ["langchain", "langchain-core", "langgraph", "langgraph-checkpoint",
                 "langgraph-checkpoint-sqlite", "langsmith", "langchain-ollama", "ollama",
                 "langchain-anthropic", "anthropic", "ddgs", "pydantic", "langfuse", "pywebview",
+                # 16c: OpenAI and Gemini can be chosen in Settings since 1.2.0
+                "langchain-openai", "openai", "tiktoken", "langchain-google-genai", "google-genai",
                 "pystray"]:  # pystray's metadata carries its LGPL license texts (13a)
     try:
         datas += copy_metadata(package)
@@ -44,7 +46,9 @@ a = Analysis(
     pathex=["."],
     datas=datas,
     # Imported inside functions (only when that provider / screen is used), so be explicit.
-    hiddenimports=["langchain_ollama", "langchain_anthropic", "desktop_web.selftest",
+    hiddenimports=["langchain_ollama", "langchain_anthropic", "langchain_openai", "langchain_google_genai",
+                   "tiktoken_ext.openai_public", "tiktoken_ext",  # tiktoken finds its encodings by name
+                   "desktop_web.selftest", "job_agent.providers",
                    "job_agent.monitoring", "job_agent.system_check", "job_agent.ollama_setup",
                    # pystray picks its backend by name at runtime: PyInstaller can't see it.
                    "pystray._win32"],

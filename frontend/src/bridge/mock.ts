@@ -38,10 +38,15 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
       settings = { ...settings, ...updates };
       return settings;
     },
-    set_api_key: async (key) => {
-      settings = { ...settings, ANTHROPIC_API_KEY_SET: Boolean(key) };
+    set_api_key: async (key, provider = "anthropic") => {
+      const flag = { anthropic: "ANTHROPIC_API_KEY_SET", openai: "OPENAI_API_KEY_SET", google: "GOOGLE_API_KEY_SET" }[provider] ?? "ANTHROPIC_API_KEY_SET";
+      settings = { ...settings, [flag]: Boolean(key) };
       return settings;
     },
+    list_models: async (provider, key) =>
+      key === "bad"
+        ? { ok: false, message: "OpenAI didn't accept this key.", models: [] }
+        : { ok: true, message: "The key works: 3 models to choose from.", models: provider === "google" ? ["gemini-a", "gemini-b", "gemini-c"] : ["gpt-a", "gpt-b", "gpt-c"] },
     feedback_options: async () => ({
       fit_score: ["too low", "about right", "too high"],
       cover_note: ["usable as is", "needed edits", "not usable"],

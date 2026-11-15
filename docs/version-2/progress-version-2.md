@@ -2482,3 +2482,33 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
 - **Test data changed:** HTC Global Services (#38) had a snooze copied from
   your installed app; I cleared it to see the reminder, then pressed
   "I sent it", so it is marked as followed up today.
+
+## 16c OpenAI and Gemini: built, not yet run with a real key 🟡 (15 Nov 2026)
+- **Settings → AI model** has four choices: On this PC, Claude, OpenAI,
+  Gemini. Each cloud provider has its own key (saved only in the settings
+  file; the page can set a key, never read it back).
+- **"Find my models"** asks OpenAI / Google which models your key can use
+  and offers the chat models among them. A wrong key is explained in plain
+  words ("OpenAI didn't accept this key..."), never echoed.
+- **Checked against the real services with a wrong key:** all three refuse
+  it and the message is right. In the real window: the OpenAI tab, a wrong
+  key, and Save without a model ("Choose a model first...").
+- **In the build:** `langchain-openai` and `langchain-google-genai` are in
+  requirements, the PyInstaller recipe and the bundled self-test. A scratch
+  build passed its self-test and window test, including a new check that
+  builds all three cloud models inside the frozen app.
+- **Size:** the app folder grew from 137 MB (1.1.1) to 156 MB (+19 MB). The
+  installer wasn't built; at the usual compression that is about +8 MB.
+- **The package install moved `langchain-core` 1.7.0 → 1.8.0.** All tests
+  pass and the local model still answers (checked with 2 follow-up emails).
+- pytest: 453 passed (19 new); typecheck and build clean.
+- **NOT DONE, needs your keys:** no real call to OpenAI or Gemini has been
+  made, so "a full run works with each" and "the fit evals on each" are
+  open. Known risks until then:
+  - OpenAI's reasoning models (o-series, gpt-5) refuse a temperature; the
+    app sends none for those names. Other names that behave the same would
+    fail with a clear error.
+  - Reasoning models spend the answer limit (4,096 tokens) on thinking
+    too, so a long step could be cut off ("answer was cut off").
+  - Gemini's structured output and tool calls are used the standard way
+    but are untested here.
