@@ -9,6 +9,7 @@ import { JobSheet } from "../tracker/JobSheet";
 import { useJobs } from "../tracker/useJobs";
 import { SafetyNets, seconds, StatusFunnel, StepTimes } from "./Charts";
 import { Galaxy } from "./galaxy/Galaxy";
+import { ReadyToApply } from "./ReadyToApply";
 import { SelectedJob } from "./SelectedJob";
 
 type Range = 7 | 30 | null;
@@ -38,7 +39,7 @@ function bestJob(jobs: JobRow[]): JobRow | undefined {
 }
 
 export function Dashboard({ level }: { level: Ui3D }) {
-  const { jobs, error: jobsError, load: reloadJobs, move, followUp } = useJobs();
+  const { jobs, error: jobsError, load: reloadJobs, move, followUp, applyAnswer } = useJobs();
   const [days, setDays] = useState<Range>(savedRange);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +146,8 @@ export function Dashboard({ level }: { level: Ui3D }) {
         {selected && <SelectedJob job={selected} onOpen={setSheetId} />}
       </div>
 
+      {jobs && <ReadyToApply jobs={jobs} onOpen={setSheetId} />}
+
       <div className="chart-row">
         <StepTimes data={data} />
         <SafetyNets data={data} />
@@ -158,6 +161,7 @@ export function Dashboard({ level }: { level: Ui3D }) {
           row={jobs?.find((j) => j.id === sheetId)}
           onMove={(id, to) => void move(id, to)}
           onFollowUp={followUp}
+          onApply={applyAnswer}
           onChanged={reloadJobs}
           onDeleted={() => {
             setSheetId(null);

@@ -822,6 +822,13 @@ In-app updates failed on every try. Amends D27 and D37.
   searches in a row or 3 minutes, whichever comes first, and the cover note
   then uses what was found, or only the posting. The limit is checked
   between steps, so one AI call that is already running still finishes.
+  - The 24 hours to answer start when JobLens first SHOWS the question
+    (the page, or a notification while it is in the tray), not when it
+    became due: a PC that was off all weekend doesn't cost you the question.
+  - A new cover note for the same job asks again.
+  - "Ready to apply" leaves out a job you pressed Ignore on, but keeps one
+    whose question simply ran out: you never said no.
+  - There is no setting to turn it off (the period is fixed, as you asked).
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage, getApi, onEvent } from "../bridge/bridge";
-import type { JobRow, JobStatus } from "../bridge/types";
+import type { ApplyAnswer, JobRow, JobStatus } from "../bridge/types";
 
 export type FollowUpAction = "done" | "snooze" | "ignore";
 
@@ -70,5 +70,18 @@ export function useJobs() {
     [load],
   );
 
-  return { jobs, error, load, move, followUp };
+  /** 16i: the answer to "Did you apply?". */
+  const applyAnswer = useCallback(
+    async (id: number, answer: ApplyAnswer): Promise<void> => {
+      try {
+        await (await getApi()).apply_answer(id, answer);
+        load();
+      } catch (e) {
+        setError(`Couldn't save that: ${errorMessage(e)}`);
+      }
+    },
+    [load],
+  );
+
+  return { jobs, error, load, move, followUp, applyAnswer };
 }

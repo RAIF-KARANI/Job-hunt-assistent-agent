@@ -69,6 +69,9 @@ MIGRATIONS = (
     ("interview_at", "TEXT"),     # 14h: "YYYY-MM-DDTHH:MM" as you typed it (your local time)
     ("contact", "TEXT"),          # 14h: recruiter / hiring manager: name, email, link
     ("follow_up_ignored", "TEXT"),  # 16a: the status the job had when you pressed Ignore
+    ("apply_asked_at", "TEXT"),       # 16i: when "Did you apply?" was first shown
+    ("apply_snoozed_until", "TEXT"),  # 16i: "Not yet": ask again then
+    ("apply_ignored_at", "TEXT"),     # 16i: "Ignore" (or no answer in 24 hours)
 )
 
 # 14h: what you may write about a job, and how long it may be.
@@ -208,7 +211,9 @@ def list_jobs() -> list[sqlite3.Row]:
     with _db() as conn:
         return conn.execute(
             """SELECT id, title, company, fit_score, best_resume, status, created_at, updated_at,
-                      followed_up_at, snoozed_until, follow_up_ignored, notes, interview_at, contact
+                      followed_up_at, snoozed_until, follow_up_ignored, notes, interview_at, contact,
+                      apply_asked_at, apply_snoozed_until, apply_ignored_at,
+                      (SELECT MAX(approved_at) FROM cover_notes WHERE job_id = jobs.id) AS note_approved_at
                FROM jobs ORDER BY fit_score DESC, updated_at DESC"""
         ).fetchall()
 

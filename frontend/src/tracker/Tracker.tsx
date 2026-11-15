@@ -34,12 +34,13 @@ function savedStatuses(): JobStatus[] {
 }
 
 export function Tracker() {
-  const { jobs, error, load, move, followUp } = useJobs();
+  const { jobs, error, load, move, followUp, applyAnswer } = useJobs();
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>(savedView);
   const [statuses, setStatuses] = useState<JobStatus[]>(savedStatuses); // empty = all
   const [openId, setOpenId] = useState<number | null>(null);
   const [followOnly, setFollowOnly] = useState(false); // 14e: only the jobs due a follow-up
+  const [applyOnly, setApplyOnly] = useState(false); // 16i: only the jobs asking "Did you apply?"
   const [exported, setExported] = useState<{ path: string; count: number } | null>(null); // 14i
   const [exportError, setExportError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState<string | null>(null); // 1.0.1
@@ -99,16 +100,26 @@ export function Tracker() {
   const dueCount = jobs?.filter((j) => j.follow_up).length ?? 0;
   // The status filter is for the List; the Board already sorts by status.
   const byStatus = view === "list" && statuses.length ? searched.filter((j) => statuses.includes(j.status)) : searched;
-  const shown = view === "list" && followOnly ? byStatus.filter((j) => j.follow_up) : byStatus;
+  const askCount = jobs?.filter((j) => j.apply_ask).length ?? 0; // 16i
+  const shown = view !== "list" ? byStatus : byStatus.filter((j) => (!followOnly || j.follow_up) && (!applyOnly || j.apply_ask));
   const toggleStatus = (s: JobStatus) => setStatuses((old) => (old.includes(s) ? old.filter((x) => x !== s) : [...old, s]));
   const showStatus = (s: JobStatus) => {
     setStatuses([s]);
     setFollowOnly(false);
+    setApplyOnly(false);
     setView("list");
   };
   const showFollowUps = () => {
     setStatuses([]);
     setFollowOnly(true);
+    setApplyOnly(false);
+    setView("list");
+  };
+  const showApplyAsks = () => {
+    setStatuses([]);
+    setFollowOnly(false);
+    setApplyOnly(false);
+    setApplyOnly(true);
     setView("list");
   };
 
@@ -125,6 +136,10 @@ export function Tracker() {
   useEffect(() => {
     if (followOnly && dueCount === 0) setFollowOnly(false); // the last one was handled
   }, [followOnly, dueCount]);
+
+  useEffect(() => {
+    if (applyOnly && askCount === 0) setApplyOnly(false); // 16i: all answered
+  }, [applyOnly, askCount]);
 
   return (
     <div className="page tracker">
@@ -183,6 +198,18 @@ export function Tracker() {
         </p>
       )}
 
+      {askCount > 0 && !(view === "list" && applyOnly) && (
+        <p className="notice follow-notice" role="status">
+          <span>
+            {askCount === 1 ? "1 cover note has" : `${askCount} cover notes have`} been ready for a day. Did you apply? Unanswered for a day, JobLens
+            stops asking.
+          </span>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={showApplyAsks}>
+            Show {askCount === 1 ? "it" : "them"}
+          </button>
+        </p>
+      )}
+
       {jobs === null ? (
         !error && <p className="hint">Loading your jobs...</p>
       ) : jobs.length === 0 ? (
@@ -199,10 +226,11 @@ export function Tracker() {
               <button
                 type="button"
                 className="chip-toggle"
-                aria-pressed={statuses.length === 0 && !followOnly}
+                aria-pressed={statuses.length === 0 && !followOnly && !applyOnly}
                 onClick={() => {
                   setStatuses([]);
                   setFollowOnly(false);
+                  setApplyOnly(false);
                 }}
               >
                 All <span className="chip-count">{searched.length}</span>
@@ -210,6 +238,11 @@ export function Tracker() {
               {dueCount > 0 && (
                 <button type="button" className="chip-toggle" aria-pressed={followOnly} onClick={() => setFollowOnly((on) => !on)}>
                   Follow up? <span className="chip-count">{searched.filter((j) => j.follow_up).length}</span>
+                </button>
+              )}
+              {askCount > 0 && (
+                <button type="button" className="chip-toggle" aria-pressed={applyOnly} onClick={() => setApplyOnly((on) => !on)}>
+                  Applied? <span className="chip-count">{searched.filter((j) => j.apply_ask).length}</span>
                 </button>
               )}
               {STATUSES.map((s) => {
@@ -229,7 +262,8 @@ export function Tracker() {
               : `${shown.length} of ${jobs.length} jobs` +
                 (query ? ` match “${query.trim()}”` : "") +
                 (view === "list" && statuses.length ? ` · ${statuses.map(statusLabel).join(", ")}` : "") +
-                (view === "list" && followOnly ? " · due a follow-up" : "")}
+                (view === "list" && followOnly ? " · due a follow-up" : "") +
+                (view === "list" && applyOnly ? " · cover note ready for a day" : "")}
           </p>
           {view === "board" ? (
             <Board jobs={shown} onOpen={setOpenId} onMove={changeStatus} onShowStatus={showStatus} />
@@ -244,6 +278,7 @@ export function Tracker() {
                 onClick={() => {
                   setStatuses([]);
                   setFollowOnly(false);
+                  setApplyOnly(false);
                 }}
               >
                 Show all
@@ -280,6 +315,7 @@ export function Tracker() {
           row={jobs?.find((j) => j.id === openId)}
           onMove={changeStatus}
           onFollowUp={followUp}
+          onApply={applyAnswer}
           onChanged={load}
           onDeleted={(what) => {
             setDeleted(what);

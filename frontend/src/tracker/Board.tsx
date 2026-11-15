@@ -99,6 +99,7 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
                   <span className="job-card-note">
                     {cardNote(job)}
                     {job.follow_up && <span className="follow-badge">Follow up?</span>}
+                    {job.apply_ask && <span className="follow-badge">Applied?</span>}
                   </span>
                 </button>
               ))}

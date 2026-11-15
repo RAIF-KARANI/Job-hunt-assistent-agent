@@ -9,7 +9,7 @@ import { ResumePrompt } from "../resume/ResumePrompt";
 import { NotesSection } from "./NotesSection";
 import { Exported } from "../app/Exported";
 import { errorMessage, getApi } from "../bridge/bridge";
-import type { JobDetail, JobRow, JobStatus } from "../bridge/types";
+import type { ApplyAnswer, JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
 import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
 import type { FollowUpAction } from "./useJobs";
@@ -21,6 +21,8 @@ interface Props {
   row: JobRow | undefined;
   onMove(id: number, to: JobStatus): void;
   onFollowUp(id: number, action: FollowUpAction): Promise<void>;
+  /** 16i: the answer to "Did you apply?". */
+  onApply(id: number, answer: ApplyAnswer): Promise<void>;
   /** 14h: notes saved: refresh the cards. */
   onChanged(): void;
   /** 1.0.1: the job was deleted. */
@@ -30,7 +32,7 @@ interface Props {
 
 const isWebLink = (url: string) => /^https?:\/\//i.test(url);
 
-export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, onDeleted, onClose }: Props) {
+export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onChanged, onDeleted, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [job, setJob] = useState<JobDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,15 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
       if (result) setSavedNote(result.path);
     } catch (e) {
       setExportError(errorMessage(e));
+    }
+  };
+
+  const applyAnswer = async (answer: ApplyAnswer) => {
+    setFollowing(true);
+    try {
+      await onApply(jobId, answer);
+    } finally {
+      setFollowing(false);
     }
   };
 
@@ -167,6 +178,40 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onChanged, on
               <p className="hint" role="status">
                 {draftProblem}
               </p>
+            )}
+
+            {row?.apply_ask && (
+              <section className="follow-up" aria-labelledby="apply-title">
+                <div>
+                  <h3 id="apply-title">Did you apply?</h3>
+                  <p className="hint">
+                    The cover note has been ready for a day, and postings close. With no answer for a day, JobLens stops asking about this job.
+                  </p>
+                </div>
+                <div className="follow-up-actions">
+                  <button type="button" className="btn btn-primary btn-sm" disabled={following} onClick={() => void applyAnswer("yes")}>
+                    Yes, I applied
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={following}
+                    title="Ask again in 24 hours"
+                    onClick={() => void applyAnswer("not_yet")}
+                  >
+                    Not yet
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={following}
+                    title="Never ask again about this job"
+                    onClick={() => void applyAnswer("ignore")}
+                  >
+                    Ignore
+                  </button>
+                </div>
+              </section>
             )}
 
             {row?.follow_up && (

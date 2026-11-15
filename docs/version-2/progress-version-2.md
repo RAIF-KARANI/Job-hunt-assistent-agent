@@ -2369,3 +2369,25 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
 - pytest: 386 passed (9 new); typecheck and build clean.
 - **Not done:** a full run with the model on a small company. The numbers
   above are the search alone.
+
+## 16i "Did you apply?" ✅ (15 Nov 2026)
+- **The rule** (`job_agent/applyreminder.py`, no AI): a job that is still
+  "Cover note ready" 24 hours after its cover note was approved is asked
+  about. **Yes, I applied** moves it to Applied; **Not yet** asks again in 24
+  hours; **Ignore** never asks again. No answer within 24 hours of the
+  question being shown counts as Ignore.
+- **Where you see it:** in the job's details; a notice and an "Applied?"
+  filter in the Tracker; an "Applied?" badge on the Board's cards; one
+  notification when JobLens is in the tray (each job is announced once).
+- **Dashboard: "Ready to apply"**: jobs with fit 75+, a cover note and no
+  application, oldest first, at most 6 with a link for the rest. Hidden when
+  there are none.
+- **Checked in the real window** on the copied data: 12 jobs were asked
+  about, 6 of them in the dashboard list; "Not yet" on one removed its
+  question and kept it in the list.
+- **After the update, every old "Cover note ready" job is asked about once**
+  (43 in your installed tracker): one notice, and after a day without an
+  answer they are left alone for good.
+- pytest: 398 passed (12 new); typecheck and build clean.
+- **Not checked:** the tray notification itself (it needs the window hidden
+  for up to half an hour); its text and the once-only rule are tested.

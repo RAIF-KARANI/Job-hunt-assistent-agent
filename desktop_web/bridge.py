@@ -39,7 +39,7 @@ from urllib.parse import urlparse
 
 import webview
 
-from job_agent import __version__, followup, paths, runlog, settings, tracker
+from job_agent import __version__, applyreminder, followup, paths, runlog, settings, tracker
 from job_agent.llm import llm_status
 
 from desktop_web.runner import AgentRunner, Event
@@ -231,7 +231,12 @@ class Api:
 
     def list_jobs(self) -> list:
         days = followup.days_setting()
-        return [{**to_json(dict(row)), "follow_up": followup.is_due(row, days)} for row in tracker.list_jobs()]
+        # 16i: the page is about to show "Did you apply?" for the due jobs, so
+        # their 24 hours to answer start now (mark=True), before the rows are read.
+        applyreminder.due_jobs(mark=True)
+        return [{**to_json(dict(row)), "follow_up": followup.is_due(row, days),
+                 "apply_ask": applyreminder.is_due(row),
+                 "ready_to_apply": applyreminder.in_ready_list(row)} for row in tracker.list_jobs()]
 
     def get_job(self, job_id: int) -> dict:
         job = tracker.get_job(int(job_id))
@@ -338,6 +343,18 @@ class Api:
 
     def snooze_follow_up(self, job_id: int) -> None:
         followup.snooze(int(job_id))
+
+    def apply_answer(self, job_id: int, answer: str) -> None:
+        """16i: your answer to "Did you apply?": yes / not_yet / ignore."""
+        job_id = int(job_id)
+        if answer == "yes":
+            tracker.update_status(job_id, "applied")
+        elif answer == "not_yet":
+            applyreminder.not_yet(job_id)
+        elif answer == "ignore":
+            applyreminder.ignore(job_id)
+        else:
+            raise ValueError(f"Unknown answer '{answer}'. Use: yes, not_yet, ignore.")
 
     def ignore_follow_up(self, job_id: int) -> None:
         """16a: stop reminding about this job until its status changes."""

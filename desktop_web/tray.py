@@ -91,7 +91,7 @@ WM_QUERYENDSESSION = 0x0011  # Windows, or an installer, asks: may this app clos
 
 # Which screen a notification opens when you click it (the page's #/<route>).
 NOTE_PAGES = {"Cover note ready": "analyze", "JobLens needs you": "analyze", "Run failed": "analyze",
-              "Run finished": "tracker", "Time to follow up": "tracker"}
+              "Run finished": "tracker", "Time to follow up": "tracker", "Did you apply?": "tracker"}
 
 
 def notification(event: Event, state: RunState) -> tuple[str, str] | None:
@@ -120,6 +120,18 @@ def follow_up_notice(count: int, last_day: str | None, today: str) -> tuple[str,
         return None
     jobs = "1 application has" if count == 1 else f"{count} applications have"
     return "Time to follow up", f"{jobs} had no news for a while. Open the Tracker to send a short follow-up."
+
+
+def apply_notice(jobs: list) -> tuple[str, str] | None:
+    """16i: jobs whose cover note has been ready for a day. `jobs`: the ones
+    not asked about yet (company, title), so each is announced once."""
+    if not jobs:
+        return None
+    if len(jobs) == 1:
+        what = f"The cover note for {jobs[0]['company']} has been ready for a day."
+    else:
+        what = f"{len(jobs)} cover notes have been ready for a day."
+    return "Did you apply?", f"{what} Open the Tracker to answer. Unanswered for a day, it won't ask again."
 
 
 # ---------------------------------------------------------------------------

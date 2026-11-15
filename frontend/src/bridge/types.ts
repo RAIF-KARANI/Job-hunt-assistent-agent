@@ -45,6 +45,12 @@ export interface JobRow {
   follow_up_ignored?: string | null;
   /** 14e: Applied/Interviewing with no change for FOLLOW_UP_DAYS, not snoozed. */
   follow_up: boolean;
+  /** 16i: when the newest cover note was approved (UTC), or null. */
+  note_approved_at?: string | null;
+  /** 16i: "Did you apply?" is open: the cover note has been ready for 24 hours. */
+  apply_ask?: boolean;
+  /** 16i: a best fit (75+) with a cover note and no application: the dashboard's list. */
+  ready_to_apply?: boolean;
   notes: string | null; // 14h
   interview_at: string | null; // "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM", your local time
   contact: string | null;
@@ -305,6 +311,9 @@ export interface DashboardData {
   pass_rate: number | null; // share of fit claims the evidence check kept
 }
 
+/** 16i: yes = move to Applied; not_yet = ask again in 24 hours; ignore = never ask again. */
+export type ApplyAnswer = "yes" | "not_yet" | "ignore";
+
 /** Api.evals(): monitoring.build_evals() — how well the agent did (D9). */
 export interface EvalsData {
   model: string | null; // the filter; null = all models
@@ -402,6 +411,8 @@ export interface PyApi {
   set_langfuse_secret(key: string): Promise<Settings>;
   save_notes(jobId: number, values: Partial<Record<keyof JobNotes, string>>): Promise<JobNotes>;
   snooze_follow_up(jobId: number): Promise<void>;
+  /** 16i: your answer to "Did you apply?". */
+  apply_answer(jobId: number, answer: ApplyAnswer): Promise<void>;
   /** 16a: no more reminders for this job until its status changes. */
   ignore_follow_up(jobId: number): Promise<void>;
   autostart_status(): Promise<Autostart>;

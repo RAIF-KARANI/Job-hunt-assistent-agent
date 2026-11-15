@@ -426,6 +426,98 @@
 
 /* ---- 2D cards ---- */
 
+/* ---- ready to apply (16i) ---- */
+
+.ready-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ready-card .section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.ready-card .section-head .hint {
+  margin: 0;
+}
+
+.ready-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ready-job {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.ready-job:hover {
+  border-color: var(--accent-ink);
+}
+
+.ready-job:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ready-names {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ready-company {
+  font-weight: 600;
+}
+
+.ready-title,
+.ready-company {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ready-title {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.ready-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 4px;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.ready-when .follow-badge {
+  margin-left: 0;
+}
+
 .chart-card {
   flex: 1 1 300px;
   min-width: 0;

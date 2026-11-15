@@ -384,7 +384,8 @@ def _follow_up_reminders(tray) -> None:
     """14e: count the jobs due a follow-up now and every half hour; once a
     day, if the window is hidden, a notification. The day is remembered in
     the data folder, so restarting JobLens doesn't repeat it."""
-    from desktop_web.tray import follow_up_notice
+    from desktop_web.tray import apply_notice, follow_up_notice
+    from job_agent import applyreminder
 
     marker = paths.APP_HOME / "follow_up_notice.txt"
 
@@ -401,6 +402,17 @@ def _follow_up_reminders(tray) -> None:
                     marker.write_text(today, encoding="utf-8")
             except Exception as e:
                 print(f"! follow-up reminder: {e}")
+            try:
+                # 16i: "Did you apply?", a day after a cover note was approved.
+                # Only while hidden: an open window shows it on the page, and
+                # the page starts the 24 hours to answer itself (list_jobs).
+                if tray.hidden:
+                    note = apply_notice(applyreminder.new_jobs())  # each job is announced once
+                    if note:
+                        tray.notify(*note)
+                        applyreminder.due_jobs(mark=True)  # shown: the 24 hours to answer start
+            except Exception as e:
+                print(f"! apply reminder: {e}")
             time.sleep(30 * 60)
 
     threading.Thread(target=loop, name="joblens-follow-ups", daemon=True).start()
