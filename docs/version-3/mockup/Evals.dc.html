@@ -102,6 +102,19 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .step[data-state="next"] .step-title{color:#C8CBD3}
 .step-sub{font-size:13px;line-height:1.5;color:#A1A1AA}
 .step-time{padding-top:7px;font-size:13px;color:#A1A1AA}
+.erow{display:grid;grid-template-columns:24px minmax(0,1.4fr) minmax(60px,1fr) 64px minmax(0,200px) 16px;gap:16px;align-items:center;padding:14px 0}
+.acc.flat>summary.erow{display:grid;padding:14px 0}
+.e-name{display:flex;flex-direction:column;gap:2px;min-width:0}
+.e-bar{height:8px;border-radius:999px;background:rgba(255,255,255,0.07);overflow:hidden}
+.e-bar span{display:block;height:100%;min-width:4px;border-radius:999px;background:rgba(147,197,253,0.42)}
+.e-time{text-align:right;font-size:13px;color:#C8CBD3}
+.e-metric{font-size:13px;color:#A1A1AA}
+.e-metric strong{font-size:16px;font-weight:650;color:#FFFFFF;margin-right:4px}
+.statc{flex:1 1 200px;display:flex;flex-direction:column;gap:10px;padding:0 24px;border-left:1px solid rgba(255,255,255,0.09)}
+.statc:first-child{border-left:0;padding-left:0}
+.statc .k-label{color:#A1A1AA;font-weight:500}
+.statc .k-note{color:#9C9CA8;opacity:1}
+@media (max-width:820px){.erow{grid-template-columns:24px minmax(0,1fr) 64px 16px}.erow .e-bar,.erow .e-metric{display:none}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 .stats{display:flex;flex-wrap:wrap;gap:16px 0;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.07)}
 .stat{flex:1 1 140px;display:flex;flex-direction:column;gap:8px;padding:0 20px;border-left:1px solid rgba(255,255,255,0.08)}
@@ -157,80 +170,137 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
     <header class="top" style="align-items: flex-end; padding-bottom: 8px">
       <div style="margin-right: auto">
         <h1 class="title">Agent evals</h1>
-        <p class="sub">First whether the agent got it right, then what it cost. Measured on this PC; nothing is sent anywhere.</p>
+        <p class="sub">How the agent did at each step of a run, in the order it works. Measured on this PC; nothing is sent anywhere.</p>
       </div>
       <label for="eval-model" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #A1A1AA">Showing
         <select id="eval-model" class="select" style="min-width: 220px"><option>All models</option><option>qwen3:8b (local)</option><option>gemini-3.1-flash-lite (API)</option></select>
       </label>
     </header>
 
-    <section class="panel split" aria-label="Key numbers">
-      <div class="pane" style="flex: 2 1 360px; gap: 16px">
-        <h2 style="margin: 0; font-size: 16px; font-weight: 600">Is it right?</h2>
-        <div style="display: flex; flex-wrap: wrap; gap: 20px 40px">
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 13px; color: #A1A1AA">Evidence pass rate</span>
-            <span class="num" style="font-size: 36px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">64%</span>
-            <span style="font-size: 12px; color: #86EFAC">Up 11 points on the 10 runs before</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 13px; color: #A1A1AA">Cover notes approved</span>
-            <span class="num" style="font-size: 36px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">97%</span>
-            <span style="font-size: 12px; color: #9C9CA8">32 of 33 decisions</span>
-          </div>
-        </div>
+    <section class="panel" aria-labelledby="run-title" style="gap: 6px">
+      <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; padding-bottom: 10px">
+        <h2 id="run-title" style="margin: 0 auto 0 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em">A run, step by step</h2>
+        <span class="num" style="font-size: 13px; color: #A1A1AA">Whole run: <strong style="color: #FFFFFF; font-weight: 600">4m 22s</strong> median</span>
+        <span class="num" style="font-size: 13px; color: #A1A1AA"><strong style="color: #FFFFFF; font-weight: 600">38.9k</strong> tokens</span>
+        <span style="font-size: 13px; color: #A1A1AA">Cost not set · <a href="#">add a price</a></span>
       </div>
-      <div class="pane" style="flex: 3 1 420px; gap: 16px">
-        <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #D4D4D8">What does a run cost?</h2>
-        <div style="display: flex; flex-wrap: wrap; gap: 20px 40px">
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 13px; color: #A1A1AA">Agent time</span>
-            <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.5">4m 22s</span>
-            <span style="font-size: 12px; color: #9C9CA8">Median of 31 runs</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 13px; color: #A1A1AA">Tokens</span>
-            <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.5">38.9k</span>
-            <span style="font-size: 12px; color: #9C9CA8">30.4k in · 8.5k out</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <span style="font-size: 13px; color: #A1A1AA">Money</span>
-            <span style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.5; color: #A1A1AA">Not set</span>
-            <a href="#" style="font-size: 12px">Add a model's price</a>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <details class="acc" open="open">
-      <summary>
-        <h2>Evidence pass rate, run by run</h2>
-        <span class="acc-digest">Latest: qwen3:8b 60%, gemini 97%</span>
-        <svg class="acc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-      </summary>
-      <div class="acc-body">
-        <span style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #D4D4D8">
-          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; border-radius: 2px; background: #60A5FA"></span>qwen3:8b</span>
-          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FB923C"></span>gemini-3.1-flash-lite</span>
-          <span style="color: #9C9CA8">Share of resume claims the judge accepted, oldest run on the left.</span>
-        </span>
-        <svg viewBox="0 0 1000 215" role="img" aria-label="Evidence pass rate per run: qwen3:8b between 21% and 100%, latest 60%; gemini-3.1-flash-lite one run at 97%" style="width: 100%; height: auto; overflow: visible">
-          <defs>
-            <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60A5FA" stop-opacity="0.30"></stop><stop offset="1" stop-color="#60A5FA" stop-opacity="0"></stop></linearGradient>
-          </defs>
-          <g stroke="rgba(255,255,255,0.07)"><line x1="40" x2="980" y1="20" y2="20"></line><line x1="40" x2="980" y1="60" y2="60"></line><line x1="40" x2="980" y1="100" y2="100"></line><line x1="40" x2="980" y1="140" y2="140"></line></g>
-          <line x1="40" x2="980" y1="180" y2="180" stroke="rgba(255,255,255,0.18)"></line>
-          <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif" text-anchor="end"><text x="30" y="24">100%</text><text x="30" y="104">50%</text><text x="30" y="184">0%</text></g>
-          <path d="{{passArea}}" fill="url(#area)"></path>
-          <path d="{{passLine}}" fill="none" stroke="#60A5FA" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
-          <circle cx="{{lastX}}" cy="{{lastY}}" r="4.5" fill="#60A5FA" stroke="#0B0F17" stroke-width="2"></circle>
-          <text x="{{lastLabelX}}" y="{{lastLabelY}}" text-anchor="end" fill="#BFDBFE" font-size="12" font-weight="600" font-family="Inter, sans-serif">60%</text>
-          <circle cx="980" cy="24.8" r="6" fill="#FB923C" stroke="#0B0F17" stroke-width="2"></circle>
-          <text x="968" y="14" text-anchor="end" fill="#FED7AA" font-size="12" font-weight="600" font-family="Inter, sans-serif">97%</text>
-          <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif"><text x="40" y="204">Nov 2</text><text x="980" y="204" text-anchor="end">Latest</text></g>
-        </svg>
+      <div class="erow" style="border-top: 1px solid rgba(255,255,255,0.09)">
+        <span class="stepno">1</span>
+        <span class="e-name"><span class="step-title">Read the posting</span><span class="step-sub">Title, company, requirements</span></span>
+        <span class="e-bar"><span style="width: 16%"></span></span>
+        <span class="e-time num">29 s</span>
+        <span class="e-metric"></span>
+        <span></span>
       </div>
-    </details>
+
+      <details class="acc flat" open="open">
+        <summary class="erow">
+          <span class="stepno">2</span>
+          <span class="e-name"><span class="step-title">Compare with your resumes</span><span class="step-sub">Each claim must be proven by a quote from your resume</span></span>
+          <span class="e-bar"><span style="width: 100%; background: linear-gradient(90deg, #60A5FA, #A78BFA)"></span></span>
+          <span class="e-time num" style="color: #FFFFFF">3m 02s</span>
+          <span class="e-metric"><strong class="num">64%</strong> evidence passes</span>
+          <svg class="acc-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </summary>
+        <div class="acc-body" style="padding: 6px 0 22px 46px; gap: 18px">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px 0">
+            <div class="statc">
+              <span class="k-label">Evidence pass rate</span>
+              <span class="num" style="font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">64%</span>
+              <span style="font-size: 12px; color: #86EFAC">Up 11 points on the 10 runs before</span>
+            </div>
+            <div class="statc">
+              <span class="k-label">Made-up resume quotes caught</span>
+              <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.33">100</span>
+              <span class="k-note num">3.3 per run</span>
+            </div>
+            <div class="statc">
+              <span class="k-label">Claims the judge rejected</span>
+              <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.33">121</span>
+              <span class="k-note num">4.0 per run</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <span style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #D4D4D8">
+              <span style="font-weight: 600; color: #FFFFFF">Pass rate, run by run</span>
+              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; border-radius: 2px; background: #60A5FA"></span>qwen3:8b</span>
+              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FB923C"></span>gemini-3.1-flash-lite</span>
+            </span>
+            <svg viewBox="0 0 1000 200" role="img" aria-label="Evidence pass rate per run: qwen3:8b between 21% and 100%, latest 60%; gemini-3.1-flash-lite one run at 97%" style="width: 100%; height: auto; overflow: visible">
+              <defs>
+                <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60A5FA" stop-opacity="0.30"></stop><stop offset="1" stop-color="#60A5FA" stop-opacity="0"></stop></linearGradient>
+              </defs>
+              <g stroke="rgba(255,255,255,0.07)"><line x1="40" x2="980" y1="20" y2="20"></line><line x1="40" x2="980" y1="95" y2="95"></line></g>
+              <line x1="40" x2="980" y1="170" y2="170" stroke="rgba(255,255,255,0.18)"></line>
+              <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif" text-anchor="end"><text x="30" y="24">100%</text><text x="30" y="99">50%</text><text x="30" y="174">0%</text></g>
+              <path d="{{passArea}}" fill="url(#area)"></path>
+              <path d="{{passLine}}" fill="none" stroke="#60A5FA" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+              <circle cx="{{lastX}}" cy="{{lastY}}" r="4.5" fill="#60A5FA" stroke="#0B0F17" stroke-width="2"></circle>
+              <text x="{{lastLabelX}}" y="{{lastLabelY}}" text-anchor="end" fill="#BFDBFE" font-size="12" font-weight="600" font-family="Inter, sans-serif">60%</text>
+              <circle cx="980" cy="24.5" r="6" fill="#FB923C" stroke="#0B0F17" stroke-width="2"></circle>
+              <text x="968" y="14" text-anchor="end" fill="#FED7AA" font-size="12" font-weight="600" font-family="Inter, sans-serif">97%</text>
+              <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif"><text x="40" y="192">Nov 2</text><text x="980" y="192" text-anchor="end">Latest</text></g>
+            </svg>
+          </div>
+        </div>
+      </details>
+
+      <details class="acc flat">
+        <summary class="erow">
+          <span class="stepno">3</span>
+          <span class="e-name"><span class="step-title">Research the company</span><span class="step-sub">Web and news search, checked for invented sources</span></span>
+          <span class="e-bar"><span style="width: 31%"></span></span>
+          <span class="e-time num">56 s</span>
+          <span class="e-metric"><strong class="num">3</strong> invented links removed</span>
+          <svg class="acc-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </summary>
+        <div class="acc-body" style="padding: 6px 0 22px 46px">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px 0">
+            <div class="statc">
+              <span class="k-label">Invented source links removed</span>
+              <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em">3</span>
+              <span class="k-note num">0.1 per run</span>
+            </div>
+            <div class="statc">
+              <span class="k-label">Invented news dates removed</span>
+              <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; color: #A1A1AA">0</span>
+              <span class="k-note">None so far</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="erow" style="border-top: 1px solid rgba(255,255,255,0.09)">
+        <span class="stepno">4</span>
+        <span class="e-name"><span class="step-title">Save to the tracker</span><span class="step-sub">With the job description</span></span>
+        <span class="e-bar"><span style="width: 1%"></span></span>
+        <span class="e-time num">&lt;1 s</span>
+        <span class="e-metric"></span>
+        <span></span>
+      </div>
+
+      <details class="acc flat">
+        <summary class="erow">
+          <span class="stepno">5</span>
+          <span class="e-name"><span class="step-title">Draft the cover note, then you decide</span><span class="step-sub">You approve, rewrite or reject each draft</span></span>
+          <span class="e-bar"><span style="width: 7%"></span></span>
+          <span class="e-time num">13 s</span>
+          <span class="e-metric"><strong class="num">97%</strong> approved by you</span>
+          <svg class="acc-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </summary>
+        <div class="acc-body" style="padding: 6px 0 22px 46px">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px 0">
+            <div class="statc">
+              <span class="k-label">Cover notes approved</span>
+              <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em">32 of 33</span>
+              <span class="k-note">1 rejected</span>
+            </div>
+          </div>
+        </div>
+      </details>
+      <span style="padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.09); font-size: 12px; color: #9C9CA8">Step times are averages; the bars compare them with the longest step. Time spent waiting for you isn't counted.</span>
+    </section>
 
     <details class="acc" open="open">
       <summary>
@@ -306,7 +376,7 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
 class Component extends DCLogic {
   renderVals() {
     var tokens = [19, 17, 21, 26, 23, 26, 25, 24, 21, 18, 18, 18, 26, 31, 37, 33, 41, 60, 55, 51, 47, 50, 45, 45, 42, 39, 47, 47, 42, 59, 68];
@@ -318,10 +388,10 @@ class Component extends DCLogic {
       };
     });
     var rates = [0.5, 0.8, 0.66, 0.58, 0.21, 0.35, 0.82, 0.92, 0.79, 0.8, 0.75, 0.66, 0.6, 0.71, 0.64, 0.76, 1.0, 0.75, 0.76, 0.93, 0.53, 0.6];
-    var pts = rates.map(function (r, i) { return [40 + i * (900 / (rates.length - 1)), 180 - r * 160]; });
+    var pts = rates.map(function (r, i) { return [40 + i * (900 / (rates.length - 1)), 170 - r * 150]; });
     var line = "M" + pts.map(function (p) { return p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" L");
     var last = pts[pts.length - 1];
-    var area = line + " L" + last[0].toFixed(1) + " 180 L40 180 Z";
+    var area = line + " L" + last[0].toFixed(1) + " 170 L40 170 Z";
     return {
       tokenBars: tokenBars,
       passLine: line,

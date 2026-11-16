@@ -170,3 +170,26 @@ fold less important content into accordions. Same link.
 - To avoid cards inside cards, the three agent numbers inside the
   accordion are plain figures now; the gradient card style is kept for
   the pipeline at the top.
+
+## Mockup round 5 ✅ (16 Nov 2026)
+
+You said the order-of-operations idea was meant for **Evals**, not the
+Dashboard, and that you didn't like the round 4 Dashboard.
+
+- **Dashboard:** put back as it was before round 4 (frosted, with the
+  button hover): pipeline card, Do next, galaxy with the selected job,
+  then How JobLens is doing with its three gradient cards.
+- **Evals:** now follows the agent's own order. One panel, "A run, step by
+  step": 1 Read the posting, 2 Compare with your resumes, 3 Research the
+  company, 4 Save, 5 Draft the cover note. Each row shows the step's
+  average time as a bar and its main result. Steps 2, 3 and 5 open as
+  accordions: step 2 (open) holds the evidence pass rate, the two
+  safety-net counts and the pass-rate chart; step 3 the invented links
+  and dates removed; step 5 the notes approved. Models compared (open)
+  and Tokens by run (closed) follow.
+- Tracker and Analyze are unchanged from round 4.
+
+### Assumption to confirm
+- Which step each safety net belongs to is my reading: made-up quotes and
+  judge rejections under step 2, invented links and news dates under
+  step 3. Check against the code before building.
