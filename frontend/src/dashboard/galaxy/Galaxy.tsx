@@ -15,6 +15,16 @@ const Galaxy3D = lazy(() => import("./Galaxy3D"));
 
 const reducedQuery = () => window.matchMedia("(prefers-reduced-motion: reduce)");
 
+// 17d: "Map" shows the flat view for now without changing the 3D setting.
+const VIEW_KEY = "joblens.galaxy.view";
+function savedMap(): boolean {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "map";
+  } catch {
+    return false;
+  }
+}
+
 function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(() => reducedQuery().matches);
   useEffect(() => {
@@ -37,11 +47,21 @@ export function Galaxy({ jobs, level, selectedId, onSelect }: Props) {
   const busy = useRun().busy;
   const reduced = useReducedMotion();
   const [failed, setFailed] = useState<string | null>(null);
+  const [map, setMap] = useState(savedMap);
+  const pickView = (asMap: boolean) => {
+    setMap(asMap);
+    try {
+      localStorage.setItem(VIEW_KEY, asMap ? "map" : "3d");
+    } catch {
+      /* not remembered, still works */
+    }
+  };
+  const can3d = level !== "off" && failed === null; // with 3D off in Settings, three.js never loads
   const nodes = useMemo(() => placeJobs(jobs).sort(byFit), [jobs]);
   const crowded = nodes.length > 14;
   const labeled = (node: Placed) => !crowded || node.level === "high";
 
-  const flat = level === "off" || failed !== null;
+  const flat = !can3d || map;
   const animate = level === "animated" && !reduced && !busy;
 
   let caption: string;
@@ -53,8 +73,8 @@ export function Galaxy({ jobs, level, selectedId, onSelect }: Props) {
   return (
     <section className="card galaxy-card" aria-labelledby="galaxy-title">
       <header className="galaxy-head">
-        <h2 id="galaxy-title">Job galaxy</h2>
-        <span className="hint galaxy-hint">Closer to the center = better fit. Pick a job.</span>
+        <h3 id="galaxy-title">Job galaxy</h3>
+        <span className="hint galaxy-hint">Closer to the center means a better fit. Pick a job.</span>
         <span className="galaxy-legend">
           <span className="sr-only">Colors by fit:</span>
           <span>
@@ -70,6 +90,18 @@ export function Galaxy({ jobs, level, selectedId, onSelect }: Props) {
             below 55
           </span>
         </span>
+        {can3d && (
+          <div className="segmented galaxy-view" role="group" aria-label="Galaxy view">
+            <label className="segment">
+              <input type="radio" name="galaxy-view" checked={!map} onChange={() => pickView(false)} />
+              <span>3D</span>
+            </label>
+            <label className="segment">
+              <input type="radio" name="galaxy-view" checked={map} onChange={() => pickView(true)} />
+              <span>Map</span>
+            </label>
+          </div>
+        )}
       </header>
 
       {failed && (

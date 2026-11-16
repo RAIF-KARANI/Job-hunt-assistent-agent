@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { prefill } from "../analyze/runStore";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobDetail, JobRow } from "../bridge/types";
+import { Icon } from "../app/Icon";
 import { FitChip } from "../tracker/FitChip";
 import { statusLabel } from "../tracker/status";
 
@@ -42,7 +43,7 @@ export function SelectedJob({ job, onOpen }: { job: JobRow; onOpen(id: number): 
     <aside className="card selected-job" aria-labelledby="selected-title">
       <header className="selected-head">
         <div className="selected-names">
-          <span className="eyebrow">{job.company}</span>
+          <span className="selected-company">{job.company}</span>
           <h2 id="selected-title" title={job.title}>
             {job.title}
           </h2>
@@ -58,13 +59,14 @@ export function SelectedJob({ job, onOpen }: { job: JobRow; onOpen(id: number): 
           <div className="chip-group">
             <h3>Proven by your resume</h3>
             {skills.length ? (
-              <ul className="chips">
+              <ul className="proof-list">
                 {skills.slice(0, MAX_CHIPS).map((s) => (
-                  <li key={s} className="chip chip-ok" title={s}>
-                    {s}
+                  <li key={s} className="proof ok" title={s}>
+                    <Icon name="check" size={15} />
+                    <span>{s}</span>
                   </li>
                 ))}
-                {skills.length > MAX_CHIPS && <li className="chip">+{skills.length - MAX_CHIPS} more</li>}
+                {skills.length > MAX_CHIPS && <li className="proof more">+{skills.length - MAX_CHIPS} more in the details</li>}
               </ul>
             ) : (
               <p className="hint">Nothing proven by a quote.</p>
@@ -73,13 +75,14 @@ export function SelectedJob({ job, onOpen }: { job: JobRow; onOpen(id: number): 
           <div className="chip-group">
             <h3>Gaps</h3>
             {gaps.length ? (
-              <ul className="chips">
+              <ul className="proof-list">
                 {gaps.slice(0, MAX_CHIPS).map((g) => (
-                  <li key={g} className="chip chip-gap" title={g}>
-                    {g}
+                  <li key={g} className="proof gap" title={g}>
+                    <Icon name="minus" size={15} />
+                    <span>{g}</span>
                   </li>
                 ))}
-                {gaps.length > MAX_CHIPS && <li className="chip">+{gaps.length - MAX_CHIPS} more</li>}
+                {gaps.length > MAX_CHIPS && <li className="proof more">+{gaps.length - MAX_CHIPS} more in the details</li>}
               </ul>
             ) : (
               <p className="hint">No gaps found.</p>

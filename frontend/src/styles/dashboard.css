@@ -21,22 +21,33 @@
 
 .galaxy-card {
   position: relative;
-  flex: 2 1 520px;
+  flex: 1.7 1 420px;
   min-width: 0;
   min-height: 300px;
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: var(--surface-sunken);
 }
 
 .galaxy-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2) var(--space-3);
   padding: 18px 22px 0;
+}
+
+.galaxy-head h3,
+.chart-card h3,
+.next-head h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.galaxy-view .segment span {
+  min-height: 30px;
+  padding: 0 12px;
 }
 
 .galaxy-hint {
@@ -79,8 +90,9 @@
 
 .galaxy-stage {
   position: relative;
-  flex: 1 0 440px; /* grows with the card when the job panel beside it is taller */
-  margin-top: var(--space-3);
+  flex: 1 0 400px; /* grows with the card when the job panel beside it is taller */
+  margin: var(--space-3) var(--space-3) 0;
+  border-radius: 14px;
   overflow: hidden;
   background: radial-gradient(ellipse at 50% 55%, var(--galaxy-sky) 0%, var(--galaxy-sky-edge) 70%);
 }
@@ -323,11 +335,59 @@
 /* ---- selected job ---- */
 
 .selected-job {
-  flex: 1 1 300px;
+  flex: 1 1 280px;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-4);
+}
+
+.selected-company {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.proof-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.proof {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.proof svg {
+  flex: none;
+  margin-top: 2px;
+  stroke-width: 2.2;
+}
+
+.proof.ok svg {
+  color: var(--accent-ink);
+}
+
+.proof.gap svg {
+  color: var(--warn-ink);
+}
+
+/* long requirement sentences: the full text is in the details sheet */
+.proof span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.proof.more {
+  padding-left: 25px;
+  color: var(--text-faint);
 }
 
 .selected-head {
@@ -345,7 +405,7 @@
 }
 
 .selected-names h2 {
-  font-size: var(--text-xl);
+  font-size: 18px;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -371,11 +431,10 @@
 .chip-group h3 {
   margin: 0 0 var(--space-2);
   font-family: var(--font-body);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  letter-spacing: 0;
+  color: var(--text-muted);
 }
 
 .chip-group .hint {
@@ -569,48 +628,66 @@
   display: block;
   height: 100%;
   border-radius: 5px;
-  background: var(--accent);
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* the step that takes the longest */
+.bar-row.top .bar-fill {
+  background: var(--accent-grad);
+}
+
+.bar-row.top .bar-label,
+.bar-row.top .bar-value {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .bar-value {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   text-align: right;
+  color: var(--text-muted);
 }
 
 .nets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .net {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-3) 14px;
-  border-radius: var(--radius-md);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 56px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 11px 0;
+  border-top: 1px solid var(--border);
+}
+
+.net:first-child {
+  border-top: 0;
 }
 
 .net-value {
   font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.net-value.none {
+  color: var(--text-faint);
 }
 
 .net-label {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
+  font-size: var(--text-md);
 }
 
 .net-rate {
   font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
   color: var(--text-faint);
 }
 
@@ -631,4 +708,400 @@
 
 .chart-card .section-head h2 {
   margin-right: auto;
+}
+
+/* ---- 17d: two groups, each with its own heading ---- */
+
+.page.dashboard {
+  gap: var(--space-10);
+}
+
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.dash-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  min-height: 46px;
+}
+
+.dash-head h2 {
+  margin-right: auto;
+  font-size: var(--text-xl);
+}
+
+.search-row {
+  display: flex;
+  flex-wrap: wrap;
+  /* Do next is as tall as what is waiting, not as tall as the galaxy */
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.dash-section .range-note {
+  margin: 0;
+}
+
+/* ---- gradient cards (feature F4) ----
+   A tint of two accents over the glass. The text is the theme's own text
+   colour: white on the dark tint, dark on the light one. */
+
+.kpi {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 18px var(--space-5);
+  border-radius: 18px;
+  border: 1px solid var(--kpi-edge);
+  color: var(--text);
+  background: radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--from) 55%, transparent), color-mix(in srgb, var(--to) 26%, transparent)), var(--kpi-base);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--shadow);
+}
+
+.kpi-blue {
+  --from: var(--blue);
+  --to: var(--purple);
+}
+
+.kpi-purple {
+  --from: var(--purple);
+  --to: var(--pink);
+}
+
+.kpi-pink {
+  --from: var(--pink);
+  --to: var(--orange);
+}
+
+.kpi-orange {
+  --from: var(--orange);
+  --to: var(--yellow);
+}
+
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  letter-spacing: 0;
+}
+
+.kpi-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--text) 14%, transparent);
+}
+
+.kpi-value {
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-note {
+  min-height: 1.4em;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--text) 86%, transparent);
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+/* the pipeline: the lead card (feature F15) */
+
+.pipeline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5) var(--space-10);
+  padding: var(--space-6) 28px;
+  border-radius: 22px;
+}
+
+.pipeline-lead {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pipeline-figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.pipeline-total {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pipeline-empty {
+  margin: 0;
+}
+
+.pipeline-detail {
+  flex: 1 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pipeline-bar {
+  display: flex;
+  gap: 3px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--kpi-track);
+}
+
+.pipeline-bar span {
+  flex: 1 1 0;
+  min-width: 6px;
+  border-radius: 4px;
+}
+
+.pipeline-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) 22px;
+  font-size: var(--text-sm);
+}
+
+.pipeline-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pipeline-legend li.none {
+  opacity: 0.6;
+}
+
+.pipeline-legend b {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- do next (feature F16) ---- */
+
+.do-next {
+  flex: 1 1 340px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.next-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-1);
+}
+
+.next-count {
+  background: var(--warn-soft);
+  border-color: var(--warn-line);
+  color: var(--warn-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.card .next-empty {
+  margin: 0;
+  padding: var(--space-4) 0;
+  color: var(--text-faint);
+}
+
+.next-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.next-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  margin: 0 -8px;
+  width: calc(100% + 16px);
+  padding: var(--space-2);
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.next-list > :first-child .next-row,
+.next-list > .next-row:first-child {
+  border-top: 0;
+}
+
+.next-row:hover {
+  background: var(--surface);
+}
+
+.next-row > svg {
+  flex: none;
+  color: var(--text-faint);
+}
+
+.next-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+}
+
+.next-icon.warn {
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+}
+
+.next-icon.ask {
+  background: color-mix(in srgb, var(--pink) 16%, transparent);
+  color: color-mix(in srgb, var(--pink) 60%, var(--text));
+}
+
+.next-row .fit-chip {
+  min-width: 40px;
+}
+
+.next-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.next-title {
+  font-weight: 600;
+}
+
+.next-note {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.next-row.ready .next-note {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.next-when {
+  flex: none;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.next-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) 10px;
+  padding-top: var(--space-4);
+}
+
+.next-sub h4 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.card .next-sub .hint {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+/* ---- joined panels: two cards that belong together share one frame ---- */
+
+.card.joined {
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.galaxy-panel {
+  flex: 2 1 620px;
+  min-width: 0;
+}
+
+.card.joined > .card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  background: transparent;
+}
+
+.card.joined > .card + .card {
+  border-left: 1px solid var(--border);
+}
+
+.card.joined > .selected-job {
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+.galaxy-panel > .galaxy-card {
+  padding-bottom: var(--space-1);
+}
+
+.agent-panel > .chart-card {
+  flex: 1 1 360px;
+}
+
+@media (max-width: 760px) {
+  .card.joined > .card + .card {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
 }

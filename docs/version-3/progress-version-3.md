@@ -13,7 +13,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17a Your review of the mockup | ✅ | approved after several rounds: "I am happy with the design" |
 | 17b Tokens and base components | ✅ | both glass themes in the real app; component sheet at `#/components` |
 | 17c The shell | ✅ | grouped sidebar, top bar, quick actions (Ctrl K), light/dark switch |
-| 17d–17j | ⏳ | 17d (the Dashboard) is next |
+| 17d The Dashboard | ✅ | pipeline card, Do next, galaxy joined to the selected job, agent numbers |
+| 17e–17j | ⏳ | 17e (the Tracker) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -354,3 +355,56 @@ The first change to the app itself.
 ### Not checked
 - Ctrl K was pressed in a browser, not inside the real JobLens window.
   Try it there: `.venv\Scripts\python -m desktop_web`.
+
+## 17d The Dashboard ✅ (16 Nov 2026)
+
+### What was done
+- **Two groups**, each with its own heading. "Your job search" first:
+  - **Pipeline card** (the lead): jobs tracked, one bar split by status,
+    a count per status.
+  - **Do next**: the follow-up reminder, "Did you apply?", and the strong
+    fits ready to apply to, in one list. One job: the row opens its
+    details. Several: it opens the Tracker.
+  - **Job galaxy and the selected job** in one panel, with a **3D / Map**
+    switch on the card (Map is the flat view; it doesn't change the 3D
+    setting, and it is hidden when 3D is off in Settings).
+- "How JobLens is doing" second: the 7 / 30 days / All switch, three
+  **gradient cards** (median run, evidence verified, cover notes
+  approved), then **Time per step** and **Safety nets** in one panel.
+  The longest step is highlighted and named ("Compare resumes takes
+  about 45% of a run"); safety nets are rows, not tiles.
+- **Galaxy colours**: the sky is see-through glass in both themes; dots
+  and rings use the one-blue fit scale.
+- In the selected job, what your resume proves and the gaps are lists
+  with check and dash icons instead of chips.
+
+### Checked
+- Build passes; pytest: 471 pass; the real window starts and shows the
+  new Dashboard with your data.
+- Driven in a browser with made-up data, dark and light: 3D to Map and
+  back; picking a dot changes the selected job; a Do next row opens the
+  job's details; 7 days changes the numbers; nothing scrolls sideways at
+  720, 1100 or 2560 px wide.
+
+### Found and fixed on the way
+- At 720 px the third gradient card sat alone on a row: the cards may be
+  narrower now, so three fit.
+- With your real data only one thing was waiting, and Do next was a tall
+  empty card next to the galaxy: it is as tall as its content now.
+
+### Different from the mockup, on purpose
+- **The outer galaxy ring is at fit 20, not 25.** The app's galaxy already
+  placed rings where the fit levels change (75, 55) and at its floor
+  (20), and the dots already matched them. The mismatch was only in the
+  first mockup.
+- **"Draft a cover note" stays** as the second button on the selected job
+  (the mockup said "Interview prep"). It is what the app offers there
+  today; interview prep is in the job's details.
+- **No "vivid" gradient switch.** The tinted cards were the default you
+  reviewed; the brighter version was a mockup-only comparison.
+- **The safety nets list has five rows**, the app's real ones, not the
+  mockup's four.
+
+### Not done
+- Chart colours on Evals (17g). The blur's graphics cost is still not
+  measured.

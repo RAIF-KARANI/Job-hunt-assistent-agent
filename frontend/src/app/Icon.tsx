@@ -65,6 +65,40 @@ const paths = {
   down: <path d="M9 4v10M4.5 9.5L9 14l4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />,
   arrow: <path d="M3.5 9h11M10 4.5L14.5 9 10 13.5" strokeLinecap="round" strokeLinejoin="round" />,
   bolt: <path d="M10 2L4 10.2h4.4L8 16l6-8.2H9.6z" strokeLinejoin="round" />,
+  "chevron-right": <path d="M6.75 4.5L11.25 9l-4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />,
+  check: <path d="M3.75 9.5l3.4 3.4 7.1-7.4" strokeLinecap="round" strokeLinejoin="round" />,
+  minus: <path d="M4.5 9h9" strokeLinecap="round" />,
+  briefcase: (
+    <>
+      <rect x="2.5" y="5.5" width="13" height="9.5" rx="2" />
+      <path d="M6.75 5.5V4.4A1.4 1.4 0 018.15 3h1.7a1.4 1.4 0 011.4 1.4v1.1" />
+    </>
+  ),
+  message: <path d="M3 5a2 2 0 012-2h8a2 2 0 012 2v5.5a2 2 0 01-2 2H7L3 15.5z" strokeLinejoin="round" />,
+  question: (
+    <>
+      <circle cx="9" cy="9" r="6.5" />
+      <path d="M7.2 7a1.9 1.9 0 112.6 1.75c-.5.2-.8.6-.8 1.1v.35M9 12.6h.01" strokeLinecap="round" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="9" cy="9" r="6.5" />
+      <path d="M9 5.5V9l2.3 1.5" strokeLinecap="round" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M9 2.5l5.3 2v4.1c0 3.3-2.3 5.7-5.3 6.8-3-1.1-5.3-3.5-5.3-6.8V4.5z" strokeLinejoin="round" />
+      <path d="M6.75 9l1.5 1.5 3-3" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  note: (
+    <>
+      <path d="M10.5 2.5H5.4A1.9 1.9 0 003.5 4.4v9.2a1.9 1.9 0 001.9 1.9h7.2a1.9 1.9 0 001.9-1.9V6.5z" strokeLinejoin="round" />
+      <path d="M6.75 10.5l1.5 1.5 3-3" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof paths;

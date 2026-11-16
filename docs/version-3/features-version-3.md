@@ -24,7 +24,7 @@ Legend: 🎨 designed · ❓ needs a check before it can be built · ✅ built
 | F1 | **Frosted window** | The app window is frosted glass: what is behind it shows through, blurred. The sidebar lets the most through; the work area is darker so text stays readable | 🎨 ❓ |
 | F2 | **Frosted layers** | Panels, cards, the Tracker detail sheet and the quick actions box are each a lighter frosted layer over the window | 🎨 ❓ |
 | F3 | **Your colours, one job each** | Fit score is one blue scale (bright = strong, dim = weak). Each status keeps one colour on every screen: Researched grey, Cover note ready blue, Applied purple, Interviewing orange, Offer yellow, Rejected pink | 🎨 |
-| F4 | **Gradient cards** | Translucent gradient cards with white text for the headline numbers. A switch in the mockup (`kpiFill`: tinted / vivid) shows the brighter version | 🎨 |
+| F4 | **Gradient cards** | Translucent gradient cards for the headline numbers: white text in dark, dark text in light. (The mockup's brighter "vivid" version was not built) | ✅ built (17d) |
 | F5 | **Accordions** | Less important content folds away. A closed accordion still shows a one-line summary, so the main number is visible without a click | 🎨 |
 | F6 | **Keyboard and motion** | Focus rings, text selection and scrollbars match the look. With "reduce motion" on in Windows, nothing moves | 🎨 |
 
@@ -84,11 +84,11 @@ private" (both would live in Settings).
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F15 | **Pipeline card** | 33 jobs tracked, as one bar split by status, with a count per status | 🎨 |
-| F16 | **Do next** | One list of what is waiting for you: the follow-up, "Did you apply?", and the strong fits that are ready to apply | 🎨 |
-| F17 | **Job galaxy** | Each job is a dot; closer to the centre is a better fit. The rings sit at fit 75, 55 and 25. A 3D / Map switch | 🎨 |
-| F18 | **Selected job** | Attached to the galaxy: fit, what your resume proves, gaps, Open details, Interview prep | 🎨 |
-| F19 | **How JobLens is doing** | Median run, evidence verified, cover notes approved, time per step, safety nets caught. The 7 days / 30 days / All switch sits here because it only changes these numbers | 🎨 |
+| F15 | **Pipeline card** | Jobs tracked, as one bar split by status, with a count per status | ✅ built (17d) |
+| F16 | **Do next** | One list of what is waiting for you: the follow-up, "Did you apply?", and the strong fits that are ready to apply. A row opens that job's details | ✅ built (17d) |
+| F17 | **Job galaxy** | Each job is a dot; closer to the centre is a better fit. The rings sit at fit 75, 55 and 20 (as before). A 3D / Map switch on the card | ✅ built (17d) |
+| F18 | **Selected job** | Attached to the galaxy: fit, what your resume proves, gaps, Open details, Draft a cover note | ✅ built (17d) |
+| F19 | **How JobLens is doing** | Median run, evidence verified, cover notes approved, time per step, safety nets caught. The 7 days / 30 days / All switch sits here because it only changes these numbers | ✅ built (17d) |
 
 ## 5. Tracker
 

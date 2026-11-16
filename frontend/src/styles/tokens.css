@@ -124,9 +124,9 @@
   --st-offer: #facc15;
   --st-rejected: #f472b6;
 
-  /* job galaxy (restyled in step 17d; three.js needs plain colours here) */
-  --galaxy-sky: #142445;
-  --galaxy-sky-edge: #0b0f17;
+  /* job galaxy: a see-through sky, so the glass shows behind the stars */
+  --galaxy-sky: rgba(96, 165, 250, 0.18);
+  --galaxy-sky-edge: rgba(7, 10, 17, 0.45);
   --galaxy-star: #c9d4e5;
   --galaxy-label: rgba(11, 15, 23, 0.78);
 
@@ -141,6 +141,11 @@
   --rate-good: #3987e5;
   --rate-mixed: #199e70;
   --rate-bad: #d95926;
+
+  /* gradient cards: the tint sits on this, and the status bar in this track */
+  --kpi-base: rgba(11, 15, 23, 0.3);
+  --kpi-track: rgba(8, 11, 18, 0.45);
+  --kpi-edge: rgba(255, 255, 255, 0.14);
 
   --focus: #93c5fd;
   --selection: rgba(167, 139, 250, 0.4);
@@ -204,8 +209,8 @@
   --st-offer: #a16207;
   --st-rejected: #db2777;
 
-  --galaxy-sky: #ffffff;
-  --galaxy-sky-edge: #e9eff8;
+  --galaxy-sky: rgba(255, 255, 255, 0.8);
+  --galaxy-sky-edge: rgba(255, 255, 255, 0.28);
   --galaxy-star: #8b9ab3;
   --galaxy-label: rgba(255, 255, 255, 0.88);
 
@@ -217,6 +222,10 @@
   --rate-good: #2a78d6;
   --rate-mixed: #1baf7a; /* 2.8:1 on white: the legend always names it */
   --rate-bad: #eb6834;
+
+  --kpi-base: rgba(255, 255, 255, 0.3);
+  --kpi-track: rgba(255, 255, 255, 0.6);
+  --kpi-edge: rgba(255, 255, 255, 0.8);
 
   --focus: #2563eb;
   --selection: rgba(96, 165, 250, 0.35);
