@@ -82,3 +82,29 @@ rebuilt inside your brief (Inter, your five accents, glass, gradient KPI cards).
   Analyze, sensible empty columns ("Drop a job here"), themed focus rings,
   selection and scrollbars, neutral shadows instead of coloured glows.
 - One shared style block in every screen, so the four look like one app.
+
+## Mockup round 3 ✅ (16 Nov 2026)
+
+You asked for better hierarchy, with things grouped by how they relate.
+Same link. Checked against Impeccable's layout guide (updated to 4.9.2).
+
+### What changed
+- **Dashboard** is two groups. **Your job search** comes first: the
+  pipeline (33 jobs, by status) as the lead card, then **Do next**
+  (both reminders and Ready to apply in one list), then the galaxy with
+  the selected job attached as one split panel. **How JobLens is doing**
+  is second and quieter: three smaller KPI cards, then Time per step and
+  Safety nets side by side in one panel. The 7 / 30 days / All switch
+  moved into that group, because it only changes those numbers.
+- **Tracker:** both reminders in one **Needs you** strip; search and
+  Board/List sit right above the board they filter; columns show how many
+  more jobs they hold; the detail sheet asks "Did you apply?" first, then
+  status and actions, then fit, then the description.
+- **Analyze:** three groups in order, **Job**, **Run** and **Cover note**.
+  Stop and the overall progress bar sit with the run; steps and the live
+  log are one split panel.
+- **Evals:** **Quality** (pass rate, notes approved, pass-rate chart) and
+  **Cost and speed** (time, tokens, cost, token chart), then Models
+  compared.
+- Spacing has a rhythm: 40 px between groups, 16 px inside a group;
+  section headings 20 px, panel titles 16 px.

@@ -17,7 +17,7 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 :focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
 *{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.18) transparent}
 .app{min-height:100vh;display:flex;flex-wrap:wrap;font-family:Inter,"Segoe UI",system-ui,sans-serif;font-optical-sizing:auto;color:#FFFFFF;background:radial-gradient(900px 520px at 92% -10%,rgba(251,146,60,0.17),transparent 62%),radial-gradient(760px 520px at 38% -12%,rgba(96,165,250,0.10),transparent 60%),radial-gradient(900px 700px at -5% 105%,rgba(167,139,250,0.13),transparent 60%),#0B0F17}
-.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:26px;background:rgba(8,11,18,0.55);border-right:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(24px)}
+.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:28px;background:rgba(8,11,18,0.55);border-right:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(24px)}
 .brand{display:flex;align-items:center;gap:10px;padding:0 10px;font-size:17px;font-weight:650;letter-spacing:-0.02em}
 .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 6px 14px -6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.35)}
 .navlist{display:flex;flex-direction:column;gap:2px}
@@ -26,26 +26,37 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .nav:hover{background:rgba(255,255,255,0.05);color:#FFFFFF}
 .nav[aria-current="page"]{color:#FFFFFF;background:linear-gradient(90deg,rgba(96,165,250,0.30),rgba(167,139,250,0.12));box-shadow:inset 0 0 0 1px rgba(147,197,253,0.22)}
 .nav[aria-current="page"] svg{color:#93C5FD}
+.navsep{height:1px;margin:8px 12px;background:rgba(255,255,255,0.07)}
 .count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;display:grid;place-items:center;font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;color:#0B0F17;background:#FB923C}
 .model{margin-top:auto;padding:14px;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:4px}
-.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 48px;display:flex;flex-direction:column;gap:24px}
+.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 56px;display:flex;flex-direction:column;gap:40px}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .title{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em;line-height:1.15;text-wrap:balance}
 .sub{margin:6px 0 0;font-size:14px;line-height:1.5;color:#A1A1AA;max-width:62ch}
-.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;gap:18px}
-.ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.ph h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em}
+.section{display:flex;flex-direction:column;gap:16px;min-width:0}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;min-height:40px}
+.sh h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-0.015em}
+.sh p{margin:0;font-size:13px;color:#A1A1AA}
+.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;gap:16px}
+.split{padding:0;flex-direction:row;flex-wrap:wrap;gap:0;overflow:hidden}
+.pane{box-sizing:border-box;min-width:0;padding:22px;display:flex;flex-direction:column;gap:16px}
+.pane + .pane{border-left:1px solid rgba(255,255,255,0.07)}
+.ph{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.ph h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em}
 .ph p{flex-basis:100%;margin:0;font-size:13px;line-height:1.5;color:#A1A1AA}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F4F4F5;font:600 13px/1 Inter,"Segoe UI",system-ui,sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
 .btn:hover{background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.18);color:#FFFFFF}
 .btn-primary{border:0;color:#0B0F17;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 8px 20px -10px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.35)}
 .btn-primary:hover{color:#0B0F17;background:linear-gradient(135deg,#7AB6FB,#B69DFB);transform:translateY(-1px)}
 .btn-quiet{border-color:transparent;background:transparent;color:#C4B5FD}
+.btn-sm{height:32px;padding:0 12px;border-radius:10px}
 .icon-btn{width:40px;padding:0;position:relative}
 .field{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);color:#8E8E99;transition:border-color .2s ease,box-shadow .2s ease}
 .field:focus-within{border-color:rgba(147,197,253,0.55);box-shadow:0 0 0 4px rgba(96,165,250,0.14)}
 .field input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#FFFFFF;font:14px Inter,"Segoe UI",system-ui,sans-serif}
 .field input::placeholder{color:#8E8E99}
+.select{height:40px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);color:#FFFFFF;border:1px solid rgba(255,255,255,0.12);padding:0 12px;font:14px Inter,"Segoe UI",system-ui,sans-serif}
+.select option{background:#131A29}
 .seg{display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09)}
 .seg button{height:30px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:#A1A1AA;font:500 13px Inter,"Segoe UI",system-ui,sans-serif;cursor:pointer}
 .seg button:hover{color:#FFFFFF}
@@ -54,25 +65,23 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .dot{width:7px;height:7px;border-radius:50%;flex:none}
 .num{font-variant-numeric:tabular-nums}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.kpi{position:relative;overflow:hidden;box-sizing:border-box;padding:20px;border-radius:20px;display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease}
-.kpi:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26),0 28px 50px -24px rgba(0,0,0,0.9)}
+.kpi{position:relative;overflow:hidden;box-sizing:border-box;padding:18px 20px;border-radius:18px;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85)}
 .k-label{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:550}
-.k-ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,0.16);flex:none}
-.k-val{font-size:28px;font-weight:650;letter-spacing:-0.025em;line-height:1;font-variant-numeric:tabular-nums}
+.k-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,0.16);flex:none}
+.k-val{font-size:24px;font-weight:650;letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
 .k-note{font-size:12.5px;line-height:1.4;opacity:0.86}
-.row{display:grid;align-items:center;gap:14px;padding:12px 4px;border-top:1px solid rgba(255,255,255,0.07);color:inherit;text-decoration:none;border-radius:10px;transition:background .2s ease}
+.row{display:grid;align-items:center;gap:14px;padding:12px 8px;margin:0 -8px;border-top:1px solid rgba(255,255,255,0.07);color:inherit;text-decoration:none;border-radius:10px;transition:background .2s ease}
 a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .node{position:absolute;border-radius:50%;padding:0;cursor:pointer;transition:transform .2s ease}
 .node:hover{transform:scale(1.35)}
+.ic-tile{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
-.col{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:18px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06)}
-.jcard{display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;box-sizing:border-box;border-radius:14px;cursor:grab;font:inherit;color:inherit;text-align:left;background:rgba(22,28,42,0.88);border:1px solid rgba(255,255,255,0.07);box-shadow:0 10px 20px -16px rgba(0,0,0,0.9);transition:transform .2s ease,border-color .2s ease}
+.col{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06)}
+.jcard{display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;box-sizing:border-box;border-radius:13px;cursor:grab;font:inherit;color:inherit;text-align:left;background:rgba(22,28,42,0.88);border:1px solid rgba(255,255,255,0.07);box-shadow:0 10px 20px -16px rgba(0,0,0,0.9);transition:transform .2s ease,border-color .2s ease}
 .jcard:hover{transform:translateY(-1px);border-color:rgba(255,255,255,0.16)}
 .jcard[aria-pressed="true"]{border-color:rgba(147,197,253,0.6);background:rgba(96,165,250,0.12);box-shadow:0 0 0 3px rgba(96,165,250,0.12)}
-.notice{display:flex;align-items:center;gap:14px;padding:12px 12px 12px 14px;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)}
-.n-ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
-.select{height:40px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);color:#FFFFFF;border:1px solid rgba(255,255,255,0.12);padding:0 12px;font:14px Inter,"Segoe UI",system-ui,sans-serif}
-.select option{background:#131A29}
+.more{height:32px;border:0;border-radius:10px;background:transparent;color:#A1A1AA;font:500 12px Inter,"Segoe UI",system-ui,sans-serif;cursor:pointer}
+.more:hover{background:rgba(255,255,255,0.05);color:#FFFFFF}
 </style>
 </helmet>
 <div class="app">
@@ -96,6 +105,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
         Tracker
         <span class="count" aria-label="2 reminders">2</span>
       </a>
+      <div class="navsep" aria-hidden="true"></div>
       <a class="nav" href="Evals.dc.html">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16"></path><path d="M6 15l4-5 3 3 5-6"></path></svg>
         Evals
@@ -113,138 +123,156 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
     <span style="padding: 0 10px; font-size: 11px; color: #8E8E99">JobLens 2.0.0 · mockup</span>
   </nav>
 
-  <main class="main" style="gap: 20px">
+  <main class="main" style="gap: 32px">
     <header class="top">
       <div style="margin-right: auto">
         <h1 class="title">Tracker</h1>
-        <p class="sub">33 jobs. Drag a card to change its status; the newest changes are at the top.</p>
-      </div>
-      <label class="field" style="width: 260px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4-4"></path></svg>
-        <span class="vh">Search jobs</span>
-        <input type="search" id="tracker-search" placeholder="Company, role, contact or notes">
-      </label>
-      <div class="seg" role="group" aria-label="View">
-        <button type="button" aria-pressed="true">Board</button>
-        <button type="button" aria-pressed="false">List</button>
+        <p class="sub">Every job you analyzed, by where it stands.</p>
       </div>
       <button type="button" class="btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"></path></svg>
         Export CSV
       </button>
+      <a class="btn btn-primary" href="Analyze.dc.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        New analysis
+      </a>
     </header>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 12px">
-      <div class="notice" role="status">
-        <span class="n-ic" style="background: rgba(251,146,60,0.16); color: #FDBA74"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"></path></svg></span>
-        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
-          <span style="font-size: 14px; font-weight: 600">Time to follow up</span>
-          <span style="font-size: 13px; color: #A1A1AA">HTC Global hasn't replied in 2 weeks. A short email can help.</span>
-        </span>
-        <button type="button" class="btn">Write the email</button>
+    <section class="section" aria-labelledby="needs-title" style="gap: 12px">
+      <div class="sh" style="min-height: 0">
+        <h2 id="needs-title" style="font-size: 16px; font-weight: 600">Needs you</h2>
+        <span class="pill num" style="color: #FED7AA; background: rgba(251,146,60,0.12); border-color: rgba(251,146,60,0.30)">2</span>
       </div>
-      <div class="notice" role="status">
-        <span class="n-ic" style="background: rgba(244,114,182,0.16); color: #F9A8D4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4"></path><path d="M12 16.8h.01"></path></svg></span>
-        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
-          <span style="font-size: 14px; font-weight: 600">Did you apply?</span>
-          <span style="font-size: 13px; color: #A1A1AA">11 cover notes have been ready for over a day.</span>
-        </span>
-        <button type="button" class="btn">Show them</button>
+      <div class="panel split" role="status">
+        <div class="pane" style="flex: 1 1 380px; flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px">
+          <span class="ic-tile" style="background: rgba(251,146,60,0.16); color: #FDBA74"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 14px; font-weight: 600">Follow up with HTC Global</span>
+            <span style="font-size: 13px; color: #A1A1AA">No reply in 2 weeks. A short email can help.</span>
+          </span>
+          <button type="button" class="btn btn-sm">Write the email</button>
+        </div>
+        <div class="pane" style="flex: 1 1 380px; flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px">
+          <span class="ic-tile" style="background: rgba(244,114,182,0.16); color: #F9A8D4"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4"></path><path d="M12 16.8h.01"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 14px; font-weight: 600">Did you apply?</span>
+            <span style="font-size: 13px; color: #A1A1AA">11 cover notes have been ready for over a day.</span>
+          </span>
+          <button type="button" class="btn btn-sm">Show them</button>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
-      <div style="flex: 999 1 640px; min-width: 0; overflow-x: auto; padding-bottom: 4px">
-        <div style="display: grid; grid-template-columns: repeat(6, minmax(176px, 1fr)); gap: 10px; min-width: 1100px">
-          <sc-for list="{{columns}}" as="col" hint-placeholder-count="6">
-            <section class="col" aria-label="{{col.name}}, {{col.count}} jobs">
-              <header style="display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px">
-                <span class="dot" style="{{col.dot}}"></span>
-                <h2 style="margin: 0 auto 0 0; font-size: 13px; font-weight: 600">{{col.name}}</h2>
-                <span class="num" style="font-size: 12px; color: #8E8E99">{{col.count}}</span>
-              </header>
-              <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="3">
-                <button type="button" class="jcard" aria-pressed="{{c.open}}">
-                  <span style="display: flex; gap: 10px; align-items: flex-start">
-                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
-                      <span style="font-size: 12px; color: #A1A1AA">{{c.company}}</span>
-                      <span style="font-size: 13px; font-weight: 600; line-height: 1.35">{{c.title}}</span>
+    <section class="section" aria-labelledby="jobs-title" style="gap: 14px">
+      <div class="sh">
+        <h2 id="jobs-title">All jobs</h2>
+        <span class="num" style="font-size: 13px; color: #8E8E99; margin-right: auto">33</span>
+        <label class="field" style="width: 280px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4-4"></path></svg>
+          <span class="vh">Search jobs</span>
+          <input type="search" id="tracker-search" placeholder="Company, role, contact or notes">
+        </label>
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" aria-pressed="true">Board</button>
+          <button type="button" aria-pressed="false">List</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <div style="flex: 999 1 640px; min-width: 0; overflow-x: auto; padding-bottom: 4px">
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(172px, 1fr)); gap: 10px; min-width: 1080px">
+            <sc-for list="{{columns}}" as="col" hint-placeholder-count="6">
+              <section class="col" aria-label="{{col.name}}, {{col.count}} jobs">
+                <header style="display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px">
+                  <span class="dot" style="{{col.dot}}"></span>
+                  <h3 style="margin: 0 auto 0 0; font-size: 13px; font-weight: 600">{{col.name}}</h3>
+                  <span class="num" style="font-size: 12px; color: #8E8E99">{{col.count}}</span>
+                </header>
+                <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="3">
+                  <button type="button" class="jcard" aria-pressed="{{c.open}}">
+                    <span style="display: flex; gap: 10px; align-items: flex-start">
+                      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                        <span style="font-size: 12px; color: #A1A1AA">{{c.company}}</span>
+                        <span style="font-size: 13px; font-weight: 600; line-height: 1.35">{{c.title}}</span>
+                      </span>
+                      <span style="{{c.chip}}">{{c.fit}}</span>
                     </span>
-                    <span style="{{c.chip}}">{{c.fit}}</span>
-                  </span>
-                  <span style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: #8E8E99">
-                    {{c.note}}
-                    <sc-if value="{{c.ask}}" hint-placeholder-val="{{false}}"><span class="pill" style="height: 20px; padding: 0 7px; font-size: 11px; color: #FBCFE8; background: rgba(244,114,182,0.14); border-color: rgba(244,114,182,0.32)">Applied?</span></sc-if>
-                    <sc-if value="{{c.follow}}" hint-placeholder-val="{{false}}"><span class="pill" style="height: 20px; padding: 0 7px; font-size: 11px; color: #FED7AA; background: rgba(251,146,60,0.14); border-color: rgba(251,146,60,0.32)">Follow up</span></sc-if>
-                  </span>
-                </button>
-              </sc-for>
-              <sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 22px 8px; text-align: center; font-size: 12px; line-height: 1.5; color: #8E8E99; border: 1px dashed rgba(255,255,255,0.10); border-radius: 12px">Drop a job here</p></sc-if>
-            </section>
-          </sc-for>
+                    <span style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: #8E8E99">
+                      {{c.note}}
+                      <sc-if value="{{c.ask}}" hint-placeholder-val="{{false}}"><span class="pill" style="height: 20px; padding: 0 7px; font-size: 11px; color: #FBCFE8; background: rgba(244,114,182,0.14); border-color: rgba(244,114,182,0.32)">Applied?</span></sc-if>
+                      <sc-if value="{{c.follow}}" hint-placeholder-val="{{false}}"><span class="pill" style="height: 20px; padding: 0 7px; font-size: 11px; color: #FED7AA; background: rgba(251,146,60,0.14); border-color: rgba(251,146,60,0.32)">Follow up</span></sc-if>
+                    </span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{col.hasMore}}" hint-placeholder-val="{{false}}"><button type="button" class="more">Show {{col.more}} more</button></sc-if>
+                <sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 22px 8px; text-align: center; font-size: 12px; line-height: 1.5; color: #8E8E99; border: 1px dashed rgba(255,255,255,0.10); border-radius: 12px">Drop a job here</p></sc-if>
+              </section>
+            </sc-for>
+          </div>
         </div>
+
+        <aside class="panel" aria-labelledby="details-title" style="flex: 1 1 340px; max-width: 420px; gap: 20px; background: linear-gradient(180deg, rgba(36,44,62,0.82), rgba(24,30,44,0.82)); border-color: rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 32px 64px -24px rgba(0,0,0,0.85)">
+          <div style="display: flex; gap: 12px; align-items: flex-start">
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 13px; color: #A1A1AA">GitLab</span>
+              <h3 id="details-title" style="margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.25; text-wrap: balance">Backend Engineer, GitLab Orbit</h3>
+              <span style="font-size: 13px; color: #8E8E99">Remote, Canada · Mid level · Full-time</span>
+            </div>
+            <button type="button" class="btn icon-btn" aria-label="Close details" style="width: 36px; height: 36px">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
+            </button>
+          </div>
+
+          <section aria-labelledby="ask-title" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(244,114,182,0.14), rgba(167,139,250,0.08)); border: 1px solid rgba(244,114,182,0.28)">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <h4 id="ask-title" style="margin: 0; font-size: 15px; font-weight: 600">Did you apply?</h4>
+              <p style="margin: 0; font-size: 13px; line-height: 1.55; color: #D4D4D8">The cover note has been ready for a day, and postings close. If you don't answer for a day, JobLens stops asking.</p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <button type="button" class="btn btn-sm" style="border: 0; background: #FFFFFF; color: #0B0F17">Yes, I applied</button>
+              <button type="button" class="btn btn-sm">Not yet</button>
+              <button type="button" class="btn btn-sm btn-quiet" style="color: #A1A1AA">Stop asking</button>
+            </div>
+          </section>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end">
+            <label for="job-status" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #A1A1AA">Status
+              <select id="job-status" class="select"><option>Cover note ready</option><option>Applied</option><option>Interviewing</option><option>Offer</option><option>Rejected</option></select>
+            </label>
+            <a class="btn" href="#">Open posting</a>
+            <button type="button" class="btn btn-quiet">Interview prep</button>
+          </div>
+
+          <section aria-labelledby="fit-title" style="display: flex; flex-direction: column; gap: 12px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08)">
+            <div style="display: flex; align-items: center; gap: 10px">
+              <h4 id="fit-title" style="margin: 0 auto 0 0; font-size: 15px; font-weight: 600">Fit</h4>
+              <span style="font-size: 12px; color: #A1A1AA">Best resume: AI Engineer</span>
+              <span class="num" style="width: 40px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; font-weight: 650; color: #A1A1AA; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10)">50</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; font-size: 13px">
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 600; color: #93C5FD">Proven</span>
+                <span style="display: flex; gap: 8px; align-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Python and Git</span>
+                <span style="display: flex; gap: 8px; align-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>REST APIs</span>
+                <span style="display: flex; gap: 8px; align-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Testing</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 12px; font-weight: 600; color: #F9A8D4">Gaps</span>
+                <span style="display: flex; gap: 8px; align-items: center; color: #D4D4D8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>Ruby on Rails</span>
+                <span style="display: flex; gap: 8px; align-items: center; color: #D4D4D8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>Graph databases</span>
+                <span style="display: flex; gap: 8px; align-items: center; color: #D4D4D8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>Rust</span>
+              </div>
+            </div>
+          </section>
+
+          <section aria-labelledby="desc-title" style="display: flex; flex-direction: column; gap: 6px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08)">
+            <h4 id="desc-title" style="margin: 0; font-size: 15px; font-weight: 600">Job description</h4>
+            <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #A1A1AA">Saved on this PC when the job was analyzed, so you can still read it after the posting comes down. <a href="#">Show it</a></p>
+          </section>
+        </aside>
       </div>
-
-      <aside class="panel" aria-labelledby="details-title" style="flex: 1 1 340px; max-width: 420px; padding: 22px; gap: 18px; background: linear-gradient(180deg, rgba(36,44,62,0.82), rgba(24,30,44,0.82)); border-color: rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 32px 64px -24px rgba(0,0,0,0.85)">
-        <div style="display: flex; gap: 12px; align-items: flex-start">
-          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
-            <span style="font-size: 13px; color: #A1A1AA">GitLab</span>
-            <h2 id="details-title" style="margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.25; text-wrap: balance">Backend Engineer, GitLab Orbit</h2>
-            <span style="font-size: 13px; color: #8E8E99">Remote, Canada · Mid level · Full-time</span>
-          </div>
-          <button type="button" class="btn icon-btn" aria-label="Close details" style="width: 36px; height: 36px">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
-          </button>
-        </div>
-
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end">
-          <label for="job-status" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #A1A1AA">Status
-            <select id="job-status" class="select"><option>Cover note ready</option><option>Applied</option><option>Interviewing</option><option>Offer</option><option>Rejected</option></select>
-          </label>
-          <a class="btn" href="#">Open posting</a>
-          <button type="button" class="btn btn-quiet">Interview prep</button>
-        </div>
-
-        <section aria-labelledby="ask-title" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(244,114,182,0.14), rgba(167,139,250,0.08)); border: 1px solid rgba(244,114,182,0.28)">
-          <div style="display: flex; flex-direction: column; gap: 4px">
-            <h3 id="ask-title" style="margin: 0; font-size: 15px; font-weight: 600">Did you apply?</h3>
-            <p style="margin: 0; font-size: 13px; line-height: 1.55; color: #D4D4D8">The cover note has been ready for a day, and postings close. If you don't answer for a day, JobLens stops asking.</p>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px">
-            <button type="button" class="btn" style="border: 0; background: #FFFFFF; color: #0B0F17">Yes, I applied</button>
-            <button type="button" class="btn">Not yet</button>
-            <button type="button" class="btn btn-quiet" style="color: #A1A1AA">Stop asking</button>
-          </div>
-        </section>
-
-        <section aria-labelledby="fit-title" style="display: flex; flex-direction: column; gap: 12px">
-          <div style="display: flex; align-items: center; gap: 10px">
-            <h3 id="fit-title" style="margin: 0 auto 0 0; font-size: 15px; font-weight: 600">Fit</h3>
-            <span style="font-size: 12px; color: #A1A1AA">Best resume: AI Engineer</span>
-            <span class="num" style="width: 40px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; font-weight: 650; color: #A1A1AA; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10)">50</span>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; font-size: 13px">
-            <div style="display: flex; flex-direction: column; gap: 8px">
-              <span style="font-size: 12px; font-weight: 600; color: #93C5FD">Proven</span>
-              <span style="display: flex; gap: 8px; align-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Python and Git</span>
-              <span style="display: flex; gap: 8px; align-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>REST APIs</span>
-              <span style="display: flex; gap: 8px; align-items: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Testing</span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px">
-              <span style="font-size: 12px; font-weight: 600; color: #F9A8D4">Gaps</span>
-              <span style="display: flex; gap: 8px; align-items: center; color: #D4D4D8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>Ruby on Rails</span>
-              <span style="display: flex; gap: 8px; align-items: center; color: #D4D4D8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>Graph databases</span>
-              <span style="display: flex; gap: 8px; align-items: center; color: #D4D4D8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"></path></svg>Rust</span>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="desc-title" style="display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08)">
-          <h3 id="desc-title" style="margin: 0; font-size: 15px; font-weight: 600">Job description</h3>
-          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #A1A1AA">Saved on this PC when the job was analyzed, so you can still read it after the posting comes down. <a href="#">Show it</a></p>
-        </section>
-      </aside>
-    </div>
+    </section>
   </main>
 </div>
 </x-dc>
@@ -252,7 +280,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 class Component extends DCLogic {
   renderVals() {
     var spec = [
-      ["Researched", "#8E8E99", [["GE HealthCare", "Graduate Engineer Trainee", 20, "Analyzed 13 days ago"], ["Intel", "AI Software Development Engineer", 33, "Analyzed 2 weeks ago"]]],
+      ["Researched", "#A1A1AA", [["GE HealthCare", "Graduate Engineer Trainee", 20, "Analyzed 13 days ago"], ["Intel", "AI Software Development Engineer", 33, "Analyzed 2 weeks ago"]]],
       ["Cover note ready", "#60A5FA", [["GitLab", "Backend Engineer, GitLab Orbit", 50, "Approved today", 1, 0, 1], ["Jobgether", "Full Stack Software Engineer", 78, "Approved today"], ["Barclays", "Software Engineer", 53, "3 days ago", 1], ["Nike", "Software Engineer I, ITC", 89, "4 days ago", 1]]],
       ["Applied", "#A78BFA", [["AiPrise", "Software Engineer I", 69, "Applied 2 days ago"], ["ServiceNow", "Software Engineer", 85, "Applied 2 days ago"], ["HTC Global", "Java Full Stack Developer", 83, "Applied 2 weeks ago", 0, 1], ["Amazon", "Software Dev Engineer I, FTC", 100, "Applied 3 days ago"]]],
       ["Interviewing", "#FB923C", []],
@@ -267,10 +295,13 @@ class Component extends DCLogic {
       return base + "color:#A1A1AA;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10)";
     }
     var columns = spec.map(function (col) {
+      var more = counts[col[0]] - col[2].length;
       return {
         name: col[0],
         count: counts[col[0]],
         empty: col[2].length === 0,
+        more: more,
+        hasMore: more > 0,
         dot: "width:8px;height:8px;background:" + col[1],
         cards: col[2].map(function (c) {
           return { company: c[0], title: c[1], fit: c[2], note: c[3], ask: c[4] === 1, follow: c[5] === 1, open: c[6] === 1 ? "true" : "false", chip: chip(c[2]) };

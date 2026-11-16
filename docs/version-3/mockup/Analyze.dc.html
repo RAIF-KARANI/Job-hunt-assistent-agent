@@ -17,7 +17,7 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 :focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
 *{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.18) transparent}
 .app{min-height:100vh;display:flex;flex-wrap:wrap;font-family:Inter,"Segoe UI",system-ui,sans-serif;font-optical-sizing:auto;color:#FFFFFF;background:radial-gradient(900px 520px at 92% -10%,rgba(251,146,60,0.17),transparent 62%),radial-gradient(760px 520px at 38% -12%,rgba(96,165,250,0.10),transparent 60%),radial-gradient(900px 700px at -5% 105%,rgba(167,139,250,0.13),transparent 60%),#0B0F17}
-.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:26px;background:rgba(8,11,18,0.55);border-right:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(24px)}
+.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:28px;background:rgba(8,11,18,0.55);border-right:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(24px)}
 .brand{display:flex;align-items:center;gap:10px;padding:0 10px;font-size:17px;font-weight:650;letter-spacing:-0.02em}
 .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 6px 14px -6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.35)}
 .navlist{display:flex;flex-direction:column;gap:2px}
@@ -26,26 +26,37 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .nav:hover{background:rgba(255,255,255,0.05);color:#FFFFFF}
 .nav[aria-current="page"]{color:#FFFFFF;background:linear-gradient(90deg,rgba(96,165,250,0.30),rgba(167,139,250,0.12));box-shadow:inset 0 0 0 1px rgba(147,197,253,0.22)}
 .nav[aria-current="page"] svg{color:#93C5FD}
+.navsep{height:1px;margin:8px 12px;background:rgba(255,255,255,0.07)}
 .count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;display:grid;place-items:center;font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;color:#0B0F17;background:#FB923C}
 .model{margin-top:auto;padding:14px;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:4px}
-.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 48px;display:flex;flex-direction:column;gap:24px}
+.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 56px;display:flex;flex-direction:column;gap:40px}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .title{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em;line-height:1.15;text-wrap:balance}
 .sub{margin:6px 0 0;font-size:14px;line-height:1.5;color:#A1A1AA;max-width:62ch}
-.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;gap:18px}
-.ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.ph h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em}
+.section{display:flex;flex-direction:column;gap:16px;min-width:0}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;min-height:40px}
+.sh h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-0.015em}
+.sh p{margin:0;font-size:13px;color:#A1A1AA}
+.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;gap:16px}
+.split{padding:0;flex-direction:row;flex-wrap:wrap;gap:0;overflow:hidden}
+.pane{box-sizing:border-box;min-width:0;padding:22px;display:flex;flex-direction:column;gap:16px}
+.pane + .pane{border-left:1px solid rgba(255,255,255,0.07)}
+.ph{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.ph h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em}
 .ph p{flex-basis:100%;margin:0;font-size:13px;line-height:1.5;color:#A1A1AA}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F4F4F5;font:600 13px/1 Inter,"Segoe UI",system-ui,sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
 .btn:hover{background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.18);color:#FFFFFF}
 .btn-primary{border:0;color:#0B0F17;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 8px 20px -10px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.35)}
 .btn-primary:hover{color:#0B0F17;background:linear-gradient(135deg,#7AB6FB,#B69DFB);transform:translateY(-1px)}
 .btn-quiet{border-color:transparent;background:transparent;color:#C4B5FD}
+.btn-sm{height:32px;padding:0 12px;border-radius:10px}
 .icon-btn{width:40px;padding:0;position:relative}
 .field{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);color:#8E8E99;transition:border-color .2s ease,box-shadow .2s ease}
 .field:focus-within{border-color:rgba(147,197,253,0.55);box-shadow:0 0 0 4px rgba(96,165,250,0.14)}
 .field input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#FFFFFF;font:14px Inter,"Segoe UI",system-ui,sans-serif}
 .field input::placeholder{color:#8E8E99}
+.select{height:40px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);color:#FFFFFF;border:1px solid rgba(255,255,255,0.12);padding:0 12px;font:14px Inter,"Segoe UI",system-ui,sans-serif}
+.select option{background:#131A29}
 .seg{display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09)}
 .seg button{height:30px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:#A1A1AA;font:500 13px Inter,"Segoe UI",system-ui,sans-serif;cursor:pointer}
 .seg button:hover{color:#FFFFFF}
@@ -54,20 +65,19 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .dot{width:7px;height:7px;border-radius:50%;flex:none}
 .num{font-variant-numeric:tabular-nums}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.kpi{position:relative;overflow:hidden;box-sizing:border-box;padding:20px;border-radius:20px;display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease}
-.kpi:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26),0 28px 50px -24px rgba(0,0,0,0.9)}
+.kpi{position:relative;overflow:hidden;box-sizing:border-box;padding:18px 20px;border-radius:18px;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85)}
 .k-label{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:550}
-.k-ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,0.16);flex:none}
-.k-val{font-size:28px;font-weight:650;letter-spacing:-0.025em;line-height:1;font-variant-numeric:tabular-nums}
+.k-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,0.16);flex:none}
+.k-val{font-size:24px;font-weight:650;letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
 .k-note{font-size:12.5px;line-height:1.4;opacity:0.86}
-.row{display:grid;align-items:center;gap:14px;padding:12px 4px;border-top:1px solid rgba(255,255,255,0.07);color:inherit;text-decoration:none;border-radius:10px;transition:background .2s ease}
+.row{display:grid;align-items:center;gap:14px;padding:12px 8px;margin:0 -8px;border-top:1px solid rgba(255,255,255,0.07);color:inherit;text-decoration:none;border-radius:10px;transition:background .2s ease}
 a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .node{position:absolute;border-radius:50%;padding:0;cursor:pointer;transition:transform .2s ease}
 .node:hover{transform:scale(1.35)}
+.ic-tile{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.55)}50%{box-shadow:0 0 0 7px rgba(167,139,250,0)}}
 @keyframes blink{50%{opacity:0}}
-@keyframes sweep{from{background-position:0 0}to{background-position:200% 0}}
 .res{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:500;color:#D4D4D8;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10)}
 .res[data-state="done"]{color:#BFDBFE;background:rgba(96,165,250,0.12);border-color:rgba(96,165,250,0.28)}
 .res[data-state="now"]{color:#FFFFFF;background:rgba(167,139,250,0.16);border-color:rgba(167,139,250,0.45)}
@@ -95,6 +105,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
         Tracker
         <span class="count" aria-label="2 reminders">2</span>
       </a>
+      <div class="navsep" aria-hidden="true"></div>
       <a class="nav" href="Evals.dc.html">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16"></path><path d="M6 15l4-5 3 3 5-6"></path></svg>
         Evals
@@ -112,7 +123,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
     <span style="padding: 0 10px; font-size: 11px; color: #8E8E99">JobLens 2.0.0 · mockup</span>
   </nav>
 
-  <main class="main" style="gap: 20px">
+  <main class="main" style="gap: 36px">
     <header class="top">
       <div style="margin-right: auto">
         <h1 class="title">Analyze a job</h1>
@@ -120,95 +131,103 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
       </div>
     </header>
 
-    <form class="panel" style="gap: 14px">
-      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end">
-        <label for="job-url" style="flex: 999 1 420px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 500; color: #D4D4D8">Job posting link
-          <span class="field" style="height: 48px; border-color: rgba(147,197,253,0.40)">
+    <section class="section" aria-labelledby="job-title" style="gap: 12px">
+      <div class="sh" style="min-height: 0">
+        <h2 id="job-title">Job</h2>
+      </div>
+      <div class="panel" style="gap: 14px">
+        <label for="job-url" style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 500; color: #D4D4D8">Job posting link
+          <span class="field" style="height: 48px">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
             <input type="url" id="job-url" value="https://job-boards.greenhouse.io/gitlab/jobs/8771512002" readonly>
           </span>
         </label>
-        <button type="button" class="btn btn-primary" disabled="disabled" style="height: 48px; padding: 0 20px; cursor: default; opacity: 1; background: linear-gradient(90deg, #A78BFA, #F472B6, #A78BFA); background-size: 200% 100%; animation: sweep 3s linear infinite">
-          <span class="num">Running · 2m 41s</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: #A1A1AA">
+          <span style="margin-right: 4px">Resumes compared</span>
+          <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer · 50</span>
+          <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer (UAE) · 44</span>
+          <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Software Engineer</span>
+          <span class="res" data-state="now"><span class="dot" style="width: 6px; height: 6px; background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Software Engineer (UAE)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="run-title" style="gap: 12px">
+      <div class="sh" style="min-height: 0">
+        <h2 id="run-title">Run</h2>
+        <span class="pill" style="color: #DDD6FE; background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.36)"><span class="dot" style="background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Step 2 of 5</span>
+        <span class="num" style="font-size: 13px; color: #A1A1AA; margin-right: auto">2m 41s so far · usually 4m 26s</span>
+        <button type="button" class="btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+          Stop
         </button>
-        <button type="button" class="btn" style="height: 48px">Stop</button>
       </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: #A1A1AA">
-        <span style="margin-right: 4px">Comparing 4 resumes</span>
-        <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer · 50</span>
-        <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer (UAE) · 44</span>
-        <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Software Engineer</span>
-        <span class="res" data-state="now"><span class="dot" style="width: 6px; height: 6px; background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Software Engineer (UAE)</span>
-      </div>
-    </form>
+      <div style="height: 6px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden" role="progressbar" aria-label="Run progress" aria-valuenow="61" aria-valuemin="0" aria-valuemax="100"><span style="display: block; height: 100%; width: 61%; border-radius: 999px; background: linear-gradient(90deg, #60A5FA, #A78BFA, #F472B6)"></span></div>
 
-    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
-      <section class="panel" aria-labelledby="steps-title" style="flex: 1 1 380px; gap: 6px">
-        <div class="ph" style="padding-bottom: 10px">
-          <h2 id="steps-title">What the agent is doing</h2>
-          <span class="num" style="margin-left: auto; font-size: 12px; color: #8E8E99">usually 4m 26s in all</span>
+      <div class="panel split">
+        <div class="pane" style="flex: 1 1 380px; gap: 8px">
+          <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 600">Steps</h3>
+          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+            <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+              <li style="position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 6px 0 16px">
+                <span aria-hidden="true" style="{{s.line}}"></span>
+                <span style="{{s.badge}}">
+                  <sc-if value="{{s.done}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+                  <sc-if value="{{s.numbered}}" hint-placeholder-val="{{true}}">{{s.num}}</sc-if>
+                </span>
+                <span style="display: flex; flex-direction: column; gap: 4px; padding-top: 5px">
+                  <span style="font-size: 14px; font-weight: 600; color: {{s.ink}}">{{s.title}}</span>
+                  <span style="font-size: 13px; line-height: 1.5; color: {{s.sub}}">{{s.detail}}</span>
+                </span>
+                <span class="num" style="padding-top: 6px; font-size: 13px; color: {{s.sub}}">{{s.time}}</span>
+              </li>
+            </sc-for>
+          </ol>
         </div>
-        <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
-          <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
-            <li style="position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 8px 0 18px">
-              <span aria-hidden="true" style="{{s.line}}"></span>
-              <span style="{{s.badge}}">
-                <sc-if value="{{s.done}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
-                <sc-if value="{{s.numbered}}" hint-placeholder-val="{{true}}">{{s.num}}</sc-if>
-              </span>
-              <span style="display: flex; flex-direction: column; gap: 4px; padding-top: 5px">
-                <span style="font-size: 15px; font-weight: 600; color: {{s.ink}}">{{s.title}}</span>
-                <span style="font-size: 13px; line-height: 1.5; color: {{s.sub}}">{{s.detail}}</span>
-                <sc-if value="{{s.running}}" hint-placeholder-val="{{false}}">
-                  <span style="display: block; height: 6px; margin-top: 8px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden"><span style="display: block; height: 100%; width: 75%; border-radius: 999px; background: linear-gradient(90deg, #60A5FA, #A78BFA)"></span></span>
-                </sc-if>
-              </span>
-              <span class="num" style="padding-top: 7px; font-size: 13px; color: {{s.sub}}">{{s.time}}</span>
-            </li>
-          </sc-for>
-        </ol>
-      </section>
-
-      <section class="panel" aria-labelledby="log-title" style="flex: 1.2 1 420px; background: rgba(6,9,15,0.72); border-color: rgba(255,255,255,0.07)">
-        <div class="ph">
-          <h2 id="log-title">Live log</h2>
-          <span style="margin-left: auto; display: flex; gap: 6px">
-            <span class="pill" style="height: 22px; font-size: 11px; color: #A1A1AA">Langfuse off</span>
-            <span class="pill" style="height: 22px; font-size: 11px; color: #BBF7D0; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.28)">Run log on</span>
-          </span>
-        </div>
-        <pre style="margin: 0; flex: 1; min-height: 320px; overflow-x: auto; white-space: pre-wrap; font: 12.5px/1.75 'JetBrains Mono', ui-monospace, Consolas, monospace; color: #8E8E99"><span style="color: #D4D4D8">[1/5] Reading the job posting...</span>
+        <div class="pane" style="flex: 1.2 1 420px; background: rgba(5,8,13,0.55)">
+          <div class="ph">
+            <h3>Live log</h3>
+            <span style="margin-left: auto; display: flex; gap: 6px">
+              <span class="pill" style="height: 22px; font-size: 11px; color: #A1A1AA">Langfuse off</span>
+              <span class="pill" style="height: 22px; font-size: 11px; color: #BBF7D0; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.28)">Run log on</span>
+            </span>
+          </div>
+          <pre style="margin: 0; flex: 1; min-height: 300px; overflow-x: auto; white-space: pre-wrap; font: 12.5px/1.75 'JetBrains Mono', ui-monospace, Consolas, monospace; color: #8E8E99"><span style="color: #D4D4D8">[1/5] Reading the job posting...</span>
   -&gt; Backend Engineer, GitLab Orbit @ GitLab (Remote, Canada)
 <span style="color: #FFFFFF">[2/5] Comparing your resumes with the job...</span>
   - scoring 'AI Engineer'...  second look at 2 requirement(s)
     <span style="color: #F9A8D4">[judge] 1 claim(s) not actually proven by their quote</span>
+  - scoring 'Software Engineer'...
 <span style="color: #BFDBFE">  50/100  AI Engineer   [Required: 3 of 7 shown, 4 partly]</span>
 <span style="color: #BFDBFE">  44/100  AI Engineer (UAE)</span>
   - scoring 'Software Engineer (UAE)'...<span style="display: inline-block; width: 7px; height: 14px; margin-left: 2px; vertical-align: -2px; background: #C4B5FD; animation: blink 1.1s steps(1) infinite"></span></pre>
-      </section>
-    </div>
+        </div>
+      </div>
+    </section>
 
-    <section class="panel" aria-labelledby="draft-title" style="gap: 14px">
-      <div class="ph">
+    <section class="section" aria-labelledby="draft-title" style="gap: 12px">
+      <div class="sh" style="min-height: 0">
         <h2 id="draft-title">Cover note</h2>
-        <p>It appears here after step 5. You approve it, rewrite it with your notes, or reject it.</p>
+        <p>Appears after step 5. You approve it, rewrite it with your notes, or reject it.</p>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 14px; border: 1px dashed rgba(255,255,255,0.12); background: rgba(255,255,255,0.02)">
-        <span style="display: block; height: 10px; width: 22%; border-radius: 6px; background: rgba(255,255,255,0.07)"></span>
-        <span style="display: block; height: 10px; width: 92%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
-        <span style="display: block; height: 10px; width: 86%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
-        <span style="display: block; height: 10px; width: 64%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
-      </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 8px">
-        <button type="button" class="btn btn-primary" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; transform: none">Approve and save</button>
-        <button type="button" class="btn" disabled="disabled" style="opacity: 0.4; cursor: not-allowed">Rewrite with my notes</button>
-        <button type="button" class="btn btn-quiet" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; color: #A1A1AA">Reject</button>
+      <div class="panel" style="gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 0" aria-hidden="true">
+          <span style="display: block; height: 10px; width: 22%; border-radius: 6px; background: rgba(255,255,255,0.07)"></span>
+          <span style="display: block; height: 10px; width: 92%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
+          <span style="display: block; height: 10px; width: 86%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
+          <span style="display: block; height: 10px; width: 64%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07)">
+          <button type="button" class="btn btn-primary" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; transform: none">Approve and save</button>
+          <button type="button" class="btn" disabled="disabled" style="opacity: 0.4; cursor: not-allowed">Rewrite with my notes</button>
+          <button type="button" class="btn btn-quiet" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; color: #A1A1AA">Reject</button>
+        </div>
       </div>
     </section>
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
 class Component extends DCLogic {
   renderVals() {
     var rows = [
@@ -222,11 +241,11 @@ class Component extends DCLogic {
       var done = r[4] === "done", running = r[4] === "running", next = r[4] === "next";
       var bg = done ? "linear-gradient(135deg,#60A5FA,#A78BFA)" : running ? "linear-gradient(135deg,#A78BFA,#F472B6)" : "rgba(255,255,255,0.04)";
       return {
-        num: r[0], title: r[1], detail: r[2], time: r[3], running: running, done: done, numbered: !done,
+        num: r[0], title: r[1], detail: r[2], time: r[3], done: done, numbered: !done,
         ink: next ? "#A1A1AA" : "#FFFFFF",
         sub: next ? "#8E8E99" : "#A1A1AA",
         badge: "position:relative;z-index:1;width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:650;color:" + (next ? "#A1A1AA" : "#0B0F17") + ";background:" + bg + ";border:1px solid " + (next ? "rgba(255,255,255,0.12)" : "transparent") + (running ? ";animation:breathe 1.8s ease-in-out infinite" : ""),
-        line: i === rows.length - 1 ? "display:none" : "position:absolute;left:15.5px;top:42px;bottom:0;width:1px;background:" + (done ? "linear-gradient(180deg,#60A5FA,#A78BFA)" : "rgba(255,255,255,0.10)")
+        line: i === rows.length - 1 ? "display:none" : "position:absolute;left:15.5px;top:40px;bottom:0;width:1px;background:" + (done ? "linear-gradient(180deg,#60A5FA,#A78BFA)" : "rgba(255,255,255,0.10)")
       };
     });
     return { steps: steps };
