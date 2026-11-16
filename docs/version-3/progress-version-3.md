@@ -205,3 +205,24 @@ You said the left menu was overwhelming.
 - The model card (three lines) and the version line became one row at
   the bottom: status dot, model name, "Ready" (or "Step 2 of 5" during a
   run). The version number would move to Settings.
+
+## Mockup: search widget and quick actions ✅ (16 Nov 2026)
+
+You said the search bar at the top was overbearing.
+
+- The wide search box is now a small **Search · Ctrl K** button, on all
+  four screens.
+- Ctrl K or a click opens **quick actions**: Actions, Go to, and Jobs.
+  Type to filter, Up / Down to move, Enter to open, Esc to close.
+- The label is Ctrl K, not Command K, because JobLens runs on Windows.
+- In the mockup, press Play and click inside the screen first; then the
+  shortcut works. The mockup's "Quick actions" switch shows the box open
+  without clicking.
+- The logic of each screen was run once outside the browser (it filters
+  and groups correctly); how it looks was not checked.
+
+## Features file ✅ (16 Nov 2026)
+
+[features-version-3.md](features-version-3.md): every feature of the new
+look (F1 to F32), by screen, with what still needs a check before
+building. It is the checklist for Phase 17.

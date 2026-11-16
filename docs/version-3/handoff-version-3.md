@@ -7,7 +7,8 @@ follows.
 
 Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 [decisions-version-3.md](decisions-version-3.md) · Progress:
-[progress-version-3.md](progress-version-3.md)
+[progress-version-3.md](progress-version-3.md) · Features of the new look:
+[features-version-3.md](features-version-3.md)
 
 ---
 
