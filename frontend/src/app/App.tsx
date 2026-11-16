@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Analyze } from "../analyze/Analyze";
 import { catchUp } from "../analyze/runStore";
 import { Components } from "./Components";
@@ -8,8 +8,11 @@ import { Evals } from "../evals/Evals";
 import { Settings } from "../settings/Settings";
 import { SetupWizard } from "../setup/SetupWizard";
 import type { AppInfo, Settings as SettingsData, Theme } from "../bridge/types";
+import { QuickActions } from "./QuickActions";
 import { useRoute, type PageId } from "./routes";
 import { Sidebar } from "./Sidebar";
+import { TopBar } from "./TopBar";
+import { useReminders } from "./useReminders";
 import { Tracker } from "../tracker/Tracker";
 import { useTheme } from "./useTheme";
 
@@ -19,7 +22,9 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>("system");
   const [skipped, setSkipped] = useState(false); // "Skip for now": this session only
-  useTheme(theme);
+  const resolved = useTheme(theme); // what is on screen: never "system"
+  const reminders = useReminders();
+  const [quick, setQuick] = useState(false); // 17c: quick actions (Ctrl K)
 
   useEffect(() => {
     catchUp(); // a run may already be going (page reload)
@@ -40,6 +45,24 @@ export function App() {
       .then((api) => api.save_settings({ UI_THEME: next }))
       .catch(() => undefined);
   };
+
+  // 17c: the top-bar switch flips what you see now. "Match Windows" is still
+  // a choice in Settings; using the switch replaces it with dark or light.
+  const toggleTheme = useCallback(() => changeTheme(resolved === "dark" ? "light" : "dark"), [resolved]);
+  const closeQuick = useCallback(() => setQuick(false), []);
+
+  // Ctrl K, from anywhere in the window. (The quick-analyze box has its own,
+  // system-wide shortcut: a different one.)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setQuick((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   /** Settings changed (Settings page, wizard): every screen sees it at once. */
   const onSettings = (settings: SettingsData) => setInfo((i) => (i ? { ...i, settings, setup_needed: false } : i));
@@ -80,8 +103,9 @@ export function App() {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Sidebar page={sheet ? null : shown} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
+      <Sidebar page={sheet ? null : shown} model={info?.settings.LLM_MODEL ?? "…"} reminders={reminders} />
       <main id="main" className="content" tabIndex={-1}>
+        <TopBar theme={resolved} onToggleTheme={toggleTheme} onSearch={() => setQuick(true)} showNew={sheet || shown !== "analyze"} />
         {sheet ? (
           <Components />
         ) : shown === "dashboard" ? (
@@ -98,6 +122,7 @@ export function App() {
         )}
         {info && <footer className="version">JobLens {info.version}</footer>}
       </main>
+      <QuickActions open={quick} onClose={closeQuick} theme={resolved} onToggleTheme={toggleTheme} />
     </div>
   );
 }

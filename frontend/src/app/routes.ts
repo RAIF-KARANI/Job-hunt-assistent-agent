@@ -4,12 +4,18 @@ import type { IconName } from "./Icon";
 // Pages live in the URL hash (#/tracker): no router library needed, and the
 // page survives a reload (F5) inside the window.
 export const PAGES = [
-  { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { id: "analyze", label: "Analyze", icon: "analyze" },
-  { id: "tracker", label: "Tracker", icon: "tracker" },
-  { id: "evals", label: "Evals", icon: "evals" },
-  { id: "settings", label: "Settings", icon: "settings" },
-] as const satisfies readonly { id: string; label: string; icon: IconName }[];
+  { id: "dashboard", label: "Dashboard", icon: "dashboard", group: "search" },
+  { id: "analyze", label: "Analyze", icon: "analyze", group: "search" },
+  { id: "tracker", label: "Tracker", icon: "tracker", group: "search" },
+  { id: "evals", label: "Evals", icon: "evals", group: "agent" },
+  { id: "settings", label: "Settings", icon: "settings", group: "agent" },
+] as const satisfies readonly { id: string; label: string; icon: IconName; group: string }[];
+
+/** 17c: the sidebar's two groups. "Agent" folds away until you need it. */
+export const NAV_GROUPS = [
+  { id: "search", label: "Job search", folds: false },
+  { id: "agent", label: "Agent", folds: true },
+] as const;
 
 export type PageId = (typeof PAGES)[number]["id"];
 /** A page, the setup wizard (#/setup: full screen, not in the sidebar), or

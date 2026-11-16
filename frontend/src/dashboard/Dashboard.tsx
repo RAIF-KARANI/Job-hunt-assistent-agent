@@ -89,9 +89,6 @@ export function Dashboard({ level }: { level: Ui3D }) {
               </label>
             ))}
           </div>
-          <a className="btn btn-primary" href="#/analyze">
-            New analysis
-          </a>
         </div>
       </header>
 

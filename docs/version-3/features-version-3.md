@@ -9,11 +9,11 @@ Mockup: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 · source in
 Decisions: [decisions-version-3.md](decisions-version-3.md) · How we got
 here: [progress-version-3.md](progress-version-3.md)
 
-**Status of everything below: designed in the mockup, not built.** Nothing
-in the app has changed. The mockup was not checked on screen by Claude;
+**Status: built where a row says so; the rest is designed in the mockup
+and not built yet.** The mockup was not checked on screen by Claude;
 you review it.
 
-Legend: 🎨 designed · ❓ needs a check before it can be built
+Legend: 🎨 designed · ❓ needs a check before it can be built · ✅ built
 
 ---
 
@@ -41,7 +41,7 @@ Legend: 🎨 designed · ❓ needs a check before it can be built
 | # | Feature | What it does | Status |
 |---|---|---|---|
 | F33 | **Light mode** | The same screens in clear, light glass: white see-through layers over a bright wallpaper, dark text, darker accent text so it stays readable | 🎨 ❓ |
-| F34 | **Light / dark toggle** | A sun / moon button in the top bar of every screen. The choice is remembered on this PC and carries across screens | 🎨 ❓ |
+| F34 | **Light / dark toggle** | A sun / moon button in the top bar of every screen. The choice is saved in your settings. "Match Windows" is still a choice in Settings | ✅ built (17c) |
 
 **To check (❓), light mode:**
 - F33: not looked at on screen by Claude. Text over the brightest parts
@@ -52,10 +52,10 @@ Legend: 🎨 designed · ❓ needs a check before it can be built
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F7 | **Two labelled groups** | "Job search": Dashboard, Analyze, Tracker. "Agent": Evals, Settings. Every item has an icon | 🎨 |
-| F8 | **Agent group folds** | Closed on the job-search screens (one row with an arrow), open on Evals | 🎨 |
-| F9 | **Model status row** | One row at the bottom: status dot, model name, "Ready". During a run: "Step 2 of 5" | 🎨 |
-| F10 | **Reminder count** | The number of things waiting for you, on the Tracker item | 🎨 |
+| F7 | **Two labelled groups** | "Job search": Dashboard, Analyze, Tracker. "Agent": Evals, Settings. Every item has an icon | ✅ built (17c) |
+| F8 | **Agent group folds** | Closed on the job-search screens (one row with an arrow), open on Evals and Settings | ✅ built (17c) |
+| F9 | **Model status row** | One row at the bottom: status dot, model name, "Ready". During a run: "Working"; when it waits for you: "Your turn". A click opens Settings | ✅ built (17c) |
+| F10 | **Reminder count** | The number of jobs waiting for you (follow-ups and "Did you apply?"), on the Tracker item | ✅ built (17c) |
 
 Moved out of the sidebar: the version number and "On this PC · free and
 private" (both would live in Settings).
@@ -64,10 +64,10 @@ private" (both would live in Settings).
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F11 | **Search widget** | A small "Search · Ctrl K" button replaces the wide search box, on every screen | 🎨 |
-| F12 | **Quick actions** | Ctrl K, or a click on the widget, opens a box with three groups: **Actions** (Analyze a new job, Confirm applications, Write a follow-up, Export the tracker as CSV), **Go to** (the five pages), and **Jobs** (the three most recent, or every match as you type) | 🎨 ❓ |
-| F13 | **Quick actions by keyboard** | Type to filter, Up / Down to move, Enter to open, Esc or a click outside to close | 🎨 |
-| F14 | **New analysis button** | On hover or keyboard focus the label changes to "Land the next one" and the plus becomes a lens that keeps scanning. The button's width doesn't change | 🎨 |
+| F11 | **Search widget** | A small "Search · Ctrl K" button, top right on every screen | ✅ built (17c) |
+| F12 | **Quick actions** | Ctrl K, or a click on the widget, opens a box with three groups: **Actions** (Analyze a new job, Confirm applications, Write a follow-up, Export the tracker as CSV), **Go to** (the five pages), and **Jobs** (the three most recent, or every match as you type) | ✅ built (17c) |
+| F13 | **Quick actions by keyboard** | Type to filter, Up / Down to move, Enter to open, Esc or a click outside to close | ✅ built (17c) |
+| F14 | **New analysis button** | On hover or keyboard focus the label changes to "Land the next one" and the plus becomes a lens that keeps scanning. The button's width doesn't change | ✅ built (17c) |
 
 **To check (❓):**
 - F12: the label says **Ctrl K** because JobLens is a Windows app (you

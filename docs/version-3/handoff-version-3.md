@@ -21,14 +21,14 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **17c: the shell** (grouped sidebar, top bar with Search · Ctrl K and quick actions) |
+| Next step | **17d: the Dashboard** (pipeline card, Do next, galaxy with the selected job, How JobLens is doing) |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
 
 | # | Phase | Status |
 |---|---|---|
-| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a, 17b done |
+| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a to 17c done |
 | 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
@@ -114,6 +114,9 @@ with every feature still working. That is how Phase 17 is laid out.
 - **Fonts (since 17b):** Inter (`@fontsource-variable/inter`, one variable
   file) and IBM Plex Mono, bundled, offline. Sora and IBM Plex Sans are
   gone.
+- **Shell (since 17c):** `app/Sidebar.tsx` (two groups from `NAV_GROUPS` in
+  `routes.ts`), `app/TopBar.tsx`, `app/QuickActions.tsx` (Ctrl K),
+  `app/useReminders.ts` (the number on Tracker).
 - **Component sheet:** `#/components` (not in the menu) shows every shared
   piece; use it to check a token change in both themes.
 - **How the glass is built:** `body` paints `--backdrop`; `.shell` is the

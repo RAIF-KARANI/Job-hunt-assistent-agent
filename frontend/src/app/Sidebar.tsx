@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
 import { useRun } from "../analyze/runStore";
 import { getApi, onEvent } from "../bridge/bridge";
-import type { LlmStatus, Theme } from "../bridge/types";
-import { Icon, Logo, type IconName } from "./Icon";
-import { PAGES, type PageId } from "./routes";
-
-const THEMES: { id: Theme; label: string; icon: IconName }[] = [
-  { id: "system", label: "Match Windows", icon: "monitor" },
-  { id: "dark", label: "Dark", icon: "moon" },
-  { id: "light", label: "Light", icon: "sun" },
-];
+import type { LlmStatus } from "../bridge/types";
+import { Icon, Logo } from "./Icon";
+import { NAV_GROUPS, PAGES, type PageId } from "./routes";
 
 interface Props {
   /** null: a screen that isn't in the menu (the component sheet). */
   page: PageId | null;
   model: string;
-  theme: Theme;
-  onTheme(theme: Theme): void;
+  /** Jobs waiting for you (follow-ups, "Did you apply?"), shown on Tracker. */
+  reminders: number;
 }
 
-export function Sidebar({ page, model, theme, onTheme }: Props) {
+// 17c: two labelled groups. "Agent" folds away while you work on your job
+// search; it opens by itself on its own pages.
+export function Sidebar({ page, model, reminders }: Props) {
   const [status, setStatus] = useState<LlmStatus | null>(null);
   const run = useRun();
   const waiting = run.phase === "review" || run.phase === "paste";
@@ -45,15 +41,18 @@ export function Sidebar({ page, model, theme, onTheme }: Props) {
     });
   }, []);
 
-  const [dot, label] = run.busy
-    ? ["var(--accent)", "Agent working"]
+  // A group you opened stays open; the group of the current page is always open.
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
+
+  const [dot, label, short] = run.busy
+    ? ["var(--purple)", "Agent working", "Working"]
     : waiting
-      ? ["var(--warn)", "Waiting for you"]
+      ? ["var(--warn)", "Waiting for you", "Your turn"]
       : status === null
-        ? ["var(--text-faint)", "Checking the model..."]
+        ? ["var(--text-faint)", "Checking the model...", "Checking"]
         : status.ok
-          ? ["var(--ok)", "Model ready"]
-          : ["var(--danger-ink)", "Model not ready"];
+          ? ["var(--ok)", "Model ready", "Ready"]
+          : ["var(--danger-ink)", "Model not ready", "Not ready"];
 
   return (
     <nav className="sidebar" aria-label="Main">
@@ -62,51 +61,72 @@ export function Sidebar({ page, model, theme, onTheme }: Props) {
         <span>JobLens</span>
       </div>
 
-      <ul className="nav">
-        {PAGES.map((p) => (
-          <li key={p.id}>
-            <a href={`#/${p.id}`} className="nav-link" aria-current={p.id === page ? "page" : undefined}>
-              <Icon name={p.icon} />
-              {p.label}
-              {p.id === "analyze" && (run.busy || waiting) && (
-                <span className={waiting ? "nav-dot waiting" : "nav-dot"} title={label}>
-                  <span className="sr-only">({label})</span>
+      <div className="nav-groups">
+        {NAV_GROUPS.map((group) => {
+          const pages = PAGES.filter((p) => p.group === group.id);
+          const current = pages.some((p) => p.id === page);
+          const open = !group.folds || current || !!opened[group.id];
+          const listId = `nav-${group.id}`;
+          return (
+            <div key={group.id} className="nav-group">
+              {group.folds ? (
+                <button
+                  type="button"
+                  className="nav-label nav-fold"
+                  aria-expanded={open}
+                  aria-controls={listId}
+                  disabled={current}
+                  onClick={() => setOpened((o) => ({ ...o, [group.id]: !open }))}
+                >
+                  {group.label}
+                  <Icon name="chevron" size={14} />
+                </button>
+              ) : (
+                <span className="nav-label" id={`${listId}-label`}>
+                  {group.label}
                 </span>
               )}
-            </a>
-          </li>
-        ))}
-      </ul>
+              <ul id={listId} className={open ? "nav" : "nav closed"} aria-label={group.label}>
+                {pages.map((p) => (
+                  <li key={p.id}>
+                    <a href={`#/${p.id}`} className="nav-link" aria-current={p.id === page ? "page" : undefined}>
+                      <Icon name={p.icon} />
+                      {p.label}
+                      {p.id === "analyze" && (run.busy || waiting) && (
+                        <span className={waiting ? "nav-dot waiting" : "nav-dot"} title={label}>
+                          <span className="sr-only">({label})</span>
+                        </span>
+                      )}
+                      {p.id === "tracker" && reminders > 0 && (
+                        <span className="nav-count" title="Jobs waiting for you">
+                          {reminders}
+                          <span className="sr-only"> waiting for you</span>
+                        </span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="sidebar-foot">
-        <div className="model-card" role="status" title={status?.message}>
-          <span className="model-card-state">
-            <span className={run.busy ? "dot pulse" : "dot"} style={{ background: dot }} />
-            {label}
+        {update && (
+          // 13d: to Settings → Updates, where it downloads, verifies and installs.
+          <a className="update-link" href="#/settings" title="Download and install it in Settings → Updates">
+            Update available: {update.latest}
+          </a>
+        )}
+        <a className="model-row" href="#/settings" role="status" title={status?.message ?? "Change the model in Settings"}>
+          <span className={run.busy ? "dot pulse" : "dot"} style={{ background: dot }} />
+          <span className="model-row-name">{model}</span>
+          <span className="model-row-state">
+            <span className="sr-only">{label}</span>
+            <span aria-hidden="true">{short}</span>
           </span>
-          <span className="model-card-name">{model}</span>
-          {update && (
-            // 13d: to Settings → Updates, where it downloads, verifies and installs.
-            <a className="update-link" href="#/settings" title="Download and install it in Settings → Updates">
-              Update available: {update.latest}
-            </a>
-          )}
-        </div>
-
-        <div className="theme-switch" role="group" aria-label="Theme">
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              aria-pressed={theme === t.id}
-              aria-label={t.label}
-              title={t.label}
-              onClick={() => onTheme(t.id)}
-            >
-              <Icon name={t.icon} size={16} />
-            </button>
-          ))}
-        </div>
+        </a>
       </div>
     </nav>
   );

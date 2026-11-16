@@ -12,7 +12,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Mockup round 2 | ✅ | same link, elevated after your "looks AI slop" review (see below) |
 | 17a Your review of the mockup | ✅ | approved after several rounds: "I am happy with the design" |
 | 17b Tokens and base components | ✅ | both glass themes in the real app; component sheet at `#/components` |
-| 17c–17j | ⏳ | 17c (the shell) is next |
+| 17c The shell | ✅ | grouped sidebar, top bar, quick actions (Ctrl K), light/dark switch |
+| 17d–17j | ⏳ | 17d (the Dashboard) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -304,3 +305,52 @@ The first change to the app itself.
   file could restyle the whole app.
 - The reference grey fails contrast on glass over a bright backdrop: on
   see-through surfaces, check text against the worst spot behind it.
+
+## 17c The shell ✅ (16 Nov 2026)
+
+### What was done
+- **Sidebar:** two labelled groups, "Job search" (Dashboard, Analyze,
+  Tracker) and "Agent" (Evals, Settings). Agent folds away and opens by
+  itself on its own pages. The number of jobs waiting for you sits on
+  Tracker. The model card became one row: dot, model, state; a click
+  opens Settings.
+- **Top bar** on every screen: Search · Ctrl K, the light/dark switch,
+  and New analysis (not on Analyze, where it leads). On hover or focus
+  the button reads "Land the next one" and its plus becomes a scanning
+  lens.
+- **Quick actions:** Ctrl K or a click. Actions (Analyze a new job,
+  Confirm applications and Follow up when there are any, Export the
+  tracker as CSV, Switch to light / dark mode), Go to (the five pages),
+  and Jobs (the three newest, or every match as you type). It searches
+  the same fields as the Tracker's search: company, role, contact, notes.
+  Picking a job opens its details in the Tracker.
+- **Pages settle in** with a short fade when you change screens.
+- The Dashboard's own "New analysis" button is gone (it is in the top
+  bar now). The three-way theme switch left the sidebar; "Match Windows"
+  is still in Settings.
+
+### Checked
+- Build passes; pytest: 471 pass; the real window starts (5 menu items)
+  and shows the new shell.
+- Driven in a browser with made-up data: the fold opens and closes;
+  the theme switch flips; Ctrl K opens, the search box has the focus,
+  arrows move, typing filters, Enter on a job opens its details in the
+  Tracker; Esc and a click outside close; export reports the saved file;
+  no "New analysis" on Analyze; at 720 px wide nothing scrolls sideways.
+
+### Found and fixed on the way
+- The light/dark button showed no icon: a later rule gave it side padding
+  wider than the button. Seen in the first screenshot, fixed.
+
+### Different from the mockup, on purpose
+- The top bar is its own slim row above the page title, not on the title's
+  line: each screen keeps its own controls next to its title (the
+  Dashboard's 7 / 30 days / All, the Tracker's search and Board / List).
+- The Tracker keeps its own search box for now. Quick actions searches
+  the same fields, so 17e can decide whether the box goes.
+- "Confirm applications" and "Follow up" open the Tracker; they don't
+  switch on its filter yet (17e).
+
+### Not checked
+- Ctrl K was pressed in a browser, not inside the real JobLens window.
+  Try it there: `.venv\Scripts\python -m desktop_web`.

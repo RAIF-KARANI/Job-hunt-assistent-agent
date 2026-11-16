@@ -45,6 +45,26 @@ const paths = {
       <path d="M6.5 15.5h5M9 12.5v3" strokeLinecap="round" />
     </>
   ),
+  search: (
+    <>
+      <circle cx="8" cy="8" r="5" />
+      <path d="M15.5 15.5l-3.8-3.8" strokeLinecap="round" />
+    </>
+  ),
+  // the main button: a plus that turns into a lens with a glint (17c)
+  plus: <path d="M9 3.5v11M3.5 9h11" strokeLinecap="round" />,
+  lens: (
+    <>
+      <circle cx="8" cy="8" r="4.6" />
+      <path d="M14.8 14.8l-3.5-3.5" strokeLinecap="round" />
+      <path className="glint" d="M6 8a2 2 0 012-2" strokeLinecap="round" />
+    </>
+  ),
+  chevron: <path d="M4.5 6.75L9 11.25l4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />,
+  up: <path d="M9 14V4M4.5 8.5L9 4l4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />,
+  down: <path d="M9 4v10M4.5 9.5L9 14l4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />,
+  arrow: <path d="M3.5 9h11M10 4.5L14.5 9 10 13.5" strokeLinecap="round" strokeLinejoin="round" />,
+  bolt: <path d="M10 2L4 10.2h4.4L8 16l6-8.2H9.6z" strokeLinejoin="round" />,
 } as const;
 
 export type IconName = keyof typeof paths;
