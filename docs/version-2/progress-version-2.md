@@ -2602,3 +2602,22 @@ Also: two notices on the Tracker sat too far apart.
   they belong to the release step.
 - **The tray notification for "Did you apply?"** was not seen live.
 - Test data: job #3 (GitLab) was deleted and analyzed again as #40, now Applied.
+
+## Fit evals after Phase 16 ✅ (16 Nov 2026)
+Run in two halves (the first full run was stopped by low memory), 3 runs per
+case, qwen3:8b; merged in `data/evals/results/20261116-1114_merged_phase16.json`.
+
+| | 3 Nov baseline | after Phase 16 |
+|---|---|---|
+| accuracy | 83 % | 83 % |
+| false gaps | 3 % | 2 % |
+| false matches | 0 % | 0 % |
+| score error | 13.1 | 12.1 |
+| stability | 98 % | 93 % |
+| time per run | 48 s | 49 s |
+
+Per case: Nexora 100 → 99, Cranes 38 → 43, Tag-N-Trac 22 → 23, project-only
+91 → 85 (its expected range is 85–100). Stability dropped only on
+Tag-N-Trac (scores 23 / 18 / 27). No change beyond run-to-run noise: step 2's
+code wasn't touched, and the `langchain-core` 1.7 → 1.8 update didn't move it.
+You checked the app by hand: "its good".
