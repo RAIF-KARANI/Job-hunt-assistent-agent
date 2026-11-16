@@ -102,6 +102,16 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .step[data-state="next"] .step-title{color:#C8CBD3}
 .step-sub{font-size:13px;line-height:1.5;color:#A1A1AA}
 .step-time{padding-top:7px;font-size:13px;color:#A1A1AA}
+.navgroup{display:flex;flex-direction:column;gap:2px}
+.navlabel{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#9C9CA8}
+.navfold>summary{list-style:none;display:flex;align-items:center;gap:8px;height:32px;margin-bottom:2px;padding:0 12px;border-radius:10px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#9C9CA8;transition:background .2s ease,color .2s ease}
+.navfold>summary::-webkit-details-marker{display:none}
+.navfold>summary:hover{background:rgba(255,255,255,0.05);color:#FFFFFF}
+.navfold>summary svg{margin-left:auto;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.navfold[open]>summary svg{transform:rotate(180deg)}
+.modelrow{margin-top:auto;display:flex;align-items:center;gap:10px;min-height:44px;box-sizing:border-box;padding:6px 12px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);color:#FFFFFF;text-decoration:none;font-size:13px;font-weight:600;transition:background .2s ease}
+.modelrow:hover{background:rgba(255,255,255,0.10);color:#FFFFFF}
+.modelrow span:last-child{margin-left:auto;font-size:12px;font-weight:400;color:#A1A1AA;white-space:nowrap}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.55)}50%{box-shadow:0 0 0 7px rgba(167,139,250,0)}}
 @keyframes blink{50%{opacity:0}}
@@ -118,37 +128,39 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
       <span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B0F17" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"></circle><circle cx="12" cy="12" r="2.6"></circle><path d="M12 4.5v2.4"></path></svg></span>
       JobLens
     </div>
-    <div class="navlist">
-      <a class="nav" href="Main.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2"></rect></svg>
-        Dashboard
-      </a>
-      <a class="nav" href="Analyze.dc.html" aria-current="page">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z"></path></svg>
-        Analyze
-        <span class="dot" style="margin-left: auto; background: #A78BFA; animation: breathe 1.8s ease-in-out infinite" aria-label="Running"></span>
-      </a>
-      <a class="nav" href="Tracker.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"></rect><rect x="10.5" y="4" width="5" height="11" rx="1.5"></rect><rect x="17.5" y="4" width="3.5" height="7" rx="1.5"></rect></svg>
-        Tracker
-        <span class="count" aria-label="2 reminders">2</span>
-      </a>
-      <div class="navsep" aria-hidden="true"></div>
-      <a class="nav" href="Evals.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16"></path><path d="M6 15l4-5 3 3 5-6"></path></svg>
-        Evals
-      </a>
-      <a class="nav" href="#">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
-        Settings
-      </a>
+    <div class="navgroup">
+      <span class="navlabel">Job search</span>
+        <a class="nav" href="Main.dc.html">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2"></rect></svg>
+          Dashboard
+        </a>
+        <a class="nav" href="Analyze.dc.html" aria-current="page">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z"></path></svg>
+          Analyze
+          <span class="dot" style="margin-left: auto; background: #A78BFA; animation: breathe 1.8s ease-in-out infinite" aria-label="Running"></span>
+        </a>
+        <a class="nav" href="Tracker.dc.html">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"></rect><rect x="10.5" y="4" width="5" height="11" rx="1.5"></rect><rect x="17.5" y="4" width="3.5" height="7" rx="1.5"></rect></svg>
+          Tracker
+          <span class="count" aria-label="2 reminders">2</span>
+        </a>
     </div>
-    <div class="model">
-      <span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A1A1AA"><span class="dot" style="background: #A78BFA; animation: breathe 1.8s ease-in-out infinite"></span>Working · step 2 of 5</span>
-      <span style="font-size: 14px; font-weight: 600">qwen3:8b</span>
-      <span style="font-size: 12px; color: #9C9CA8">On this PC · free and private</span>
-    </div>
-    <span style="padding: 0 10px; font-size: 11px; color: #9C9CA8">JobLens 2.0.0 · mockup</span>
+    <details class="navgroup navfold">
+      <summary>Agent<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></summary>
+        <a class="nav" href="Evals.dc.html">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16"></path><path d="M6 15l4-5 3 3 5-6"></path></svg>
+          Evals
+        </a>
+        <a class="nav" href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+          Settings
+        </a>
+    </details>
+    <a class="modelrow" href="#" aria-label="Model qwen3:8b, on this PC, step 2 of 5">
+      <span class="dot" style="background: #A78BFA; animation: breathe 1.8s ease-in-out infinite"></span>
+      <span>qwen3:8b</span>
+      <span>Step 2 of 5</span>
+    </a>
   </nav>
 
   <main class="main" style="gap: 24px">

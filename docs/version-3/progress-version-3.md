@@ -193,3 +193,15 @@ Dashboard, and that you didn't like the round 4 Dashboard.
 - Which step each safety net belongs to is my reading: made-up quotes and
   judge rejections under step 2, invented links and news dates under
   step 3. Check against the code before building.
+
+## Mockup: cleaner sidebar ✅ (16 Nov 2026)
+
+You said the left menu was overwhelming.
+
+- Two labelled groups. **Job search**: Dashboard, Analyze, Tracker.
+  **Agent**: Evals, Settings. Every item keeps its icon.
+- **Agent** folds: it is closed on the job-search screens (one row with
+  an arrow) and open on Evals.
+- The model card (three lines) and the version line became one row at
+  the bottom: status dot, model name, "Ready" (or "Step 2 of 5" during a
+  run). The version number would move to Settings.
