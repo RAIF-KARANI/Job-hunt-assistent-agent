@@ -2682,3 +2682,11 @@ ignores; `referance/` stays out of git. The settings file still uses Ollama.
 - pytest: 471 passed (9 new); typecheck and build clean.
 - **Not tested:** OpenAI (no key). The code is shared with Gemini and Claude,
   and a wrong OpenAI key is refused correctly.
+
+## v1.2.0 final build (16 Nov 2026, D3)
+Rebuilt after 16c's changes: pytest 471 passed; `--test-install` self-test
+and window test 1.2.0 (built and installed copy), clean uninstall;
+`check_real_update.py` all four checks from 1.1.1, and `new_from_old` from
+1.0.3. Nothing private in the app folder (3 saved keys and 4 names checked).
+- `JobLens-Setup-1.2.0.exe`: 68 MB, SHA-256 `01268331…b44e`
+- portable zip: 83 MB, SHA-256 `4f22a270…7502`
