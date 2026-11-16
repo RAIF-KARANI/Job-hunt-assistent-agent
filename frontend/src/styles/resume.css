@@ -6,9 +6,9 @@
   padding: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-xl);
-  background: var(--surface);
+  background: var(--surface-raised);
   color: var(--text);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--glass-edge), var(--shadow-raised);
 }
 
 .prompt-dialog[open] {
@@ -23,7 +23,7 @@
 }
 
 .prompt-dialog::backdrop {
-  background: rgba(5, 8, 16, 0.55);
+  background: var(--scrim);
 }
 
 .prompt-body {

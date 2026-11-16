@@ -1,24 +1,27 @@
 /*
- * JobLens design tokens (v2). Every color, size and font in the UI comes
- * from here, so a theme is just a different set of values.
+ * JobLens design tokens (v3: the glass look). Every color, size and font in
+ * the UI comes from here, so a theme is just a different set of values.
  *
- * Dark = the approved concept. Light = the same roles, re-tuned so text
- * still passes WCAG AA (4.5:1 body, 3:1 large/UI).
+ * Both themes are frosted glass over a soft backdrop (features F1, F2, F33):
+ * surfaces are see-through and blur what is behind them. Text colours are
+ * checked against the surface over the brightest part of the backdrop.
  * The theme is chosen by <html data-theme="dark|light">; "system" sets it
  * from prefers-color-scheme (see useTheme.ts).
+ *
+ * Source of the values: docs/version-3/mockup and features-version-3.md.
  */
 
 :root {
   /* type */
-  --font-display: "Sora", "Segoe UI", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
   --text-xs: 12px;
   --text-sm: 13px;
   --text-md: 14px;
   --text-lg: 16px;
   --text-xl: 20px;
-  --text-2xl: 28px;
+  --text-2xl: 30px;
 
   /* space (4 px grid) */
   --space-1: 4px;
@@ -28,9 +31,10 @@
   --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
+  --space-10: 40px;
 
   /* shape */
-  --radius-sm: 8px;
+  --radius-sm: 10px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
@@ -41,65 +45,94 @@
   --dur-fast: 120ms;
   --dur-med: 200ms;
 
-  --sidebar-w: 224px;
+  --sidebar-w: 236px;
+
+  /* the five accents (the same in both themes) */
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --yellow: #facc15;
+  --accent-grad: linear-gradient(135deg, var(--blue), var(--purple));
+  --on-grad: #0b0f17; /* text on the gradient: 7.3:1 on the blue end, 7:1 on the purple */
+
+  /* frost */
+  --glass-blur: blur(28px) saturate(170%);
+  --glass-blur-strong: blur(40px) saturate(180%);
 }
 
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0a0f1c;
-  --surface: #111829;
-  --surface-2: #172036;
-  --surface-sunken: #0d1322;
-  --surface-log: #070b15;
-  --sidebar: #0e1424;
-  --border: #1e2840;
-  --border-strong: #2a3756;
+  --bg: #0a0d16;
+  /* What the glass sits on. A stand-in for the desktop until the window
+     itself can be see-through (Phase 18). */
+  --backdrop: radial-gradient(60% 55% at 10% 16%, rgba(96, 165, 250, 0.8), transparent 62%),
+    radial-gradient(48% 52% at 90% 6%, rgba(251, 146, 60, 0.72), transparent 64%),
+    radial-gradient(52% 56% at 80% 94%, rgba(244, 114, 182, 0.62), transparent 62%),
+    radial-gradient(56% 60% at 6% 96%, rgba(167, 139, 250, 0.72), transparent 64%), #0a0d16;
+  --window: rgba(11, 15, 23, 0.68); /* the frosted window over the backdrop */
+  --sidebar: rgba(8, 11, 18, 0.18);
 
-  --text: #e6ecf5;
-  --text-muted: #a9b6cb;   /* 8.6:1 on surface */
-  --text-faint: #93a1b8;   /* 6.8:1 on surface */
+  --surface: rgba(255, 255, 255, 0.07);
+  --surface-2: rgba(255, 255, 255, 0.11);
+  --surface-sunken: rgba(8, 11, 18, 0.34);
+  --surface-log: rgba(5, 8, 13, 0.55);
+  --surface-raised: rgba(32, 40, 58, 0.78); /* dialogs, sheets, toasts, tips */
+  --border: rgba(255, 255, 255, 0.11);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.12); /* the lit top edge */
+  --shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.75);
+  --shadow-raised: 0 32px 64px -24px rgba(0, 0, 0, 0.85);
+  --scrim: rgba(5, 8, 13, 0.5);
 
-  --accent: #4cc3f0;       /* fills: buttons, rings */
-  --on-accent: #06121c;    /* text on --accent: 9.3:1 */
-  --accent-ink: #8fd6f5;   /* accent-colored text and links: 11:1 */
-  --accent-soft: rgba(76, 195, 240, 0.12);
+  --text: #ffffff;
+  /* Contrast is worked out for the worst spot: a card over the window over
+     the orange corner of the backdrop (blur ignored). White there is 10:1. */
+  --text-muted: #c8cbd3;   /* 6.4:1 */
+  --text-faint: #b4b4be;   /* 5.0:1 (the reference grey #A1A1AA is 4.3:1 there) */
 
-  --ok: #5fd39a;
-  --warn: #f2a93b;
-  --warn-ink: #f7cf92;
-  --warn-soft: rgba(242, 169, 59, 0.1);
-  --warn-line: rgba(242, 169, 59, 0.4);
-  --ok-soft: rgba(95, 211, 154, 0.15);
-  --danger-ink: #f3a3a3;
-  --danger-soft: rgba(243, 163, 163, 0.1);
+  --accent: #60a5fa;       /* fills: rings, checked marks */
+  --on-accent: #0b0f17;    /* text on --accent: 7.3:1 */
+  --accent-ink: #93c5fd;   /* accent-colored text and links: 5.7:1 */
+  --accent-soft: rgba(96, 165, 250, 0.14);
+  --accent-line: rgba(96, 165, 250, 0.32);
 
-  --fit-high: #9be3ff;
-  --fit-mid: #3a8fd0;
-  --fit-low: #56647d;
-  --fit-high-ink: #06121c;  /* text on the fit chips: 13.3:1, 5.4:1, 6.0:1 */
-  --fit-mid-ink: #06121c;
+  --ok: #4ade80;
+  --warn: #fb923c;
+  --warn-ink: #fdba74;
+  --warn-soft: rgba(251, 146, 60, 0.12);
+  --warn-line: rgba(251, 146, 60, 0.36);
+  --ok-soft: rgba(74, 222, 128, 0.12);
+  --danger-ink: #fda4af;
+  --danger-soft: rgba(244, 114, 182, 0.12);
+
+  /* fit: one blue scale, bright = strong (feature F3) */
+  --fit-high: #60a5fa;
+  --fit-mid: #6f8bc4;
+  --fit-low: #4e5970;
+  --fit-high-ink: #0b0f17;  /* text on the fit chips: 7.3:1, 5.4:1, 7:1 */
+  --fit-mid-ink: #0b0f17;
   --fit-low-ink: #ffffff;
-  --fit-track: #1a2440;
+  --fit-track: rgba(255, 255, 255, 0.07);
 
-  /* tracker statuses */
-  --st-researched: #93a1b8;
-  --st-cover: #4cc3f0;
-  --st-applied: #8b7cf6;
-  --st-interviewing: #f2a93b;
-  --st-offer: #5fd39a;
-  --st-rejected: #56647d;
+  /* tracker statuses: one colour each, on every screen (feature F3) */
+  --st-researched: #a1a1aa;
+  --st-cover: #60a5fa;
+  --st-applied: #a78bfa;
+  --st-interviewing: #fb923c;
+  --st-offer: #facc15;
+  --st-rejected: #f472b6;
 
-  /* job galaxy (12f) */
+  /* job galaxy (restyled in step 17d; three.js needs plain colours here) */
   --galaxy-sky: #142445;
-  --galaxy-sky-edge: #0d1322;
+  --galaxy-sky-edge: #0b0f17;
   --galaxy-star: #c9d4e5;
-  --galaxy-label: rgba(10, 15, 28, 0.78);
+  --galaxy-label: rgba(11, 15, 23, 0.78);
 
-  /* ratings (12f2): good / mixed / bad, checked with the dataviz palette
-     validator against --surface (color-blind and normal-vision separation pass) */
   /* 16d: one colour per model in "Evidence pass rate by model" (4 at most).
-     Checked with the dataviz palette validator against --surface: every check passes. */
+     Kept from version 2 until step 17g checks new ones with the palette
+     validator. */
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -109,60 +142,73 @@
   --rate-mixed: #199e70;
   --rate-bad: #d95926;
 
-  --focus: #e6ecf5;
+  --focus: #93c5fd;
+  --selection: rgba(167, 139, 250, 0.4);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f6fa;
-  --surface: #ffffff;
-  --surface-2: #eef2f8;
-  --surface-sunken: #f7f9fc;
-  --surface-log: #eef2f8;
-  --sidebar: #eaeef5;
-  --border: #d7deea;
-  --border-strong: #bcc7d8;
+  --bg: #eaf0fb;
+  --backdrop: radial-gradient(60% 55% at 10% 16%, rgba(96, 165, 250, 0.62), transparent 62%),
+    radial-gradient(48% 52% at 90% 6%, rgba(251, 146, 60, 0.5), transparent 64%),
+    radial-gradient(52% 56% at 80% 94%, rgba(244, 114, 182, 0.45), transparent 62%),
+    radial-gradient(56% 60% at 6% 96%, rgba(167, 139, 250, 0.52), transparent 64%), #eaf0fb;
+  --window: rgba(255, 255, 255, 0.36);
+  --sidebar: rgba(255, 255, 255, 0.14);
 
-  --text: #0e1626;
-  --text-muted: #44526b;   /* 7.9:1 on white */
-  --text-faint: #56647a;   /* 6.0:1 on white */
+  --surface: rgba(255, 255, 255, 0.46);
+  --surface-2: rgba(255, 255, 255, 0.7);
+  --surface-sunken: rgba(255, 255, 255, 0.3);
+  --surface-log: rgba(255, 255, 255, 0.5);
+  --surface-raised: rgba(255, 255, 255, 0.78);
+  --border: rgba(20, 28, 48, 0.1);
+  --border-strong: rgba(20, 28, 48, 0.2);
+  --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+  --shadow: 0 22px 44px -28px rgba(40, 52, 96, 0.45);
+  --shadow-raised: 0 40px 80px -24px rgba(40, 52, 96, 0.55);
+  --scrim: rgba(226, 232, 246, 0.5);
 
-  --accent: #0b6fa4;
-  --on-accent: #ffffff;    /* 5.5:1 */
-  --accent-ink: #0a5f8d;   /* 6.9:1 on white */
-  --accent-soft: rgba(11, 111, 164, 0.1);
+  --text: #0f1422;
+  /* Worst spot in light: a card over the window over the blue corner. */
+  --text-muted: #2a3145;   /* 10:1 */
+  --text-faint: #454c61;   /* 7:1 */
 
-  --ok: #1c7c4a;
-  --warn: #b26a00;
-  --warn-ink: #8a5200;
-  --warn-soft: rgba(178, 106, 0, 0.1);
-  --warn-line: rgba(178, 106, 0, 0.45);
-  --ok-soft: rgba(28, 124, 74, 0.12);
+  --accent: #2563eb;
+  --on-accent: #ffffff;    /* 5.1:1 */
+  --accent-ink: #1d4ed8;   /* 5.4:1 on a card, 4.5:1 straight on the window */
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-line: rgba(37, 99, 235, 0.32);
+
+  --ok: #166534;           /* also used as text: 5.7:1 */
+  --warn: #c2410c;
+  --warn-ink: #9a3412;
+  --warn-soft: rgba(194, 65, 12, 0.1);
+  --warn-line: rgba(194, 65, 12, 0.4);
+  --ok-soft: rgba(21, 128, 61, 0.12);
   --danger-ink: #b42318;
   --danger-soft: rgba(180, 35, 24, 0.08);
 
-  --fit-high: #0b6fa4;
-  --fit-mid: #4f9bd1;
-  --fit-low: #9aa6b8;
-  --fit-high-ink: #ffffff;  /* 5.5:1, 6.0:1, 7.3:1 */
-  --fit-mid-ink: #0e1626;
-  --fit-low-ink: #0e1626;
-  --fit-track: #e3e8f0;
+  /* in light, a weak fit is paler instead of dimmer */
+  --fit-high: #2563eb;
+  --fit-mid: #8fa9da;
+  --fit-low: #b9c2d6;
+  --fit-high-ink: #ffffff;  /* 5.1:1, 7.7:1, 10:1 */
+  --fit-mid-ink: #0f1422;
+  --fit-low-ink: #0f1422;
+  --fit-track: rgba(20, 28, 48, 0.08);
 
   --st-researched: #6b7890;
-  --st-cover: #0b6fa4;
-  --st-applied: #6d5bd0;
-  --st-interviewing: #b26a00;
-  --st-offer: #1c7c4a;
-  --st-rejected: #9aa6b8;
+  --st-cover: #2563eb;
+  --st-applied: #7c3aed;
+  --st-interviewing: #c2410c;
+  --st-offer: #a16207;
+  --st-rejected: #db2777;
 
   --galaxy-sky: #ffffff;
   --galaxy-sky-edge: #e9eff8;
   --galaxy-star: #8b9ab3;
   --galaxy-label: rgba(255, 255, 255, 0.88);
 
-  /* 16d: same four on white. Aqua and yellow are under 3:1 on white, so the
-     legend names every line and the numbers are in a table too. */
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
@@ -172,5 +218,6 @@
   --rate-mixed: #1baf7a; /* 2.8:1 on white: the legend always names it */
   --rate-bad: #eb6834;
 
-  --focus: #0e1626;
+  --focus: #2563eb;
+  --selection: rgba(96, 165, 250, 0.35);
 }

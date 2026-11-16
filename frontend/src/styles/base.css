@@ -12,25 +12,39 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* The backdrop stays put while pages scroll; the glass moves over it. */
+  background: var(--backdrop) fixed;
+  background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
+  font-optical-sizing: auto;
   font-size: var(--text-md);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
   margin: 0;
 }
 
 a {
   color: var(--accent-ink);
+  text-underline-offset: 3px;
 }
 
 button,
@@ -53,8 +67,8 @@ textarea {
   z-index: 10;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--accent-grad);
+  color: var(--on-grad);
   font-weight: 600;
   text-decoration: none;
 }

@@ -12,7 +12,8 @@ const THEMES: { id: Theme; label: string; icon: IconName }[] = [
 ];
 
 interface Props {
-  page: PageId;
+  /** null: a screen that isn't in the menu (the component sheet). */
+  page: PageId | null;
   model: string;
   theme: Theme;
   onTheme(theme: Theme): void;

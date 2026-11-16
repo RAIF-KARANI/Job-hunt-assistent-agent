@@ -10,8 +10,9 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Planning | ✅ | 4 phases (17 new look, 18 Rust spike, 19 your features, 20 interview practice); E1–E5 recorded |
 | Mockup | ✅ | 4 linked screens in your glass style: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 (source in [mockup/](mockup/)) |
 | Mockup round 2 | ✅ | same link, elevated after your "looks AI slop" review (see below) |
-| 17a Your review of the mockup | 🟡 | waiting for you |
-| 17b–17j | ⏳ | after your go |
+| 17a Your review of the mockup | ✅ | approved after several rounds: "I am happy with the design" |
+| 17b Tokens and base components | ✅ | both glass themes in the real app; component sheet at `#/components` |
+| 17c–17j | ⏳ | 17c (the shell) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -244,3 +245,62 @@ dark toggle. Decision E4 is now settled: both themes, both glass.
 - The logic of each screen was run once outside the browser; neither
   theme was looked at on screen. A copy of the screens from before this
   change is in git (commit fb559d6) if dark mode came out worse.
+
+## 17a Your review ✅ (16 Nov 2026)
+
+"good lets start building i am happy with the design reference artifact."
+The mockup is the reference; [features-version-3.md](features-version-3.md)
+is the checklist.
+
+## 17b Tokens and base components ✅ (16 Nov 2026)
+
+The first change to the app itself.
+
+### What was done
+- **`tokens.css` rewritten** for the glass look, dark and light: the five
+  accents, the gradient for the main button, see-through surfaces, the
+  backdrop, the frost recipe, the one-blue fit scale, one colour per
+  status. The token names the screens already use were kept, so every
+  screen picked up the new look without being touched.
+- **Inter** replaces Sora and IBM Plex Sans (bundled, works offline).
+  IBM Plex Mono stays for the log. Licence notices updated.
+- **Base and controls:** the gradient main button, glass secondary
+  buttons, inputs with a soft focus ring, the segmented switch, badges,
+  themed selection and scrollbars.
+- **Glass:** the page background is the backdrop, the app shell is the
+  frosted window, cards and tiles are frosted layers; dialogs, the job
+  sheet, toasts and chart tips use a more solid frosted surface so they
+  stay readable.
+- **Component sheet** at `#/components`: type, buttons, fields, notices,
+  tiles, colours, in whichever theme is on.
+
+### Checked
+- `npm run build` (types and bundle): passes.
+- pytest: 471 pass.
+- The real window (`python -m desktop_web --smoke`): starts, and the
+  glass shows in it.
+- Looked at Dashboard, Tracker, Settings and the component sheet in dark
+  and light (dev server, made-up data).
+
+### Changed from the mockup, on purpose
+- **Faint grey text is `#B4B4BE`, not `#A1A1AA`.** Measured over the
+  brightest corner of the backdrop, the reference grey is 4.3:1; the
+  lighter one is 5.0:1.
+- **The dark window is a little more solid** (68 %, the mockup used 58 %
+  plus a second tint) for the same reason.
+- **"Match Windows" stays** as a third theme choice next to dark and
+  light (the app already had it; E4 leaves it open).
+
+### Not done yet (so don't be surprised)
+- The sidebar, top bar, search and quick actions still have the old
+  layout: that is 17c. Each screen's own layout (pipeline card, Do next,
+  accordions, Evals by step) comes in 17d to 17g.
+- Chart colours and the galaxy's 3D sky are still version 2's (17d, 17g).
+- Graphics cost of the blur has not been measured yet; it will be, with
+  the full layout in place.
+
+### Learned
+- The version 2 styles were already built on tokens, which is why one
+  file could restyle the whole app.
+- The reference grey fails contrast on glass over a bright backdrop: on
+  see-through surfaces, check text against the worst spot behind it.

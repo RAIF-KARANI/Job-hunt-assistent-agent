@@ -2,11 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 // Fonts are bundled (the app works offline): only the weights we use.
-import "@fontsource/sora/600.css";
-import "@fontsource/sora/700.css";
-import "@fontsource/ibm-plex-sans/400.css";
-import "@fontsource/ibm-plex-sans/500.css";
-import "@fontsource/ibm-plex-sans/600.css";
+// Inter is one variable file (every weight, and the optical-size axis that
+// tightens it at heading sizes).
+import "@fontsource-variable/inter/opsz.css";
 import "@fontsource/ibm-plex-mono/400.css";
 
 import "./styles/tokens.css";

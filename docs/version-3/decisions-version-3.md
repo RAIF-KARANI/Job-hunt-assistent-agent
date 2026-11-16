@@ -17,7 +17,7 @@ learning project.
   smaller, or the window ready at least 30 % sooner, and nothing worse (tray,
   shortcut, updates, memory).
 
-## E3 — The new look: your glass reference, adapted ✅ direction, 🟡 details (16 Nov 2026)
+## E3 — The new look: your glass reference, adapted ✅ (16 Nov 2026; mockup approved the same day)
 Your reference image and prompt set the direction: dark glassmorphism,
 Inter, your five accents, gradient KPI cards. A mockup of four screens came
 first, before any app code: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4
@@ -31,7 +31,8 @@ first, before any app code: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4
   CSS and charts get the new look; your prompt asks for no unnecessary
   dependencies, and the app works offline.
 - **The 3D job galaxy stays**, restyled (your choice).
-- **Open:** your review of the mockup.
+- **Approved:** after several rounds on the mockup you said to start building. What it does is listed in
+  [features-version-3.md](features-version-3.md).
 
 ## E4 — Light and dark, both glass, with a toggle ✅ (16 Nov 2026, your choice)
 You asked for a light mode in a fully see-through glass style, and a
@@ -49,7 +50,6 @@ old-style light theme goes.
 A new look in every screen is a big change for the people using it.
 
 ## Open questions ❓
-- Your review of the mockup (E3).
 - Follow Windows as a third theme choice (E4).
 - "Clearly better" for Rust (E2).
 - The release number (E5).

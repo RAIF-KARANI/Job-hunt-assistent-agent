@@ -18,17 +18,17 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 |---|---|
 | Released | **v1.2.0** (16 Nov 2026): https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.2.0 |
 | `main` | `d90dea6`, the same as `version-2` (v1.2.0) |
-| Working branch | **`version-3`**, pushed; ahead of `main` by the v3 docs only. No app code changed yet |
+| Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **17a: your review of the mockup.** Nothing in Phase 17 starts before you say go |
-| Waiting on you | the 5 questions in section 3 |
+| Next step | **17c: the shell** (grouped sidebar, top bar with Search · Ctrl K and quick actions) |
+| Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
 
 | # | Phase | Status |
 |---|---|---|
-| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🟡 mockup ready, waiting for your OK |
+| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a, 17b done |
 | 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
@@ -39,9 +39,9 @@ could move to Rust.
 
 ## 3. Open questions (answer these to unblock work)
 
-1. **The mockup (E3, step 17a):** what to keep, change, drop.
-2. **Light theme (E4):** drop it / a light glass version (more work in
-   every step) / keep light in today's old style.
+1. ~~The mockup (E3)~~ ✅ approved 16 Nov.
+2. ~~Light theme (E4)~~ ✅ both themes in glass. Still open inside it:
+   keep "Match Windows" as a third choice (it is kept for now).
 3. **"Clearly better" for Rust (E2):** proposed: installer ≥ 25 % smaller
    **or** window ready ≥ 30 % sooner, and nothing worse (tray, shortcut,
    updates, memory).
@@ -111,9 +111,17 @@ with every feature still working. That is how Phase 17 is laid out.
   (colours, dark + light), `base.css`, `controls.css`, `app.css`, then one
   file per screen (`dashboard`, `tracker`, `analyze`, `evals`,
   `settings`, `quick`, `resume`). Step 17b starts in `tokens.css`.
-- **Fonts today:** IBM Plex Sans, IBM Plex Mono, Sora via `@fontsource`
-  (bundled, offline). Inter would come the same way
-  (`@fontsource/inter`): a font package, not a UI library.
+- **Fonts (since 17b):** Inter (`@fontsource-variable/inter`, one variable
+  file) and IBM Plex Mono, bundled, offline. Sora and IBM Plex Sans are
+  gone.
+- **Component sheet:** `#/components` (not in the menu) shows every shared
+  piece; use it to check a token change in both themes.
+- **How the glass is built:** `body` paints `--backdrop`; `.shell` is the
+  frosted window (`--window`); `.card`, `.tile`, `.glass` and dialogs are
+  frosted layers. Surfaces are see-through, so anything that must hide
+  what is under it uses `--surface-raised`.
+- **Screenshots without the real window:** `npm run dev` in `frontend/`
+  serves the UI with made-up data (the mock bridge), safe to capture.
 - **Screens by folder:** `app/` (shell, `Sidebar.tsx`, `routes.ts`,
   `useTheme.ts`), `dashboard/` (+ `galaxy/`: `Galaxy3D.tsx`, `scene.ts`,
   `OrbitMap.tsx`, `declutter.ts`, `layout.ts`), `tracker/`, `analyze/`,

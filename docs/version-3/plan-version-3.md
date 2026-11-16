@@ -15,7 +15,7 @@ at the end** (E1).
 
 | # | Phase | What | Status |
 |---|---|---|---|
-| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🟡 mockup ready, waiting for your OK |
+| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🚧 17a, 17b done; 17c next |
 | 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ⏳ |
 | 19 | New features | your list (to come) | 🟡 waiting for your list |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
@@ -24,7 +24,7 @@ Release: **v2.0.0**, once, after all phases (E1, E5).
 
 ---
 
-## Phase 17 — New look: the glass direction 🟡
+## Phase 17 — New look: the glass direction 🚧
 
 **Source:** your reference image (`referance/Glassmorphism Dashboard Design
 Kit.png`) and prompt (`referance/ui promt`): dark glassmorphism, frosted
@@ -49,8 +49,8 @@ Source kept in [mockup/](mockup/).
 ### Steps (after your OK on the mockup)
 | Step | What | Done when |
 |---|---|---|
-| 17a | **Your review of the mockup**: what to keep, change, drop | you say go |
-| 17b | **Tokens and base components**: colours, gradients, glass surfaces, radii, spacing, Inter (bundled, works offline) as CSS variables in `tokens.css`; buttons, inputs, selects, cards, badges, tabs, dialogs, tooltips | a component sheet screen shows every piece |
+| 17a ✅ | **Your review of the mockup**: what to keep, change, drop | you say go (16 Nov: "I am happy with the design") |
+| 17b ✅ | **Tokens and base components**: colours, gradients, glass surfaces, radii, spacing, Inter (bundled, works offline) as CSS variables in `tokens.css`; buttons, inputs, selects, cards, badges, tabs, dialogs, tooltips | a component sheet screen shows every piece |
 | 17c | **Shell**: sidebar with gradient active state, top bar (title, search, reminders, New analysis), page transitions | every page opens in the new shell |
 | 17d | **Dashboard**: gradient KPI cards, the **job galaxy restyled** in the new palette (kept, your choice), Ready to apply, charts | the 3D galaxy, the flat map and "3D off" all match |
 | 17e | **Tracker**: board, list, job details, follow-up email, interview prep, resume prompt | every dialog restyled; drag and drop still works |

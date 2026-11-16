@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Analyze } from "../analyze/Analyze";
 import { catchUp } from "../analyze/runStore";
+import { Components } from "./Components";
 import { bridgeKind, getApi } from "../bridge/bridge";
 import { Dashboard } from "../dashboard/Dashboard";
 import { Evals } from "../evals/Evals";
@@ -70,16 +71,20 @@ export function App() {
     );
   }
 
-  const shown: PageId = page === "setup" ? "settings" : page; // #/setup before the settings have loaded
+  const sheet = page === "components";
+  // #/setup before the settings have loaded shows Settings
+  const shown: PageId = page === "setup" ? "settings" : sheet ? "dashboard" : page;
 
   return (
     <div className="shell">
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Sidebar page={shown} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
+      <Sidebar page={sheet ? null : shown} model={info?.settings.LLM_MODEL ?? "…"} theme={theme} onTheme={changeTheme} />
       <main id="main" className="content" tabIndex={-1}>
-        {shown === "dashboard" ? (
+        {sheet ? (
+          <Components />
+        ) : shown === "dashboard" ? (
           // Wait for the settings: with 3D off, three.js must never even load.
           info && <Dashboard level={info.settings.UI_3D ?? "animated"} />
         ) : shown === "analyze" ? (

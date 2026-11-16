@@ -30,7 +30,8 @@
   white-space: nowrap;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+    color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
 }
 
 .btn:disabled {
@@ -38,24 +39,28 @@
   opacity: 0.55;
 }
 
+/* The one gradient button per screen: the main action. */
 .btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
+  border: 0;
+  background: var(--accent-grad);
+  color: var(--on-grad);
   font-weight: 600;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .btn-primary:not(:disabled):hover {
   filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--surface-2);
+  background: var(--surface);
   border-color: var(--border-strong);
   color: var(--text);
 }
 
 .btn-secondary:not(:disabled):hover {
-  border-color: var(--accent);
+  background: var(--surface-2);
 }
 
 .btn-ghost {
@@ -105,7 +110,7 @@
   border: 1px solid var(--border-strong);
   background: var(--surface-sunken);
   color: var(--text);
-  transition: border-color var(--dur-fast) var(--ease-out);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .input::placeholder {
@@ -117,9 +122,14 @@
 }
 
 .input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-  border-color: transparent;
+  outline: 0;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+select.input option {
+  background: var(--bg);
+  color: var(--text);
 }
 
 .input:disabled {
@@ -194,10 +204,10 @@ textarea.input {
 }
 
 .segment input:checked + span {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
+  background: var(--surface-2);
+  color: var(--text);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--accent);
+  box-shadow: var(--glass-edge);
 }
 
 .segment input:focus-visible + span {
@@ -255,6 +265,7 @@ textarea.input {
   padding: 0 var(--space-2);
   border-radius: 999px;
   background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
   color: var(--accent-ink);
   font-size: var(--text-xs);
   font-weight: 600;
@@ -295,4 +306,35 @@ textarea.input {
 
 .nav-dot.waiting {
   background: var(--warn);
+}
+
+/* ---- glass (v3) ----
+   One recipe for every frosted layer, so the blur can be tuned (or turned
+   off for slow graphics) in one place. */
+
+.card,
+.tile,
+.glass {
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--shadow);
+}
+
+/* Layers that float over a page: they sit in the top layer, so they frost
+   whatever page is under them. */
+dialog,
+.toast,
+.chart-tip {
+  background: var(--surface-raised);
+  backdrop-filter: var(--glass-blur-strong);
+}
+
+dialog::backdrop {
+  background: var(--scrim);
+}
+
+/* Numbers that line up in columns */
+.num,
+table,
+.tile-value {
+  font-variant-numeric: tabular-nums;
 }

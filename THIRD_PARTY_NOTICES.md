@@ -46,8 +46,8 @@ and installs the runtime from Microsoft.
 |---|---|---|
 | React, React DOM (incl. `scheduler`) | 19.3.1 | MIT, © Meta Platforms, Inc. and affiliates |
 | three.js | 0.186.1 | MIT, © 2010–2026 three.js authors |
-| Sora (font, via Fontsource) | 5.3.0 | SIL Open Font License 1.1 |
-| IBM Plex Sans, IBM Plex Mono (fonts, via Fontsource) | 5.3.0 | SIL Open Font License 1.1, © IBM Corp. |
+| Inter (font, via Fontsource) | 5.3.0 | SIL Open Font License 1.1, © The Inter Project Authors |
+| IBM Plex Mono (font, via Fontsource) | 5.3.0 | SIL Open Font License 1.1, © IBM Corp. |
 
 The fonts may be used, bundled and redistributed under the SIL Open Font
 License 1.1 (https://openfontlicense.org); they are not sold on their own.
