@@ -36,6 +36,10 @@ Legend: 🎨 designed · ❓ needs a check before it can be built
 - F1, F2: many blurred layers cost graphics time. Measure on this PC in
   step 17b.
 
+### Themes
+
+| # | Feature | What it does | Status |
+|---|---|---|---|
 | F33 | **Light mode** | The same screens in clear, light glass: white see-through layers over a bright wallpaper, dark text, darker accent text so it stays readable | 🎨 ❓ |
 | F34 | **Light / dark toggle** | A sun / moon button in the top bar of every screen. The choice is remembered on this PC and carries across screens | 🎨 ❓ |
 

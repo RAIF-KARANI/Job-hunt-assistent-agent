@@ -224,7 +224,7 @@ You said the search bar at the top was overbearing.
 ## Features file ✅ (16 Nov 2026)
 
 [features-version-3.md](features-version-3.md): every feature of the new
-look (F1 to F32), by screen, with what still needs a check before
+look (F1 to F34), by screen, with what still needs a check before
 building. It is the checklist for Phase 17.
 
 ## Mockup: light mode and toggle ✅ (16 Nov 2026)
