@@ -1,6 +1,8 @@
 """16c: OpenAI and Gemini beside Claude. No network and no real key:
 `requests.get` is replaced, and the chat models are only built, never called."""
 
+import os
+
 import pytest
 import requests
 from langchain_core.messages import AIMessage
@@ -229,3 +231,125 @@ def test_the_bundled_app_checks_that_both_packages_load():
     spec = (paths.resource_path("joblens.spec")).read_text(encoding="utf-8")
     for name in ("langchain-openai", "langchain-google-genai", "langchain_openai", "langchain_google_genai", "tiktoken_ext.openai_public"):
         assert name in spec
+
+
+# ---- 16c with a real key: a used-up limit (Gemini's free tier: 20 requests a day) ----------
+
+GEMINI_429 = ("Error calling model 'gemini-3.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. "
+              "{'error': {'code': 429, 'message': 'You exceeded your current quota ... Generate content requests "
+              "per day limit exceeded on Free Tier.\nPlease retry in 1h26m57.425648171s.'}}")
+
+
+class GoogleRateLimitError(Exception):
+    pass
+
+
+def test_a_used_up_limit_gets_a_plain_message(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "google")
+    message = llm.quota_message(GoogleRateLimitError(GEMINI_429))
+    assert message.startswith("Google refused the request: this API key has used up its daily limit.")
+    assert "try again in 1 h 26 min" in message and "small daily limit for each model" in message
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    assert "out of credit" in llm.quota_message(Exception("Error code: 429 - {'error': {'code': 'insufficient_quota'}}"))
+    assert llm.quota_message(Exception("Error code: 429 - rate_limit_exceeded")).startswith("OpenAI refused")
+    assert llm.quota_message(ValueError("The AI's answer didn't match the expected structure.")) is None
+    assert llm.quota_message(ConnectionError("connection refused")) is None
+
+
+def test_a_used_up_limit_is_never_retried(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "google")
+    calls = []
+
+    class Model:
+        def invoke(self, value, config=None):
+            calls.append(value)
+            raise GoogleRateLimitError(GEMINI_429)
+    with pytest.raises(llm.OutOfQuota):
+        llm.with_retries(Model()).invoke("x")
+    assert len(calls) == 1                                       # asking again only uses more of it
+
+    class Flaky:
+        def invoke(self, value, config=None):
+            calls.append(value)
+            if len(calls) < 3:
+                raise ValueError("bad JSON")
+            return "ok"
+    calls.clear()
+    assert llm.with_retries(Flaky()).invoke("x") == "ok" and len(calls) == 3   # other errors still are
+
+
+def test_the_cloud_libraries_retry_only_twice(monkeypatch, env):
+    monkeypatch.setenv("GOOGLE_API_KEY", "AIza-test")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    for provider in ("google", "openai"):
+        monkeypatch.setenv("LLM_PROVIDER", provider)
+        monkeypatch.setenv("LLM_MODEL", "x")
+        assert llm.get_llm().max_retries == llm.CLOUD_RETRIES == 2
+
+
+def test_a_run_that_ran_out_can_be_continued(tmp_path, monkeypatch):
+    from job_agent import runlog, tracker
+    monkeypatch.setattr(tracker, "DB_PATH", tmp_path / "jobs.db")
+    monkeypatch.setenv("LLM_PROVIDER", "google")
+    recorder = runlog.RunRecorder("run-q", "desktop", "google", "gemini-x")
+    recorder.on_chain_start({}, {}, run_id="root", parent_run_id=None)
+    recorder.on_chain_error(llm.OutOfQuota("Google refused the request: ..."), run_id="root")
+    with tracker._db() as conn:
+        row = dict(conn.execute("SELECT status, error FROM runs").fetchone())
+    assert row == {"status": "out_of_quota", "error": "Google refused the request: ..."}
+    assert "out_of_quota" in runlog.CONTINUABLE
+    assert runlog.last_unfinished("desktop")["run_id"] == "run-q"
+    from job_agent import monitoring
+    assert monitoring._result({"status": "out_of_quota", "decision": None}) == "out of quota"
+
+
+GEMINI_RPM = ("Error calling model 'gemini-flash-lite-latest' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. "
+              "{'error': {'message': 'Quota exceeded for metric: generate_content_free_tier_requests, "
+              "limit: 15 ... Please retry in 9.48s.'}}")
+
+
+def test_a_per_minute_limit_is_waited_out(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "google")
+    assert llm.quota_wait(GoogleRateLimitError(GEMINI_RPM)) == pytest.approx(10.48)
+    assert llm.quota_wait(GoogleRateLimitError(GEMINI_429)) is None                      # per day: stop
+    assert llm.quota_wait(GoogleRateLimitError(GEMINI_RPM.replace("9.48s", "2m30s"))) is None   # too long
+    assert llm.quota_wait(ValueError("bad JSON")) is None
+    slept = []
+    monkeypatch.setattr("time.sleep", slept.append)
+    answers = [GoogleRateLimitError(GEMINI_RPM), GoogleRateLimitError(GEMINI_RPM), "ok"]
+
+    def call():
+        answer = answers.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+    assert llm.call_with_quota_waits(call) == "ok" and slept == [pytest.approx(10.48)] * 2
+    with pytest.raises(llm.OutOfQuota, match="daily limit"):
+        llm.call_with_quota_waits(lambda: (_ for _ in ()).throw(GoogleRateLimitError(GEMINI_429)))
+    assert len(slept) == 2                                                                 # no wait for a daily limit
+    with pytest.raises(ValueError):
+        llm.call_with_quota_waits(lambda: (_ for _ in ()).throw(ValueError("bad JSON")))  # other errors pass through
+
+
+def test_the_key_test_explains_a_retired_model_and_a_used_up_limit(monkeypatch, env):
+    class Fails:
+        def __init__(self, error):
+            self.error = error
+
+        def invoke(self, text):
+            raise self.error
+    api = Api(send=lambda e: None, graph=object())
+    retired = RuntimeError("Error calling model 'gemini-2.5-flash' (NOT_FOUND): 404 NOT_FOUND. This model is no longer available")
+    monkeypatch.setattr(bridge, "_test_model", lambda p, m, k: Fails(retired))
+    assert api.test_api_key("AIza-x", "gemini-2.5-flash", "google")["message"] == \
+        "Google says the model 'gemini-2.5-flash' isn't available to this key any more. Choose another one."
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setattr(bridge, "_test_model", lambda p, m, k: Fails(GoogleRateLimitError(GEMINI_429)))
+    answer = api.test_api_key("AIza-x", "gemini-3.5-flash", "google")
+    assert answer["message"].startswith("Google refused the request") and os.environ["LLM_PROVIDER"] == "ollama"
+
+
+def test_the_image_model_is_not_offered(monkeypatch):
+    web(monkeypatch, Answer({"models": [{"name": "models/gemini-nano-banana-2.1", "supportedGenerationMethods": ["generateContent"]},
+                                        {"name": "models/gemini-3.5-flash", "supportedGenerationMethods": ["generateContent"]}]}))
+    assert providers.list_models("google", "k")["models"] == ["gemini-3.5-flash"]

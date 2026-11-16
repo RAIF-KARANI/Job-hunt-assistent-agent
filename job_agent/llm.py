@@ -89,6 +89,10 @@ def unload_model(timeout: float = 3.0) -> bool:
 
 # 16c: a cloud call that hangs must end by itself (a local one is ended by Stop).
 CLOUD_TIMEOUT = 120
+# The provider libraries retry by themselves (Gemini's: 6 times, with waits). On a used-up
+# daily limit that took 40 s per call before failing anyway (measured 16 Nov); 2 still
+# rides out a short network hiccup.
+CLOUD_RETRIES = 2
 
 
 def openai_temperature(model: str, temperature: float) -> dict:
@@ -136,14 +140,15 @@ def get_llm(max_tokens: int | None = None) -> BaseChatModel:
     if provider == "openai":
         from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(model=model, max_tokens=limit, timeout=CLOUD_TIMEOUT, **openai_temperature(model, temperature))
+        return ChatOpenAI(model=model, max_tokens=limit, timeout=CLOUD_TIMEOUT, max_retries=CLOUD_RETRIES,
+                          **openai_temperature(model, temperature))
 
     # ---- Google Gemini ----  16c: in the app since 1.2.0 (key in Settings)
     if provider == "google":
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(model=model, temperature=temperature, max_output_tokens=limit,
-                                      timeout=CLOUD_TIMEOUT)
+                                      timeout=CLOUD_TIMEOUT, max_retries=CLOUD_RETRIES)
 
     raise ValueError(
         f"Unknown LLM_PROVIDER '{provider}'. Use: ollama, anthropic, openai, google."
@@ -157,6 +162,91 @@ def get_llm(max_tokens: int | None = None) -> BaseChatModel:
 
 class AnswerTooLong(RuntimeError):
     """The model hit the answer-length cap: the reply was cut off (12j)."""
+
+
+class OutOfQuota(RuntimeError):
+    """16c: the provider refused because the API key's limit is used up. A free
+    Gemini key has a daily limit per model (16 Nov 2026: Gemini 3.5 Flash stopped
+    at 20 requests; 3.1 Flash Lite finished a 38-request job). Never retried:
+    asking again only uses more of it.
+    The run can be continued once the limit resets."""
+
+
+_QUOTA_SIGNS = ("resource_exhausted", "ratelimiterror", "rate_limit", "rate limit", "insufficient_quota",
+                "quota", "too many requests", "error code: 429", " 429 ")
+
+
+def quota_message(error: BaseException) -> str | None:
+    """A plain sentence if `error` is a provider saying "limit used up", else None."""
+    import re
+
+    if isinstance(error, OutOfQuota):
+        return str(error)
+    text = f"{type(error).__name__}: {error}"
+    low = text.lower()
+    if not any(sign in low for sign in _QUOTA_SIGNS):
+        return None
+    from job_agent import providers
+
+    provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+    who = providers.CLOUD.get(provider, {}).get("company", "The AI provider")
+    daily = "per day" in low or "perday" in low
+    wait = re.search(r"retry in ((?:\d+h)?(?:\d+m)?(?:\d+)(?:\.\d+)?s)", low)
+    when = ""
+    if wait:  # "1h26m57.42s" -> "1 h 26 min"
+        h, m, s = (re.search(rf"(\d+){u}", wait.group(1)) for u in ("h", "m", r"(?:\.\d+)?s"))
+        parts = [f"{h.group(1)} h" if h else "", f"{m.group(1)} min" if m else "", "" if (h or m) else f"{s.group(1)} s" if s else ""]
+        when = " It says to try again in " + " ".join(p for p in parts if p) + "."
+    if "insufficient_quota" in low:
+        return f"{who} says this API key is out of credit. Add credit on your {who} account, or choose another model in Settings."
+    limit = "its daily limit" if daily else "its limit for now"
+    free = (" A free Gemini key has a small daily limit for each model, and one job needs about 30 to 40"
+            " requests: try a Flash Lite model, or turn on billing for the key."
+            if provider == "google" and daily else "")
+    return (f"{who} refused the request: this API key has used up {limit}.{when}{free} "
+            "Continue the run later, choose another model in Settings, or run the AI on this PC.")
+
+
+MAX_QUOTA_WAIT = 60  # seconds: a per-minute limit is waited out; a longer one stops the run
+
+
+def quota_wait(error: BaseException) -> float | None:
+    """16c: seconds to wait when the provider says "too many requests, try again
+    in N s" for a SHORT, per-minute limit (Gemini's free tier: about 15 a minute;
+    measured 16 Nov: "try again in 9 s"). None = don't wait: a daily limit, no
+    time given, or longer than MAX_QUOTA_WAIT."""
+    import re
+
+    low = f"{error}".lower()
+    if quota_message(error) is None or "per day" in low or "perday" in low:
+        return None
+    wait = re.search(r"retry in (?:(\d+)h)?(?:(\d+)m)?(\d+(?:\.\d+)?)s", low)
+    if not wait:
+        return None
+    seconds = int(wait.group(1) or 0) * 3600 + int(wait.group(2) or 0) * 60 + float(wait.group(3))
+    return seconds + 1 if seconds <= MAX_QUOTA_WAIT else None
+
+
+def call_with_quota_waits(call, attempts: int = 4):
+    """Run `call()`; on a short per-minute limit wait it out and try again
+    (up to `attempts` times). A used-up limit that won't clear soon becomes
+    OutOfQuota at once, with a plain message."""
+    import time
+
+    for attempt in range(1, attempts + 1):
+        try:
+            return call()
+        except (AnswerTooLong, RunStopped, OutOfQuota):
+            raise
+        except Exception as e:
+            message = quota_message(e)
+            if not message:
+                raise
+            wait = quota_wait(e)
+            if wait is None or attempt == attempts:
+                raise OutOfQuota(message) from e
+            print(f"  ! the AI provider asks to wait {wait:.0f} s (requests per minute): waiting")
+            time.sleep(wait)
 
 
 class RunStopped(RuntimeError):
@@ -201,10 +291,14 @@ def with_retries(runnable, attempts: int = 3):
     def run(value, config):
         for attempt in range(1, attempts + 1):
             try:
-                return runnable.invoke(value, config)
-            except (AnswerTooLong, RunStopped):
+                # 16c: a per-minute limit is waited out inside; only a long one ends up below
+                return call_with_quota_waits(lambda: runnable.invoke(value, config))
+            except (AnswerTooLong, RunStopped, OutOfQuota):
                 raise
-            except Exception:
+            except Exception as e:
+                message = quota_message(e)
+                if message:  # 16c: asking again only uses more of the limit
+                    raise OutOfQuota(message) from e
                 if attempt == attempts:
                     raise
     return RunnableLambda(run, name="structured_llm")

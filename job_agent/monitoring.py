@@ -383,10 +383,12 @@ def _per_run_quality(quality: pd.DataFrame) -> pd.DataFrame:
     return q
 
 
-UNFINISHED = ("error", "stopped", "interrupted")
+UNFINISHED = ("error", "stopped", "interrupted", "out_of_quota")
 
 
 def _result(run) -> str:
+    if run["status"] == "out_of_quota":
+        return "out of quota"  # 16c
     if run["status"] in UNFINISHED or run["status"] == "running":
         return run["status"]  # running = going on right now
     if run["status"] == "paused":

@@ -11,7 +11,7 @@ function where(run: UnfinishedRun): string {
   if (run.status === "paused") {
     return run.next_step === 1 ? "It was waiting for you to paste the job text." : "The cover note is waiting for your decision.";
   }
-  const how = run.status === "stopped" ? "You stopped it" : "JobLens was closed";
+  const how = run.status === "stopped" ? "You stopped it" : run.status === "out_of_quota" ? "The API key's limit ran out" : "JobLens was closed";
   return `${how} during step ${run.next_step} (${STEP_TITLES[run.next_step]}).`;
 }
 

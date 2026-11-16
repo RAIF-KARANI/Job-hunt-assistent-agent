@@ -149,6 +149,12 @@ def research(state: JobHuntState) -> dict:
         else:
             print(f"  -> {len(brief.sources)} verified sources")
     except Exception as e:
+        # 16c: a used-up API limit is not "research failed": every next step
+        # would fail the same way, so the run stops here and can be continued.
+        from job_agent.llm import OutOfQuota, quota_message
+
+        if quota_message(e):
+            raise OutOfQuota(quota_message(e)) from e
         # Graceful degradation: research is nice-to-have, not essential.
         print(f"  ! research failed ({e}) - continuing without it")
         brief = None

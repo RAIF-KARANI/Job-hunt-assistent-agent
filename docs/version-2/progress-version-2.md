@@ -2646,3 +2646,39 @@ You checked the app by hand: "its good".
   - OpenAI / Gemini with a real key (16c): waiting for your key.
   - A real Windows shutdown with JobLens open: needs you (it shuts the PC down).
   - The tray's "Did you apply?" notification, seen live.
+
+## 16c tested with your Gemini key ✅ (16 Nov 2026)
+The key (from your screenshot) is in the repo's settings file only, which git
+ignores; `referance/` stays out of git. The settings file still uses Ollama.
+- **The key check** lists 23 models. One listed model, `gemini-2.5-flash`,
+  answers "no longer available": the key check now says so plainly. An image
+  model (`gemini-nano-banana`) is no longer offered.
+- **Every part of the agent works with Gemini 3.5 Flash:** structured answers,
+  reading a posting, comparing a resume (with the judge), the research
+  agent's web searches, a cover note.
+- **A full run in the app on Gemini 3.1 Flash Lite:** 38 calls, 3 min 1 s,
+  cover note approved; the run log says google / gemini-3.1-flash-lite; Evals
+  lists it as "API · your key" with its own line in the per-model chart.
+  Evidence pass rate 97 % (qwen3:8b: 63 %).
+- **Fit evals, Gemini Flash Lite, 1 run per case:**
+
+  | case | qwen3:8b (3 runs) | Gemini Flash Lite | expected |
+  |---|---|---|---|
+  | project-only | 85 | 92, 100 % accuracy | 85–100 |
+  | Nexora | 99 | 100, 100 % | 90–100 |
+  | Cranes | 43, 60 % | 54, 80 % | 45–70 |
+  | Tag-N-Trac | 23, 87 % | 60, 80 %, 1 false match | 20–45 |
+
+  About 13 s per case run (qwen3:8b: 49 s). Better on three cases, too
+  generous on Tag-N-Trac. One run each (the free limit), so not conclusive.
+- **Found: the free limits.** Gemini 3.5 Flash stopped after 20 requests a
+  day; a job needs 30 to 40. The error used to arrive after 40 s of the
+  library's own retries, as Google's raw text, and "Try again" would redo
+  finished steps. Now:
+  - a short per-minute limit is waited out (happened twice in the full run);
+  - a daily limit stops the run in 2.5 s with a plain message and "Continue
+    the run"; the run log records "out of quota" and the Continue banner
+    offers it later. Seen in the real window.
+- pytest: 471 passed (9 new); typecheck and build clean.
+- **Not tested:** OpenAI (no key). The code is shared with Gemini and Claude,
+  and a wrong OpenAI key is refused correctly.

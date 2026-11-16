@@ -426,7 +426,10 @@ class AgentRunner:
             self.emit({"type": "stopped", "run_id": self.run_id})
             return
         except Exception as e:  # never let an error kill the thread silently
-            self.emit({"type": "failed", "error": f"{type(e).__name__}: {e}"})
+            from job_agent.llm import quota_message
+
+            quota = quota_message(e)  # 16c: a plain sentence, and the run can be continued
+            self.emit({"type": "failed", "error": quota or f"{type(e).__name__}: {e}", "quota": bool(quota)})
             return
         finally:
             _log_route.set(None)

@@ -40,6 +40,8 @@ export interface RunView {
   paste: PastePayload | null;
   result: FinishedEvent | null;
   error: string | null;
+  /** 16c: the last run failed because the API limit ran out: it can be continued */
+  quota: boolean;
   /** Stop was pressed; the run ends at its next checkpoint (12j). */
   stopping: boolean;
 }
@@ -80,6 +82,7 @@ export const IDLE: RunView = {
   paste: null,
   result: null,
   error: null,
+  quota: false,
   stopping: false,
 };
 
@@ -213,7 +216,7 @@ export function reduce(view: RunView, event: AgentEvent): RunView {
     }
 
     case "failed":
-      return { ...view, phase: "failed", error: event.error, review: null, paste: null, stopping: false, steps: closeRunning(view.steps, ms(event.at), "failed") };
+      return { ...view, phase: "failed", error: event.error, quota: Boolean(event.quota), review: null, paste: null, stopping: false, steps: closeRunning(view.steps, ms(event.at), "failed") };
 
     case "stopping":
       return { ...view, stopping: true };

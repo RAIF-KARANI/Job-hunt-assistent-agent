@@ -238,7 +238,10 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
               ? "Free and private: nothing leaves this PC. Needs Ollama and about 8–16 GB of RAM."
               : provider === "anthropic"
                 ? "Fast on any PC. Job text and your resume are sent to Anthropic. About $0.01 per job with Claude Haiku."
-                : `Fast on any PC. Job text and your resume are sent to ${who.company}, and ${who.company} bills your key for each job.`}
+                : `Fast on any PC. Job text and your resume are sent to ${who.company}, and ${who.company} bills your key for each job.` +
+                  (provider === "google"
+                    ? " A free Gemini key has a small daily limit for each model, and one job needs about 30 to 40 requests. Flash Lite models got through a whole job when tested; Gemini 3.5 Flash didn't. Turn on billing for more."
+                    : "")}
           </p>
 
           {/* 16c: the key comes first: the model list is asked for with it */}

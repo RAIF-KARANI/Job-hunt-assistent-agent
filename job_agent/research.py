@@ -196,7 +196,9 @@ def agent_node(state: MessagesState) -> dict:
     # else: no tools bound -> the model can only answer in text -> loop ends.
 
     system = SystemMessage(content=RESEARCH_PROMPT.format(today=date.today()))
-    response = llm.invoke([system] + state["messages"])
+    from job_agent.llm import call_with_quota_waits  # 16c: wait out a per-minute API limit
+
+    response = call_with_quota_waits(lambda: llm.invoke([system] + state["messages"]))
     return {"messages": [response]}
 
 

@@ -648,7 +648,22 @@ class Api:
             _test_model(provider, model.strip(), key).invoke("Reply OK")
             return {"ok": True, "message": "The key works."}
         except Exception as e:  # wrong key, no credit, no network, a model this key can't use...
-            return {"ok": False, "message": str(e).replace(key, "(your key)")[:240]}
+            from job_agent.llm import quota_message
+
+            text = str(e).replace(key, "(your key)")
+            low = text.lower()
+            who = providers.CLOUD[provider]["company"]
+            if "not_found" in low or "no longer available" in low or "does not exist" in low or "model_not_found" in low:
+                # 16c: Google still lists retired models (gemini-2.5-flash, 16 Nov)
+                return {"ok": False, "message": f"{who} says the model '{model.strip()}' isn't available to this key any more. Choose another one."}
+            os.environ["LLM_PROVIDER"], before = provider, os.environ.get("LLM_PROVIDER", "")
+            try:
+                quota = quota_message(e)  # it names the provider from LLM_PROVIDER
+            finally:
+                os.environ["LLM_PROVIDER"] = before
+            if quota:
+                return {"ok": False, "message": quota}
+            return {"ok": False, "message": text[:240]}
 
     def set_model_price(self, model: str, price_in=None, price_out=None) -> dict:
         """16d: the price of a cloud model per million tokens (input, output), for

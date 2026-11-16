@@ -195,8 +195,12 @@ class RunRecorder(BaseCallbackHandler):
         if start and start[1] == "root":
             from job_agent.llm import RunStopped  # the user pressed Stop: not an error
 
+            from job_agent.llm import quota_message
+
             if isinstance(error, RunStopped):
                 self._write(time.time() - start[0], {}, status="stopped")
+            elif quota_message(error):  # 16c: can be continued once the limit resets
+                self._write(time.time() - start[0], {}, error=quota_message(error), status="out_of_quota")
             else:
                 self._write(time.time() - start[0], {}, error=f"{type(error).__name__}: {error}")
 
@@ -322,7 +326,7 @@ def mark_interrupted(interface: str = "desktop") -> int:
 
 # Statuses that 14d's Continue can pick up: cut off by closing the app, the
 # Stop button, or a cover note left waiting for your decision.
-CONTINUABLE = ("interrupted", "stopped", "paused")
+CONTINUABLE = ("interrupted", "stopped", "paused", "out_of_quota")  # 16c: the API limit ran out
 
 
 def last_unfinished(interface: str = "desktop") -> dict | None:

@@ -31,6 +31,7 @@ const RESULT_TONE: Record<string, string> = {
   done: "neutral",
   stopped: "neutral", // you chose to stop: not an error
   interrupted: "warn", // the app was closed mid-run
+  "out of quota": "warn", // 16c: the API key's limit ran out
   running: "neutral",
 };
 

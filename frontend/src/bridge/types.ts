@@ -182,7 +182,7 @@ export type AgentEvent =
   | { type: "reused"; job_id: number; at: number }
   | PausedEvent
   | FinishedEvent
-  | { type: "failed"; error: string; at: number }
+  | { type: "failed"; error: string; at: number; /** 16c: the API limit ran out: the run can be continued */ quota?: boolean }
   | { type: "stopping"; at: number } // Stop pressed (12j)
   | { type: "stopped"; run_id: string; at: number } // the run ended at its next checkpoint
   | { type: "update_available"; latest: string; page: string } // 13b
@@ -201,7 +201,7 @@ export interface DoneStep {
 /** Api.unfinished_run() (14d): the last run, if it can be continued. */
 export interface UnfinishedRun {
   run_id: string;
-  status: "interrupted" | "stopped" | "paused";
+  status: "interrupted" | "stopped" | "paused" | "out_of_quota"; // 16c
   updated_at: string; // UTC "YYYY-MM-DD HH:MM:SS"
   url: string;
   title: string | null;
@@ -415,7 +415,7 @@ export interface EvalsData {
     run_id: string;
     started_at: string;
     model: string;
-    result: "approved" | "rejected" | "not finished" | "error" | "done" | "stopped" | "interrupted" | "running";
+    result: "approved" | "rejected" | "not finished" | "error" | "done" | "stopped" | "interrupted" | "running" | "out of quota";
     agent_seconds: number;
     llm_calls: number;
     tokens: number;

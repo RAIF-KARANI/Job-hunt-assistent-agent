@@ -56,7 +56,7 @@ def saved_key(provider: str) -> str:
 # return also hold image, speech, embedding and other models.
 _OPENAI_CHAT = re.compile(r"^(gpt-|o\d|chatgpt-)")
 _NOT_CHAT = re.compile(r"embed|audio|realtime|tts|whisper|image|dall|transcribe|moderation|search|instruct|"
-                       r"vision|live|imagen|veo|aqa|computer-use|robotics|codex", re.I)
+                       r"vision|live|imagen|veo|aqa|computer-use|robotics|codex|banana", re.I)  # banana: Gemini's image model (16 Nov)
 
 
 def _openai_models(key: str, timeout: float) -> list[str]:

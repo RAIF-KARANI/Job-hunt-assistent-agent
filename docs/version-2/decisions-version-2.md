@@ -878,6 +878,13 @@ In-app updates failed on every try. Amends D27 and D37.
   time here (8 GB graphics card), so the others wait, and switching
   between resumes loses the "already read this resume" saving. No code
   was changed. It may still help with a cloud model; untested (no key).
+- **A used-up API limit stops the run with a plain message and can be
+  continued** (16c, found with your Gemini key). A free Gemini key has a
+  small daily limit per model (Gemini 3.5 Flash stopped at 20 requests; 3.1
+  Flash Lite finished a 38-request job), and one job needs about 30 to 40.
+  - A per-minute limit ("try again in 9 s") is waited out, up to 60 s.
+  - A daily or longer limit is never retried (it only uses more of it): the
+    run stops, says why and when, and offers "Continue the run".
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

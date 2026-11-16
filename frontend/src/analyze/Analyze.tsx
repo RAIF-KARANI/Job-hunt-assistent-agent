@@ -266,14 +266,20 @@ function Panel({ run, onAnswer, onPaste, onAnother, onRetry, onContinue }: Panel
         <section className="card review" aria-labelledby="failed-title">
           <header className="panel-head">
             <h2 id="failed-title" className="danger-ink">
-              Something went wrong
+              {run.quota ? "The API key's limit is used up" : "Something went wrong"}
             </h2>
           </header>
           <p className="lead">The agent stopped. Nothing new was saved after the last finished step.</p>
-          <pre className="error-box">{run.error}</pre>
+          {run.quota ? <p className="notice notice-warn">{run.error}</p> : <pre className="error-box">{run.error}</pre>}
           <div className="actions">
-            <button type="button" className="btn btn-primary" onClick={onRetry} disabled={run.busy}>
-              Try again
+            {run.quota && (
+              // 16c: carry on from the last finished step: "Try again" would redo them and use more of the limit
+              <button type="button" className="btn btn-primary" onClick={onContinue} disabled={run.busy}>
+                Continue the run
+              </button>
+            )}
+            <button type="button" className={run.quota ? "btn btn-secondary" : "btn btn-primary"} onClick={onRetry} disabled={run.busy}>
+              {run.quota ? "Start over" : "Try again"}
             </button>
             <button type="button" className="btn btn-ghost" onClick={onAnother}>
               Clear
