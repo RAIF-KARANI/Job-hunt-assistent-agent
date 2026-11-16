@@ -226,3 +226,21 @@ You said the search bar at the top was overbearing.
 [features-version-3.md](features-version-3.md): every feature of the new
 look (F1 to F32), by screen, with what still needs a check before
 building. It is the checklist for Phase 17.
+
+## Mockup: light mode and toggle ✅ (16 Nov 2026)
+
+You asked for a light mode in a fully see-through style, and a light /
+dark toggle. Decision E4 is now settled: both themes, both glass.
+
+- All four screens have a light mode: clear white glass over a bright
+  wallpaper, dark text, and darker versions of the accent text colours.
+- A sun / moon button sits in the top bar next to Search. The choice is
+  remembered and carries across the four screens.
+- In the mockup's Tweaks, **theme** (auto / dark / light) sets a screen
+  without pressing Play; "auto" uses what the toggle last chose.
+- How it was done: every hard-coded colour became a variable with a dark
+  and a light value. Dark mode should look the same as before, apart from
+  a few text tints that were merged into one shade.
+- The logic of each screen was run once outside the browser; neither
+  theme was looked at on screen. A copy of the screens from before this
+  change is in git (commit fb559d6) if dark mode came out worse.

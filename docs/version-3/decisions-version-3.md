@@ -33,17 +33,24 @@ first, before any app code: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4
 - **The 3D job galaxy stays**, restyled (your choice).
 - **Open:** your review of the mockup.
 
-## E4 — The light theme 🟡 open
-JobLens today follows Windows, or is set to dark or light. The glass look
-in your reference is dark only. Options: drop light; keep a light glass
-variant (more work in every step); or keep light as it is today, in the old style.
+## E4 — Light and dark, both glass, with a toggle ✅ (16 Nov 2026, your choice)
+You asked for a light mode in a fully see-through glass style, and a
+light / dark toggle. So version 3 has both themes in the glass look; the
+old-style light theme goes.
+- Every colour in the mockup is now a theme variable with a dark and a
+  light value, so Phase 17 builds both themes in each step (step 17i is
+  no longer a separate job at the end).
+- The toggle is a sun / moon button in the top bar. The mockup remembers
+  the choice on this PC.
+- **Open:** today the app can also follow Windows. Keep that as a third
+  choice in Settings (proposed), or only the toggle?
 
 ## E5 — The release number is 2.0.0 🟡 proposed
 A new look in every screen is a big change for the people using it.
 
 ## Open questions ❓
 - Your review of the mockup (E3).
-- Light theme (E4).
+- Follow Windows as a third theme choice (E4).
 - "Clearly better" for Rust (E2).
 - The release number (E5).
 - Your feature list (Phase 19).

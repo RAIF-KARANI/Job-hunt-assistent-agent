@@ -57,7 +57,7 @@ Source kept in [mockup/](mockup/).
 | 17f | **Analyze**: steps, live log, review, the failed / out-of-quota panels, Continue banner | a full run looks right from start to approval |
 | 17g | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
 | 17h | **Settings, setup wizard, quick-analyze box** | first-run setup looks right |
-| 17i | **Light theme** (E4, open) | decided and done |
+| 17i | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
 | 17j | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
 ## Phase 18 — Rust (Tauri) spike ⏳
