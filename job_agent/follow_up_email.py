@@ -81,8 +81,10 @@ def candidate_name(cover_note: str | None) -> str:
         ok = 1 < len(words) <= 4 and all(re.fullmatch(r"[^\W\d_][^\W\d_.'-]*", w) and w[0].isupper() for w in words)
         return text if ok and words[0].lower() not in ("best", "kind", "sincerely", "thank", "regards", "warm", "yours") else ""
 
-    # "…\nRaif Karani", or (most saved notes) "…to your mission. Raif Karani"
-    return a_name(lines[-1]) or a_name(re.split(r"[.!?]\s+", lines[-1])[-1])
+    # "…\nRaif Karani"; or (most saved notes) "…to your mission. Raif Karani";
+    # or "…with your goals. Sincerely, Raif Karani" (found on a real note, 16 Nov)
+    last_sentence = re.split(r"[.!?]\s+", lines[-1])[-1]
+    return a_name(lines[-1]) or a_name(last_sentence) or a_name(last_sentence.rsplit(",", 1)[-1])
 
 
 def facts(job: dict, cover_note: str | None) -> dict:

@@ -169,3 +169,18 @@ def test_jobs_already_waiting_when_the_feature_arrives_are_not_asked():
     job = tracker.list_jobs()[0]                                    # init_db() migrates
     assert ar.state(job) == "expired" and ar.due_jobs() == [] and ar.new_jobs() == []
     assert ar.in_ready_list(job)                                    # still in "Ready to apply"
+
+
+def test_a_hidden_window_does_not_start_the_24_hours():
+    """Found in the full test (16 Nov): JobLens started with Windows loads its
+    page while hidden in the tray. That used to count as "shown", so the
+    question ran out before anyone saw it, and the tray never announced it."""
+    real = datetime.now(timezone.utc)
+    job_id = save("https://a.example", 90, 30, real)
+    api = Api(send=lambda e: None, graph=object())
+    api._is_hidden = lambda: True
+    assert api.list_jobs()[0]["apply_ask"] and api.list_jobs()[0]["apply_asked_at"] is None   # due, but not "shown"
+    assert [j["id"] for j in ar.new_jobs()] == [job_id]                    # so the tray still announces it
+    api._is_hidden = lambda: False                                         # you opened the window
+    assert api.list_jobs()[0]["apply_asked_at"]                            # now the clock runs
+    assert ar.new_jobs() == []

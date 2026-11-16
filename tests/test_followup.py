@@ -216,3 +216,16 @@ def test_developer_mode_cant_turn_it_on(monkeypatch):
     with pytest.raises(RuntimeError):
         autostart.set_enabled(True, r"Software\JobLensTest-never")
     assert Api(send=lambda e: None, graph=object()).autostart_status()["supported"] is False
+
+
+def test_ignore_does_not_come_back_with_an_old_status():
+    """Found in the full test (16 Nov): Applied (ignored) -> Interviewing ->
+    Applied again was still ignored, because the old status matched."""
+    job_id = save()
+    tracker.update_status(job_id, "applied")
+    followup.ignore(job_id)
+    tracker.update_status(job_id, "interviewing")
+    tracker.update_status(job_id, "applied")
+    set_dates(job_id, at(9))
+    assert [j["id"] for j in followup.due_jobs(NOW)] == [job_id]
+    assert tracker.list_jobs()[0]["follow_up_ignored"] is None

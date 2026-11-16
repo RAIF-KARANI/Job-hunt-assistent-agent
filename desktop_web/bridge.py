@@ -150,6 +150,8 @@ class Api:
         self._http_get = None  # None = requests.get; tests serve a stand-in
         self._quit = None  # set by app.py
         self._hotkey = None  # 14f: the shortcut listener, set by app.py
+        # 16i: is the window hidden in the tray? Set by app.py (None = there is no tray: always visible)
+        self._is_hidden = None
         self._exported: set[str] = set()  # 14i: files this session wrote (show_in_folder only opens these)
 
     def _emit(self, event: Event) -> None:
@@ -233,7 +235,11 @@ class Api:
         days = followup.days_setting()
         # 16i: the page is about to show "Did you apply?" for the due jobs, so
         # their 24 hours to answer start now (mark=True), before the rows are read.
-        applyreminder.due_jobs(mark=True)
+        # NOT while the window is hidden in the tray: the page loads there too
+        # (JobLens started with Windows), and a question nobody saw must not
+        # run out. The tray's notification starts the clock in that case.
+        hidden = bool(self._is_hidden and self._is_hidden())
+        applyreminder.due_jobs(mark=not hidden)
         return [{**to_json(dict(row)), "follow_up": followup.is_due(row, days),
                  "apply_ask": applyreminder.is_due(row),
                  "ready_to_apply": applyreminder.in_ready_list(row)} for row in tracker.list_jobs()]

@@ -205,6 +205,7 @@ def main(argv=None) -> int:
         else:  # no tray icon to come back from: never stay hidden
             threading.Timer(1.0, window.show).start()
     if tray:
+        api._is_hidden = lambda: tray.hidden  # 16i: a hidden window shows nobody the "Did you apply?" question
         _follow_up_reminders(tray)
     hotkey = _start_quick_box(url, window, api, tray)
     instance.listen(on_show=lambda: _bring_back(window, tray))

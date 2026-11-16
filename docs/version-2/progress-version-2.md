@@ -2536,3 +2536,69 @@ Plan: Phase 16 in the plan. Done in code, not yet checked by you:
 - pytest: 462 passed (9 new); typecheck and build clean.
 - **Not added:** the follow-up email's model call (16g) is still not in the
   run log, so it is in none of these numbers.
+
+## 16h faster resume comparison: measured, dropped ❌ (16 Nov 2026)
+- **Where the time goes** (300 calls from the run log): about 90 % is the
+  model WRITING its answer, ~35 tokens a second. Reading the resume and the
+  job costs almost nothing: Ollama reuses what it read in the call before.
+- **Side by side** (AiPrise, 15 requirements, your 4 resumes, qwen3:8b):
+
+  | | Time | vs in turn |
+  |---|---|---|
+  | one after the other | 153 s | |
+  | 2 at a time | 249 s | 0.61x |
+  | 4 at a time | 170 s | 0.90x |
+
+  Slower both ways, and the counts of proven skills drifted (9/9/9/9 in
+  turn; 9/9/8/7 two at a time). So nothing was changed.
+- **What would make it faster** changes the output, so it needs your OK:
+  shorter answers (the "why" for each requirement is most of what the
+  model writes).
+
+## Full test of Phase 16 (16 Nov 2026): 3 bugs found and fixed
+**What was run**
+- **A copy of the real 1.1.1 tracker opened with the new code** (86 jobs, 98
+  runs; the installed app's files were only copied): every job is still
+  there, no "status changed" date moved, the 5 new columns were added, all 86
+  jobs open and build a prep sheet and a follow-up email, and Evals reads
+  the old run log (60 chart points, 3 models). A second start changes nothing.
+- **"Did you apply?" on that copy:** 0 of the 45 old cover-note-ready jobs
+  are asked about (42 count as run out, 3 from the last day are still
+  waiting their 24 hours). "Ready to apply" lists 14 best fits.
+- **The one-time fetch of job descriptions on that copy, for real:** 78
+  saved, 5 unreadable, 3 gone, in 248 s. The 3 "gone" links now show a
+  LinkedIn page of other jobs, so the check that had only been tested on
+  made-up pages rejected real removed postings correctly.
+- **A full run with the model, in the real window:** GitLab posting, 5 min
+  30 s, 2 searches (both found something), cover note approved. "Open in
+  the Tracker" opened that job; its description was saved (12,785
+  characters); the prep sheet had all 7 sections; with the approval
+  back-dated 25 hours "Did you apply?" appeared, and "Yes, I applied" moved
+  it to Applied.
+- **Recent runs in the real window:** Show more (30 of 37), All (37), Show fewer.
+- **Every page at 2555 px wide:** no sideways scrolling; galaxy labels don't overlap.
+- **The page's console:** no errors besides the missing favicon.
+- **A scratch build of the app:** self-test 21 of 21, window test passed, 156 MB.
+- pytest: 464 passed; typecheck clean.
+
+**Bugs found and fixed**
+1. **A question nobody saw could run out.** JobLens started with Windows
+   loads its page while hidden in the tray; that counted as "shown", so
+   "Did you apply?" would have expired unseen, and the tray would never
+   have announced it. A hidden window no longer starts the 24 hours.
+2. **Ignore on a follow-up could come back.** Applied (ignored) →
+   Interviewing → Applied was still ignored. A status change now clears it.
+3. **The follow-up email lost your name** when a cover note ended
+   "Sincerely, Raif Karani" (1 of the real notes). Fixed.
+Also: two notices on the Tracker sat too far apart.
+
+**Not run**
+- **The fit evals with the model:** started, then stopped by the system
+  because the PC ran low on memory. Step 2's code wasn't changed in this
+  phase, but `langchain-core` moved from 1.7.0 to 1.8.0, so they should be
+  run once before the release.
+- **OpenAI and Gemini with a real key** (16c).
+- **The installer, the real update test and the Windows shutdown test:**
+  they belong to the release step.
+- **The tray notification for "Did you apply?"** was not seen live.
+- Test data: job #3 (GitLab) was deleted and analyzed again as #40, now Applied.

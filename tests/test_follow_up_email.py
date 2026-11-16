@@ -60,6 +60,9 @@ def test_the_name_is_taken_from_the_cover_note():
     assert fe.candidate_name("Dear Hiring Team,\n\nText.\n\nBest regards,\nMohammed Iyad") == "Mohammed Iyad"
     assert fe.candidate_name("Dear Hiring Team,\n\nI look forward to hearing from you.") == ""
     assert fe.candidate_name("Thank you for your time. Best Regards") == ""  # a sign-off isn't a name
+    assert fe.candidate_name("I welcome the chance to discuss my background. Sincerely, Raif Karani") == "Raif Karani"
+    assert fe.candidate_name("Text.\n\nBest regards, Raif Karani") == "Raif Karani"
+    assert fe.candidate_name("I built it with React, Next.js") == ""          # a list isn't a name
     assert fe.candidate_name(None) == "" and fe.candidate_name("") == ""
 
 

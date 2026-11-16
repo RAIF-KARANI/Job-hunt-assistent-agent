@@ -871,6 +871,13 @@ In-app updates failed on every try. Amends D27 and D37.
   tokens or time.
 - **Two measures never share one chart with two scales.** Tokens and time
   each get their own chart, and a third shows one against the other.
+- **Resume comparison stays one resume after the other** (16h, measured;
+  the rule was "kept only if it is faster and the output is the same").
+  Side by side was SLOWER on this PC: 4 resumes took 153 s in turn, 249 s
+  two at a time, 170 s four at a time. Ollama answers one request at a
+  time here (8 GB graphics card), so the others wait, and switching
+  between resumes loses the "already read this resume" saving. No code
+  was changed. It may still help with a cloud model; untested (no key).
 - **Test data:** 22 jobs of every fit band and status, with their cover
   notes and run log, were copied from the installed app into the repo's
   `data/jobs.db` (git-ignored). The old file is `data/jobs.before-phase16.db`.

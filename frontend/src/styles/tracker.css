@@ -644,6 +644,11 @@
   color: var(--warn-ink);
 }
 
+/* 16i: two notices in a row (follow up + did you apply) sit close together */
+.follow-notice + .follow-notice {
+  margin-top: calc(-1 * var(--space-5));
+}
+
 .follow-up {
   display: flex;
   flex-wrap: wrap;

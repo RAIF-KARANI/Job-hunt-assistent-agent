@@ -304,9 +304,13 @@ def update_status(job_id: int, status: str) -> None:
     """Move a job to a new stage, e.g. 'applied'. Rejects unknown statuses."""
     if status not in STATUSES:
         raise ValueError(f"Unknown status '{status}'. Use one of: {', '.join(STATUSES)}")
+    init_db()  # the columns below may be newer than this database
     with _db() as conn:
+        # 16a: "Ignore" on the follow-up reminder lasts until the status changes.
+        # Cleared here, or a job moved Applied -> Interviewing -> Applied would
+        # still count as ignored (found in the full test, 16 Nov).
         cur = conn.execute(
-            "UPDATE jobs SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            "UPDATE jobs SET status = ?, updated_at = CURRENT_TIMESTAMP, follow_up_ignored = NULL WHERE id = ?",
             (status, job_id),
         )
     if cur.rowcount == 0:
