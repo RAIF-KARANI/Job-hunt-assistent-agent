@@ -16,8 +16,10 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 ::selection{background:rgba(167,139,250,0.40);color:#FFFFFF}
 :focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
 *{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.18) transparent}
-.app{min-height:100vh;display:flex;flex-wrap:wrap;font-family:Inter,"Segoe UI",system-ui,sans-serif;font-optical-sizing:auto;color:#FFFFFF;background:radial-gradient(900px 520px at 92% -10%,rgba(251,146,60,0.17),transparent 62%),radial-gradient(760px 520px at 38% -12%,rgba(96,165,250,0.10),transparent 60%),radial-gradient(900px 700px at -5% 105%,rgba(167,139,250,0.13),transparent 60%),#0B0F17}
-.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:28px;background:rgba(8,11,18,0.55);border-right:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(24px)}
+.desk{min-height:100vh;box-sizing:border-box;display:flex;padding:clamp(10px,2vw,26px);background:radial-gradient(circle at 17% 24%,rgba(255,255,255,0.30) 0 70px,transparent 71px),radial-gradient(circle at 91% 13%,rgba(253,186,116,0.85) 0 120px,transparent 121px),radial-gradient(circle at 70% 96%,rgba(249,168,212,0.55) 0 150px,transparent 151px),radial-gradient(circle at 4% 78%,rgba(196,181,253,0.60) 0 110px,transparent 111px),repeating-linear-gradient(118deg,rgba(255,255,255,0.07) 0 2px,transparent 2px 46px),radial-gradient(60% 55% at 10% 16%,rgba(96,165,250,0.80),transparent 62%),radial-gradient(48% 52% at 90% 6%,rgba(251,146,60,0.72),transparent 64%),radial-gradient(52% 56% at 80% 94%,rgba(244,114,182,0.62),transparent 62%),radial-gradient(56% 60% at 6% 96%,rgba(167,139,250,0.72),transparent 64%),#0A0D16}
+.app{position:relative;flex:1;min-width:0;display:flex;flex-wrap:wrap;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.16);box-shadow:0 40px 90px -30px rgba(0,0,0,0.85),inset 0 1px 0 rgba(255,255,255,0.10);font-family:Inter,"Segoe UI",system-ui,sans-serif;font-optical-sizing:auto;color:#FFFFFF}
+.app::before{content:"";position:absolute;inset:0;z-index:0;background:rgba(11,15,23,0.58);backdrop-filter:blur(56px) saturate(160%)}
+.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:28px;position:relative;z-index:1;background:rgba(8,11,18,0.16);border-right:1px solid rgba(255,255,255,0.09)}
 .brand{display:flex;align-items:center;gap:10px;padding:0 10px;font-size:17px;font-weight:650;letter-spacing:-0.02em}
 .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 6px 14px -6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.35)}
 .navlist{display:flex;flex-direction:column;gap:2px}
@@ -28,8 +30,8 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .nav[aria-current="page"] svg{color:#93C5FD}
 .navsep{height:1px;margin:8px 12px;background:rgba(255,255,255,0.07)}
 .count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;display:grid;place-items:center;font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;color:#0B0F17;background:#FB923C}
-.model{margin-top:auto;padding:14px;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:4px}
-.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 56px;display:flex;flex-direction:column;gap:40px}
+.model{margin-top:auto;padding:14px;border-radius:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.13);backdrop-filter:blur(24px) saturate(170%);display:flex;flex-direction:column;gap:4px}
+.main{position:relative;z-index:1;background:rgba(11,15,23,0.34);flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 56px;display:flex;flex-direction:column;gap:40px}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .title{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em;line-height:1.15;text-wrap:balance}
 .sub{margin:6px 0 0;font-size:14px;line-height:1.5;color:#A1A1AA;max-width:62ch}
@@ -37,7 +39,7 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .sh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;min-height:40px}
 .sh h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-0.015em}
 .sh p{margin:0;font-size:13px;color:#A1A1AA}
-.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;gap:16px}
+.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.045));border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(28px) saturate(170%);display:flex;flex-direction:column;gap:16px}
 .split{padding:0;flex-direction:row;flex-wrap:wrap;gap:0;overflow:hidden}
 .pane{box-sizing:border-box;min-width:0;padding:22px;display:flex;flex-direction:column;gap:16px}
 .pane + .pane{border-left:1px solid rgba(255,255,255,0.07)}
@@ -51,10 +53,10 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .btn-quiet{border-color:transparent;background:transparent;color:#C4B5FD}
 .btn-sm{height:32px;padding:0 12px;border-radius:10px}
 .icon-btn{width:40px;padding:0;position:relative}
-.field{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);color:#8E8E99;transition:border-color .2s ease,box-shadow .2s ease}
+.field{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);color:#9C9CA8;transition:border-color .2s ease,box-shadow .2s ease}
 .field:focus-within{border-color:rgba(147,197,253,0.55);box-shadow:0 0 0 4px rgba(96,165,250,0.14)}
 .field input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#FFFFFF;font:14px Inter,"Segoe UI",system-ui,sans-serif}
-.field input::placeholder{color:#8E8E99}
+.field input::placeholder{color:#9C9CA8}
 .select{height:40px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);color:#FFFFFF;border:1px solid rgba(255,255,255,0.12);padding:0 12px;font:14px Inter,"Segoe UI",system-ui,sans-serif}
 .select option{background:#131A29}
 .seg{display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09)}
@@ -65,7 +67,7 @@ a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
 .dot{width:7px;height:7px;border-radius:50%;flex:none}
 .num{font-variant-numeric:tabular-nums}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.kpi{position:relative;overflow:hidden;box-sizing:border-box;padding:18px 20px;border-radius:18px;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85)}
+.kpi{position:relative;overflow:hidden;backdrop-filter:blur(28px) saturate(170%);box-sizing:border-box;padding:18px 20px;border-radius:18px;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85)}
 .k-label{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:550}
 .k-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,0.16);flex:none}
 .k-val{font-size:24px;font-weight:650;letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
@@ -90,14 +92,15 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 @keyframes cta-scan{0%,100%{transform:translate(0,0)}25%{transform:translate(2px,-2px)}50%{transform:translate(3px,1px) rotate(8deg)}75%{transform:translate(-1px,2px)}}
 @keyframes cta-glint{0%,40%,100%{opacity:0}55%,75%{opacity:1}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
-.col{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06)}
-.jcard{display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;box-sizing:border-box;border-radius:13px;cursor:grab;font:inherit;color:inherit;text-align:left;background:rgba(22,28,42,0.88);border:1px solid rgba(255,255,255,0.07);box-shadow:0 10px 20px -16px rgba(0,0,0,0.9);transition:transform .2s ease,border-color .2s ease}
+.col{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.06)}
+.jcard{display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;box-sizing:border-box;border-radius:13px;cursor:grab;font:inherit;color:inherit;text-align:left;background:rgba(22,28,42,0.55);border:1px solid rgba(255,255,255,0.10);backdrop-filter:blur(20px) saturate(160%);box-shadow:0 10px 20px -16px rgba(0,0,0,0.9);transition:transform .2s ease,border-color .2s ease}
 .jcard:hover{transform:translateY(-1px);border-color:rgba(255,255,255,0.16)}
 .jcard[aria-pressed="true"]{border-color:rgba(147,197,253,0.6);background:rgba(96,165,250,0.12);box-shadow:0 0 0 3px rgba(96,165,250,0.12)}
 .more{height:32px;border:0;border-radius:10px;background:transparent;color:#A1A1AA;font:500 12px Inter,"Segoe UI",system-ui,sans-serif;cursor:pointer}
 .more:hover{background:rgba(255,255,255,0.05);color:#FFFFFF}
 </style>
 </helmet>
+<div class="desk">
 <div class="app">
 
   <nav class="side" aria-label="Main">
@@ -132,9 +135,9 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
     <div class="model">
       <span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A1A1AA"><span class="dot" style="background: #4ADE80; box-shadow: 0 0 0 3px rgba(74,222,128,0.18)"></span>Model ready</span>
       <span style="font-size: 14px; font-weight: 600">qwen3:8b</span>
-      <span style="font-size: 12px; color: #8E8E99">On this PC · free and private</span>
+      <span style="font-size: 12px; color: #9C9CA8">On this PC · free and private</span>
     </div>
-    <span style="padding: 0 10px; font-size: 11px; color: #8E8E99">JobLens 2.0.0 · mockup</span>
+    <span style="padding: 0 10px; font-size: 11px; color: #9C9CA8">JobLens 2.0.0 · mockup</span>
   </nav>
 
   <main class="main" style="gap: 32px">
@@ -184,7 +187,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
     <section class="section" aria-labelledby="jobs-title" style="gap: 14px">
       <div class="sh">
         <h2 id="jobs-title">All jobs</h2>
-        <span class="num" style="font-size: 13px; color: #8E8E99; margin-right: auto">33</span>
+        <span class="num" style="font-size: 13px; color: #9C9CA8; margin-right: auto">33</span>
         <label class="field" style="width: 280px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4-4"></path></svg>
           <span class="vh">Search jobs</span>
@@ -204,7 +207,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
                 <header style="display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px">
                   <span class="dot" style="{{col.dot}}"></span>
                   <h3 style="margin: 0 auto 0 0; font-size: 13px; font-weight: 600">{{col.name}}</h3>
-                  <span class="num" style="font-size: 12px; color: #8E8E99">{{col.count}}</span>
+                  <span class="num" style="font-size: 12px; color: #9C9CA8">{{col.count}}</span>
                 </header>
                 <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="3">
                   <button type="button" class="jcard" aria-pressed="{{c.open}}">
@@ -215,7 +218,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
                       </span>
                       <span style="{{c.chip}}">{{c.fit}}</span>
                     </span>
-                    <span style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: #8E8E99">
+                    <span style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: #9C9CA8">
                       {{c.note}}
                       <sc-if value="{{c.ask}}" hint-placeholder-val="{{false}}"><span class="pill" style="height: 20px; padding: 0 7px; font-size: 11px; color: #FBCFE8; background: rgba(244,114,182,0.14); border-color: rgba(244,114,182,0.32)">Applied?</span></sc-if>
                       <sc-if value="{{c.follow}}" hint-placeholder-val="{{false}}"><span class="pill" style="height: 20px; padding: 0 7px; font-size: 11px; color: #FED7AA; background: rgba(251,146,60,0.14); border-color: rgba(251,146,60,0.32)">Follow up</span></sc-if>
@@ -223,18 +226,18 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
                   </button>
                 </sc-for>
                 <sc-if value="{{col.hasMore}}" hint-placeholder-val="{{false}}"><button type="button" class="more">Show {{col.more}} more</button></sc-if>
-                <sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 22px 8px; text-align: center; font-size: 12px; line-height: 1.5; color: #8E8E99; border: 1px dashed rgba(255,255,255,0.10); border-radius: 12px">Drop a job here</p></sc-if>
+                <sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 22px 8px; text-align: center; font-size: 12px; line-height: 1.5; color: #9C9CA8; border: 1px dashed rgba(255,255,255,0.10); border-radius: 12px">Drop a job here</p></sc-if>
               </section>
             </sc-for>
           </div>
         </div>
 
-        <aside class="panel" aria-labelledby="details-title" style="flex: 1 1 340px; max-width: 420px; gap: 20px; background: linear-gradient(180deg, rgba(36,44,62,0.82), rgba(24,30,44,0.82)); border-color: rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 32px 64px -24px rgba(0,0,0,0.85)">
+        <aside class="panel" aria-labelledby="details-title" style="flex: 1 1 340px; max-width: 420px; gap: 20px; background: linear-gradient(180deg, rgba(58,68,92,0.46), rgba(30,38,56,0.50)); border-color: rgba(255,255,255,0.18); backdrop-filter: blur(36px) saturate(180%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 32px 64px -24px rgba(0,0,0,0.85)">
           <div style="display: flex; gap: 12px; align-items: flex-start">
             <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
               <span style="font-size: 13px; color: #A1A1AA">GitLab</span>
               <h3 id="details-title" style="margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.25; text-wrap: balance">Backend Engineer, GitLab Orbit</h3>
-              <span style="font-size: 13px; color: #8E8E99">Remote, Canada · Mid level · Full-time</span>
+              <span style="font-size: 13px; color: #9C9CA8">Remote, Canada · Mid level · Full-time</span>
             </div>
             <button type="button" class="btn icon-btn" aria-label="Close details" style="width: 36px; height: 36px">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
@@ -291,6 +294,7 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
       </div>
     </section>
   </main>
+</div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>

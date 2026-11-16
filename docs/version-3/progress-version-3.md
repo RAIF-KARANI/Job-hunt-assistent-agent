@@ -116,3 +116,28 @@ Tracker changes to **Land the next one**: the old label slides up and the
 new one slides in, the plus turns into a magnifying lens, and the lens
 keeps scanning in a loop with a small glint. The button's width doesn't
 change, and with reduced motion on, the text still swaps but nothing moves.
+
+## Mockup: frosted desktop glass ✅ (16 Nov 2026)
+
+You asked for a frosted window that lets the desktop show through, and
+frosted panels on top of it.
+
+- Each screen now sits on a stand-in desktop wallpaper (your five accent
+  colours, with a few sharp shapes so the blur is visible). The app is a
+  rounded window floating on it.
+- The window is frosted: the wallpaper shows through, blurred. The
+  sidebar lets the most through; the work area is darker so text stays
+  readable.
+- Panels, KPI cards, the model card, Tracker cards and the Tracker detail
+  sheet are frosted layers of their own, each a bit lighter than what is
+  under it.
+- The faintest grey text went from `#8E8E99` to `#9C9CA8`, because the
+  background behind it is now lighter in places.
+
+### To check before building it (not checked yet)
+- In the mockup the desktop is a picture. In the real app, showing the
+  real desktop needs a see-through window with the Windows 11 backdrop
+  (Mica / Acrylic). Whether today's Python window can do that, or only a
+  Tauri one, is a question for the Phase 18 spike. Fallback: the same
+  frosted look over the app's own gradient.
+- Many blurred layers cost graphics time; measure on this PC in 17b.
