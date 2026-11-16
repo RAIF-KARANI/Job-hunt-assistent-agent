@@ -2690,3 +2690,14 @@ and window test 1.2.0 (built and installed copy), clean uninstall;
 1.0.3. Nothing private in the app folder (3 saved keys and 4 names checked).
 - `JobLens-Setup-1.2.0.exe`: 68 MB, SHA-256 `01268331…b44e`
 - portable zip: 83 MB, SHA-256 `4f22a270…7502`
+
+## Release v1.2.0 ✅ (16 Nov 2026, D43)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.2.0
+- `main` fast-forwarded to `version-2` (`c83fb53`) and pushed; the release
+  was published from it (as you asked at the start of Phase 16).
+- **Checked after publishing:** Latest; not a draft or pre-release; tag →
+  `c83fb53`; GitHub's SHA-256 of both uploads matches the build; the
+  updater (real API), asked as 1.0.3 and as 1.1.1, offers v1.2.0 with the
+  right checksum; asked as 1.2.0, it offers nothing.
+- **Left for you:** update your own JobLens (Settings → Updates), then the
+  real Windows shutdown with JobLens open in the tray. And OpenAI, untried.
