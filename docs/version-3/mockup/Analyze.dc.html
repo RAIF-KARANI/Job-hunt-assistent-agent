@@ -77,6 +77,31 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .node{position:absolute;border-radius:50%;padding:0;cursor:pointer;transition:transform .2s ease}
 .node:hover{transform:scale(1.35)}
 .ic-tile{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
+.acc{box-sizing:border-box;min-width:0;border-radius:20px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.045));border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(28px) saturate(170%)}
+.acc>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;min-height:60px;box-sizing:border-box;padding:12px 22px;cursor:pointer;transition:background .2s ease}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary:hover{background:rgba(255,255,255,0.04)}
+.acc>summary h2,.acc>summary h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.acc-digest{flex:1 1 200px;min-width:0;font-size:13px;color:#A1A1AA}
+.acc-chev{flex:none;margin-left:auto;color:#A1A1AA;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.acc[open]>summary .acc-chev{transform:rotate(180deg)}
+.acc[open]>summary{border-bottom:1px solid rgba(255,255,255,0.07)}
+.acc-body{padding:22px;display:flex;flex-direction:column;gap:16px}
+.acc.flat{background:none;border:0;border-top:1px solid rgba(255,255,255,0.09);border-radius:0;box-shadow:none;backdrop-filter:none}
+.acc.flat>summary{min-height:0;padding:14px 0}
+.acc.flat>summary h3{font-size:14px}
+.acc.flat[open]>summary{border-bottom:0}
+.acc.flat .acc-body{padding:2px 0 18px}
+.stepno{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;color:#0B0F17;background:linear-gradient(135deg,#60A5FA,#A78BFA)}
+.step{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:14px;align-items:start;padding:0 0 22px}
+.step-line{position:absolute;left:15.5px;top:36px;bottom:4px;width:1px;background:rgba(255,255,255,0.12)}
+.step-badge{position:relative;z-index:1;box-sizing:border-box;width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:650;color:#A1A1AA;background:rgba(255,255,255,0.05)}
+.step[data-state="next"] .step-badge{border:1px solid rgba(255,255,255,0.14)}
+.step-main{display:flex;flex-direction:column;gap:4px;padding-top:5px;min-width:0}
+.step-title{font-size:15px;font-weight:600}
+.step[data-state="next"] .step-title{color:#C8CBD3}
+.step-sub{font-size:13px;line-height:1.5;color:#A1A1AA}
+.step-time{padding-top:7px;font-size:13px;color:#A1A1AA}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.55)}50%{box-shadow:0 0 0 7px rgba(167,139,250,0)}}
 @keyframes blink{50%{opacity:0}}
@@ -126,76 +151,94 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
     <span style="padding: 0 10px; font-size: 11px; color: #9C9CA8">JobLens 2.0.0 · mockup</span>
   </nav>
 
-  <main class="main" style="gap: 36px">
-    <header class="top">
+  <main class="main" style="gap: 24px">
+    <header class="top" style="padding-bottom: 8px">
       <div style="margin-right: auto">
         <h1 class="title">Analyze a job</h1>
-        <p class="sub">Paste a link. JobLens reads the posting, compares your resumes, researches the company and drafts a cover note for you to approve.</p>
+        <p class="sub">Paste a link. JobLens does the five steps below and stops for your approval at the end.</p>
       </div>
     </header>
 
-    <section class="section" aria-labelledby="job-title" style="gap: 12px">
-      <div class="sh" style="min-height: 0">
-        <h2 id="job-title">Job</h2>
+    <div class="panel" style="flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: 10px">
+      <label for="job-url" style="flex: 999 1 420px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 500; color: #D4D4D8">Job posting link
+        <span class="field" style="height: 48px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+          <input type="url" id="job-url" value="https://job-boards.greenhouse.io/gitlab/jobs/8771512002" readonly>
+        </span>
+      </label>
+      <button type="button" class="btn" style="height: 48px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+        Stop
+      </button>
+    </div>
+
+    <section class="panel" aria-labelledby="run-title" style="gap: 18px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px">
+        <h2 id="run-title" style="margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em">Step 2 of 5</h2>
+        <span class="pill" style="color: #DDD6FE; background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.36)"><span class="dot" style="background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Running</span>
+        <span class="num" style="margin-left: auto; font-size: 13px; color: #A1A1AA">2m 41s so far · usually 4m 26s</span>
       </div>
-      <div class="panel" style="gap: 14px">
-        <label for="job-url" style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 500; color: #D4D4D8">Job posting link
-          <span class="field" style="height: 48px">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
-            <input type="url" id="job-url" value="https://job-boards.greenhouse.io/gitlab/jobs/8771512002" readonly>
+      <div style="height: 6px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden" role="progressbar" aria-label="Run progress" aria-valuenow="61" aria-valuemin="0" aria-valuemax="100"><span style="display: block; height: 100%; width: 61%; border-radius: 999px; background: linear-gradient(90deg, #60A5FA, #A78BFA, #F472B6)"></span></div>
+
+      <ol style="margin: 0; padding: 4px 0 0; list-style: none; display: flex; flex-direction: column">
+        <li class="step">
+          <span class="step-line" aria-hidden="true" style="background: linear-gradient(180deg, #60A5FA, #A78BFA)"></span>
+          <span class="step-badge" style="color: #0B0F17; background: linear-gradient(135deg, #60A5FA, #A78BFA)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+          <span class="step-main"><span class="step-title">Read the posting</span><span class="step-sub">Backend Engineer, GitLab Orbit at GitLab</span></span>
+          <span class="step-time num">38 s</span>
+        </li>
+        <li class="step">
+          <span class="step-line" aria-hidden="true"></span>
+          <span class="step-badge" style="color: #0B0F17; background: linear-gradient(135deg, #A78BFA, #F472B6); animation: breathe 1.8s ease-in-out infinite">2</span>
+          <span class="step-main">
+            <span class="step-title">Compare with your resumes</span>
+            <span class="step-sub">3 of 4 scored. Best so far: AI Engineer, fit 50.</span>
+            <span style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px">
+              <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer · 50</span>
+              <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer (UAE) · 44</span>
+              <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Software Engineer</span>
+              <span class="res" data-state="now"><span class="dot" style="width: 6px; height: 6px; background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Software Engineer (UAE)</span>
+            </span>
           </span>
-        </label>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: #A1A1AA">
-          <span style="margin-right: 4px">Resumes compared</span>
-          <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer · 50</span>
-          <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>AI Engineer (UAE) · 44</span>
-          <span class="res" data-state="done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Software Engineer</span>
-          <span class="res" data-state="now"><span class="dot" style="width: 6px; height: 6px; background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Software Engineer (UAE)</span>
-        </div>
-      </div>
+          <span class="step-time num" style="color: #FFFFFF">2m 03s</span>
+        </li>
+        <li class="step" data-state="next">
+          <span class="step-line" aria-hidden="true"></span>
+          <span class="step-badge">3</span>
+          <span class="step-main"><span class="step-title">Research the company</span><span class="step-sub">Web and news search, keeping only results about GitLab</span></span>
+          <span class="step-time num">usually 56 s</span>
+        </li>
+        <li class="step" data-state="next">
+          <span class="step-line" aria-hidden="true"></span>
+          <span class="step-badge">4</span>
+          <span class="step-main"><span class="step-title">Save to the tracker</span><span class="step-sub">With the job description, so it's still here later</span></span>
+          <span class="step-time num"></span>
+        </li>
+        <li class="step" data-state="next" style="padding-bottom: 0">
+          <span class="step-badge">5</span>
+          <span class="step-main">
+            <span class="step-title">Draft the cover note, then you decide</span>
+            <span class="step-sub">The draft appears here. You approve it, rewrite it with your notes, or reject it.</span>
+            <span style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px">
+              <button type="button" class="btn btn-sm btn-primary" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; transform: none">Approve and save</button>
+              <button type="button" class="btn btn-sm" disabled="disabled" style="opacity: 0.4; cursor: not-allowed">Rewrite with my notes</button>
+              <button type="button" class="btn btn-sm btn-quiet" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; color: #A1A1AA">Reject</button>
+            </span>
+          </span>
+          <span class="step-time num">usually 13 s</span>
+        </li>
+      </ol>
     </section>
 
-    <section class="section" aria-labelledby="run-title" style="gap: 12px">
-      <div class="sh" style="min-height: 0">
-        <h2 id="run-title">Run</h2>
-        <span class="pill" style="color: #DDD6FE; background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.36)"><span class="dot" style="background: #C4B5FD; animation: breathe 1.8s ease-in-out infinite"></span>Step 2 of 5</span>
-        <span class="num" style="font-size: 13px; color: #A1A1AA; margin-right: auto">2m 41s so far · usually 4m 26s</span>
-        <button type="button" class="btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
-          Stop
-        </button>
-      </div>
-      <div style="height: 6px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden" role="progressbar" aria-label="Run progress" aria-valuenow="61" aria-valuemin="0" aria-valuemax="100"><span style="display: block; height: 100%; width: 61%; border-radius: 999px; background: linear-gradient(90deg, #60A5FA, #A78BFA, #F472B6)"></span></div>
-
-      <div class="panel split">
-        <div class="pane" style="flex: 1 1 380px; gap: 8px">
-          <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 600">Steps</h3>
-          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
-            <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
-              <li style="position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 6px 0 16px">
-                <span aria-hidden="true" style="{{s.line}}"></span>
-                <span style="{{s.badge}}">
-                  <sc-if value="{{s.done}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
-                  <sc-if value="{{s.numbered}}" hint-placeholder-val="{{true}}">{{s.num}}</sc-if>
-                </span>
-                <span style="display: flex; flex-direction: column; gap: 4px; padding-top: 5px">
-                  <span style="font-size: 14px; font-weight: 600; color: {{s.ink}}">{{s.title}}</span>
-                  <span style="font-size: 13px; line-height: 1.5; color: {{s.sub}}">{{s.detail}}</span>
-                </span>
-                <span class="num" style="padding-top: 6px; font-size: 13px; color: {{s.sub}}">{{s.time}}</span>
-              </li>
-            </sc-for>
-          </ol>
-        </div>
-        <div class="pane" style="flex: 1.2 1 420px; background: rgba(5,8,13,0.55)">
-          <div class="ph">
-            <h3>Live log</h3>
-            <span style="margin-left: auto; display: flex; gap: 6px">
-              <span class="pill" style="height: 22px; font-size: 11px; color: #A1A1AA">Langfuse off</span>
-              <span class="pill" style="height: 22px; font-size: 11px; color: #BBF7D0; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.28)">Run log on</span>
-            </span>
-          </div>
-          <pre style="margin: 0; flex: 1; min-height: 300px; overflow-x: auto; white-space: pre-wrap; font: 12.5px/1.75 'JetBrains Mono', ui-monospace, Consolas, monospace; color: #9C9CA8"><span style="color: #D4D4D8">[1/5] Reading the job posting...</span>
+    <details class="acc">
+      <summary>
+        <h2>Live log</h2>
+        <span class="acc-digest">Now: scoring 'Software Engineer (UAE)' · the judge rejected 1 claim</span>
+        <span class="pill" style="height: 22px; font-size: 11px; color: #BBF7D0; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.28)">Run log on</span>
+        <svg class="acc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-left: 0"><path d="M6 9l6 6 6-6"></path></svg>
+      </summary>
+      <div class="acc-body" style="background: rgba(5,8,13,0.5)">
+        <pre style="margin: 0; overflow-x: auto; white-space: pre-wrap; font: 12.5px/1.75 'JetBrains Mono', ui-monospace, Consolas, monospace; color: #9C9CA8"><span style="color: #D4D4D8">[1/5] Reading the job posting...</span>
   -&gt; Backend Engineer, GitLab Orbit @ GitLab (Remote, Canada)
 <span style="color: #FFFFFF">[2/5] Comparing your resumes with the job...</span>
   - scoring 'AI Engineer'...  second look at 2 requirement(s)
@@ -204,55 +247,17 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 <span style="color: #BFDBFE">  50/100  AI Engineer   [Required: 3 of 7 shown, 4 partly]</span>
 <span style="color: #BFDBFE">  44/100  AI Engineer (UAE)</span>
   - scoring 'Software Engineer (UAE)'...<span style="display: inline-block; width: 7px; height: 14px; margin-left: 2px; vertical-align: -2px; background: #C4B5FD; animation: blink 1.1s steps(1) infinite"></span></pre>
-        </div>
+        <span style="font-size: 12px; color: #9C9CA8">Langfuse tracing is off for this run.</span>
       </div>
-    </section>
-
-    <section class="section" aria-labelledby="draft-title" style="gap: 12px">
-      <div class="sh" style="min-height: 0">
-        <h2 id="draft-title">Cover note</h2>
-        <p>Appears after step 5. You approve it, rewrite it with your notes, or reject it.</p>
-      </div>
-      <div class="panel" style="gap: 16px">
-        <div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 0" aria-hidden="true">
-          <span style="display: block; height: 10px; width: 22%; border-radius: 6px; background: rgba(255,255,255,0.07)"></span>
-          <span style="display: block; height: 10px; width: 92%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
-          <span style="display: block; height: 10px; width: 86%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
-          <span style="display: block; height: 10px; width: 64%; border-radius: 6px; background: rgba(255,255,255,0.05)"></span>
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07)">
-          <button type="button" class="btn btn-primary" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; transform: none">Approve and save</button>
-          <button type="button" class="btn" disabled="disabled" style="opacity: 0.4; cursor: not-allowed">Rewrite with my notes</button>
-          <button type="button" class="btn btn-quiet" disabled="disabled" style="opacity: 0.4; cursor: not-allowed; color: #A1A1AA">Reject</button>
-        </div>
-      </div>
-    </section>
+    </details>
   </main>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
 class Component extends DCLogic {
   renderVals() {
-    var rows = [
-      ["1", "Read the posting", "Backend Engineer, GitLab Orbit at GitLab", "38 s", "done"],
-      ["2", "Compare with your resumes", "3 of 4 resumes scored. Best so far: AI Engineer, fit 50.", "2m 03s", "running"],
-      ["3", "Research the company", "Web and news search, keeping only results about GitLab", "usually 56 s", "next"],
-      ["4", "Save to the tracker", "With the job description, so it's still here later", "", "next"],
-      ["5", "Draft the cover note", "From the achievements that fit this job", "usually 13 s", "next"]
-    ];
-    var steps = rows.map(function (r, i) {
-      var done = r[4] === "done", running = r[4] === "running", next = r[4] === "next";
-      var bg = done ? "linear-gradient(135deg,#60A5FA,#A78BFA)" : running ? "linear-gradient(135deg,#A78BFA,#F472B6)" : "rgba(255,255,255,0.04)";
-      return {
-        num: r[0], title: r[1], detail: r[2], time: r[3], done: done, numbered: !done,
-        ink: next ? "#A1A1AA" : "#FFFFFF",
-        sub: next ? "#9C9CA8" : "#A1A1AA",
-        badge: "position:relative;z-index:1;width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:650;color:" + (next ? "#A1A1AA" : "#0B0F17") + ";background:" + bg + ";border:1px solid " + (next ? "rgba(255,255,255,0.12)" : "transparent") + (running ? ";animation:breathe 1.8s ease-in-out infinite" : ""),
-        line: i === rows.length - 1 ? "display:none" : "position:absolute;left:15.5px;top:40px;bottom:0;width:1px;background:" + (done ? "linear-gradient(180deg,#60A5FA,#A78BFA)" : "rgba(255,255,255,0.10)")
-      };
-    });
-    return { steps: steps };
+    return {};
   }
 }
 </script>

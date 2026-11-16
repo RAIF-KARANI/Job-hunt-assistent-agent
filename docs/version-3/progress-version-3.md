@@ -141,3 +141,32 @@ frosted panels on top of it.
   Tauri one, is a question for the Phase 18 spike. Fallback: the same
   frosted look over the app's own gradient.
 - Many blurred layers cost graphics time; measure on this PC in 17b.
+
+## Mockup round 4 ✅ (16 Nov 2026)
+
+You asked for a cleaner hierarchy: follow the order of operations, and
+fold less important content into accordions. Same link.
+
+- **Dashboard:** the pipeline leads, as five stages in the order a job
+  moves (Researched → Cover note ready → Applied → Interviewing → Offer),
+  each with its count and what is waiting there. Then **Do next** as
+  three numbered steps: 1 Apply (the 5 strong fits), 2 Confirm you
+  applied, 3 Follow up. **Job galaxy** is an accordion (open). **How
+  JobLens is doing** is an accordion (closed), and its closed line still
+  shows the three headline numbers.
+- **Tracker:** search and Board/List moved into the header. **Needs you**
+  is an accordion (open), in order: confirm, then follow up. The detail
+  sheet leads with the next step for that job; **Fit** (open), **Status
+  and tools** and **Job description** (closed) are accordions.
+- **Analyze:** one spine of the five steps. The resumes being compared
+  sit inside step 2, and the approve / rewrite / reject buttons sit inside
+  step 5. **Live log** is an accordion (closed) that shows the current
+  line.
+- **Evals:** "Is it right?" first and biggest, "What does a run cost?"
+  second. Then accordions: pass rate by run (open), Models compared
+  (open), Tokens by run (closed).
+- A closed accordion always shows a one-line summary, so nothing
+  important is hidden behind a click.
+- To avoid cards inside cards, the three agent numbers inside the
+  accordion are plain figures now; the gradient card style is kept for
+  the pipeline at the top.

@@ -77,6 +77,31 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .node{position:absolute;border-radius:50%;padding:0;cursor:pointer;transition:transform .2s ease}
 .node:hover{transform:scale(1.35)}
 .ic-tile{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
+.acc{box-sizing:border-box;min-width:0;border-radius:20px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.045));border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(28px) saturate(170%)}
+.acc>summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;min-height:60px;box-sizing:border-box;padding:12px 22px;cursor:pointer;transition:background .2s ease}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary:hover{background:rgba(255,255,255,0.04)}
+.acc>summary h2,.acc>summary h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.acc-digest{flex:1 1 200px;min-width:0;font-size:13px;color:#A1A1AA}
+.acc-chev{flex:none;margin-left:auto;color:#A1A1AA;transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.acc[open]>summary .acc-chev{transform:rotate(180deg)}
+.acc[open]>summary{border-bottom:1px solid rgba(255,255,255,0.07)}
+.acc-body{padding:22px;display:flex;flex-direction:column;gap:16px}
+.acc.flat{background:none;border:0;border-top:1px solid rgba(255,255,255,0.09);border-radius:0;box-shadow:none;backdrop-filter:none}
+.acc.flat>summary{min-height:0;padding:14px 0}
+.acc.flat>summary h3{font-size:14px}
+.acc.flat[open]>summary{border-bottom:0}
+.acc.flat .acc-body{padding:2px 0 18px}
+.stepno{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;color:#0B0F17;background:linear-gradient(135deg,#60A5FA,#A78BFA)}
+.step{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:14px;align-items:start;padding:0 0 22px}
+.step-line{position:absolute;left:15.5px;top:36px;bottom:4px;width:1px;background:rgba(255,255,255,0.12)}
+.step-badge{position:relative;z-index:1;box-sizing:border-box;width:32px;height:32px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:650;color:#A1A1AA;background:rgba(255,255,255,0.05)}
+.step[data-state="next"] .step-badge{border:1px solid rgba(255,255,255,0.14)}
+.step-main{display:flex;flex-direction:column;gap:4px;padding-top:5px;min-width:0}
+.step-title{font-size:15px;font-weight:600}
+.step[data-state="next"] .step-title{color:#C8CBD3}
+.step-sub{font-size:13px;line-height:1.5;color:#A1A1AA}
+.step-time{padding-top:7px;font-size:13px;color:#A1A1AA}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 .stats{display:flex;flex-wrap:wrap;gap:16px 0;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.07)}
 .stat{flex:1 1 140px;display:flex;flex-direction:column;gap:8px;padding:0 20px;border-left:1px solid rgba(255,255,255,0.08)}
@@ -128,125 +153,103 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
     <span style="padding: 0 10px; font-size: 11px; color: #9C9CA8">JobLens 2.0.0 · mockup</span>
   </nav>
 
-  <main class="main">
-    <header class="top" style="align-items: flex-end">
+  <main class="main" style="gap: 24px">
+    <header class="top" style="align-items: flex-end; padding-bottom: 8px">
       <div style="margin-right: auto">
         <h1 class="title">Agent evals</h1>
-        <p class="sub">How well the agent did, measured on this PC. Nothing is sent anywhere.</p>
+        <p class="sub">First whether the agent got it right, then what it cost. Measured on this PC; nothing is sent anywhere.</p>
       </div>
       <label for="eval-model" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #A1A1AA">Showing
         <select id="eval-model" class="select" style="min-width: 220px"><option>All models</option><option>qwen3:8b (local)</option><option>gemini-3.1-flash-lite (API)</option></select>
       </label>
     </header>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 24px 16px">
-      <section class="section" aria-labelledby="quality-title" style="gap: 12px">
-        <div class="sh" style="min-height: 0">
-          <h2 id="quality-title">Quality</h2>
-          <p>Are the cover notes true to your resume?</p>
-        </div>
-        <div class="panel" style="flex: 1; gap: 18px">
-          <div class="stats">
-            <div class="stat">
-              <span style="font-size: 13px; color: #A1A1AA">Evidence pass rate</span>
-              <span class="num" style="font-size: 28px; font-weight: 650; letter-spacing: -0.025em; line-height: 1">64%</span>
-              <span style="font-size: 12px; color: #86EFAC">Up 11 points on the 10 runs before</span>
-            </div>
-            <div class="stat">
-              <span style="font-size: 13px; color: #A1A1AA">Cover notes approved</span>
-              <span class="num" style="font-size: 28px; font-weight: 650; letter-spacing: -0.025em; line-height: 1">97%</span>
-              <span style="font-size: 12px; color: #9C9CA8">32 of 33 decisions</span>
-            </div>
+    <section class="panel split" aria-label="Key numbers">
+      <div class="pane" style="flex: 2 1 360px; gap: 16px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600">Is it right?</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px 40px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; color: #A1A1AA">Evidence pass rate</span>
+            <span class="num" style="font-size: 36px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">64%</span>
+            <span style="font-size: 12px; color: #86EFAC">Up 11 points on the 10 runs before</span>
           </div>
-          <div class="ph">
-            <h3 id="pass-title">Evidence pass rate, run by run</h3>
-            <span style="margin-left: auto; display: flex; gap: 14px; font-size: 12px; color: #D4D4D8">
-              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; border-radius: 2px; background: #60A5FA"></span>qwen3:8b</span>
-              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FB923C"></span>gemini</span>
-            </span>
-          </div>
-          <svg viewBox="0 0 560 215" role="img" aria-label="Evidence pass rate per run: qwen3:8b between 21% and 100%, latest 60%; gemini-3.1-flash-lite one run at 97%" style="width: 100%; height: auto; overflow: visible">
-            <defs>
-              <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60A5FA" stop-opacity="0.30"></stop><stop offset="1" stop-color="#60A5FA" stop-opacity="0"></stop></linearGradient>
-            </defs>
-            <g stroke="rgba(255,255,255,0.06)"><line x1="40" x2="540" y1="20" y2="20"></line><line x1="40" x2="540" y1="60" y2="60"></line><line x1="40" x2="540" y1="100" y2="100"></line><line x1="40" x2="540" y1="140" y2="140"></line></g>
-            <line x1="40" x2="540" y1="180" y2="180" stroke="rgba(255,255,255,0.16)"></line>
-            <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif" text-anchor="end"><text x="30" y="24">100%</text><text x="30" y="104">50%</text><text x="30" y="184">0%</text></g>
-            <path d="{{passArea}}" fill="url(#area)"></path>
-            <path d="{{passLine}}" fill="none" stroke="#60A5FA" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
-            <circle cx="{{lastX}}" cy="{{lastY}}" r="4.5" fill="#60A5FA" stroke="#0B0F17" stroke-width="2"></circle>
-            <text x="{{lastLabelX}}" y="{{lastLabelY}}" text-anchor="end" fill="#BFDBFE" font-size="12" font-weight="600" font-family="Inter, sans-serif">60%</text>
-            <circle cx="540" cy="24.8" r="6" fill="#FB923C" stroke="#0B0F17" stroke-width="2"></circle>
-            <text x="530" y="14" text-anchor="end" fill="#FED7AA" font-size="12" font-weight="600" font-family="Inter, sans-serif">97%</text>
-            <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif"><text x="40" y="204">Nov 2</text><text x="540" y="204" text-anchor="end">Latest</text></g>
-          </svg>
-        </div>
-      </section>
-
-      <section class="section" aria-labelledby="cost-title" style="gap: 12px">
-        <div class="sh" style="min-height: 0">
-          <h2 id="cost-title">Cost and speed</h2>
-          <p>What each full run takes.</p>
-        </div>
-        <div class="panel" style="flex: 1; gap: 18px">
-          <div class="stats">
-            <div class="stat">
-              <span style="font-size: 13px; color: #A1A1AA">Agent time</span>
-              <span class="num" style="font-size: 28px; font-weight: 650; letter-spacing: -0.025em; line-height: 1">4m 22s</span>
-              <span style="font-size: 12px; color: #9C9CA8">Median of 31 runs</span>
-            </div>
-            <div class="stat">
-              <span style="font-size: 13px; color: #A1A1AA">Tokens</span>
-              <span class="num" style="font-size: 28px; font-weight: 650; letter-spacing: -0.025em; line-height: 1">38.9k</span>
-              <span style="font-size: 12px; color: #9C9CA8">30.4k in · 8.5k out</span>
-            </div>
-            <div class="stat">
-              <span style="font-size: 13px; color: #A1A1AA">Cost</span>
-              <span style="font-size: 28px; font-weight: 650; letter-spacing: -0.025em; line-height: 1; color: #A1A1AA">Not set</span>
-              <a href="#" style="font-size: 12px">Add a model's price</a>
-            </div>
-          </div>
-          <div class="ph">
-            <h3 id="tok-title">Tokens, run by run</h3>
-            <span style="margin-left: auto; display: flex; gap: 14px; font-size: 12px; color: #D4D4D8">
-              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #60A5FA"></span>qwen3:8b</span>
-              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #FB923C"></span>gemini</span>
-            </span>
-          </div>
-          <div style="display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; height: 200px">
-            <div class="num" style="display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: #9C9CA8; text-align: right; padding-bottom: 22px; margin-top: -6px">
-              <span>80k</span><span>60k</span><span>40k</span><span>20k</span><span>0</span>
-            </div>
-            <div style="display: flex; flex-direction: column; min-width: 0">
-              <div style="flex: 1; display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.16); background: repeating-linear-gradient(to top, rgba(255,255,255,0.05) 0 1px, transparent 1px 25%)">
-                <sc-for list="{{tokenBars}}" as="b" hint-placeholder-count="31">
-                  <span class="bar" title="{{b.tip}}" style="{{b.style}}"></span>
-                </sc-for>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9C9CA8; padding-top: 8px"><span>Oct 28</span><span>Latest</span></div>
-            </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; color: #A1A1AA">Cover notes approved</span>
+            <span class="num" style="font-size: 36px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">97%</span>
+            <span style="font-size: 12px; color: #9C9CA8">32 of 33 decisions</span>
           </div>
         </div>
-      </section>
-    </div>
-
-    <section class="section" aria-labelledby="models-title" style="gap: 12px">
-      <div class="sh" style="min-height: 0">
-        <h2 id="models-title">Models compared</h2>
-        <p>Every model you've run. Cost uses the price you enter for a model in Settings.</p>
       </div>
-      <div class="panel" style="padding: 8px 22px 12px">
+      <div class="pane" style="flex: 3 1 420px; gap: 16px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #D4D4D8">What does a run cost?</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px 40px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; color: #A1A1AA">Agent time</span>
+            <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.5">4m 22s</span>
+            <span style="font-size: 12px; color: #9C9CA8">Median of 31 runs</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; color: #A1A1AA">Tokens</span>
+            <span class="num" style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.5">38.9k</span>
+            <span style="font-size: 12px; color: #9C9CA8">30.4k in · 8.5k out</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; color: #A1A1AA">Money</span>
+            <span style="font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.5; color: #A1A1AA">Not set</span>
+            <a href="#" style="font-size: 12px">Add a model's price</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <details class="acc" open="open">
+      <summary>
+        <h2>Evidence pass rate, run by run</h2>
+        <span class="acc-digest">Latest: qwen3:8b 60%, gemini 97%</span>
+        <svg class="acc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </summary>
+      <div class="acc-body">
+        <span style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #D4D4D8">
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; border-radius: 2px; background: #60A5FA"></span>qwen3:8b</span>
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #FB923C"></span>gemini-3.1-flash-lite</span>
+          <span style="color: #9C9CA8">Share of resume claims the judge accepted, oldest run on the left.</span>
+        </span>
+        <svg viewBox="0 0 1000 215" role="img" aria-label="Evidence pass rate per run: qwen3:8b between 21% and 100%, latest 60%; gemini-3.1-flash-lite one run at 97%" style="width: 100%; height: auto; overflow: visible">
+          <defs>
+            <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#60A5FA" stop-opacity="0.30"></stop><stop offset="1" stop-color="#60A5FA" stop-opacity="0"></stop></linearGradient>
+          </defs>
+          <g stroke="rgba(255,255,255,0.07)"><line x1="40" x2="980" y1="20" y2="20"></line><line x1="40" x2="980" y1="60" y2="60"></line><line x1="40" x2="980" y1="100" y2="100"></line><line x1="40" x2="980" y1="140" y2="140"></line></g>
+          <line x1="40" x2="980" y1="180" y2="180" stroke="rgba(255,255,255,0.18)"></line>
+          <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif" text-anchor="end"><text x="30" y="24">100%</text><text x="30" y="104">50%</text><text x="30" y="184">0%</text></g>
+          <path d="{{passArea}}" fill="url(#area)"></path>
+          <path d="{{passLine}}" fill="none" stroke="#60A5FA" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></path>
+          <circle cx="{{lastX}}" cy="{{lastY}}" r="4.5" fill="#60A5FA" stroke="#0B0F17" stroke-width="2"></circle>
+          <text x="{{lastLabelX}}" y="{{lastLabelY}}" text-anchor="end" fill="#BFDBFE" font-size="12" font-weight="600" font-family="Inter, sans-serif">60%</text>
+          <circle cx="980" cy="24.8" r="6" fill="#FB923C" stroke="#0B0F17" stroke-width="2"></circle>
+          <text x="968" y="14" text-anchor="end" fill="#FED7AA" font-size="12" font-weight="600" font-family="Inter, sans-serif">97%</text>
+          <g fill="#9C9CA8" font-size="11" font-family="Inter, sans-serif"><text x="40" y="204">Nov 2</text><text x="980" y="204" text-anchor="end">Latest</text></g>
+        </svg>
+      </div>
+    </details>
+
+    <details class="acc" open="open">
+      <summary>
+        <h2>Models compared</h2>
+        <span class="acc-digest">qwen3:8b 37 runs · gemini 1 run</span>
+        <svg class="acc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </summary>
+      <div class="acc-body" style="padding: 4px 22px 12px">
         <div style="overflow-x: auto">
           <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px">
             <thead>
               <tr style="color: #9C9CA8; font-size: 12px; text-align: right">
                 <th scope="col" style="text-align: left; font-weight: 500">Model</th>
-                <th scope="col" style="font-weight: 500">Runs</th>
                 <th scope="col" style="font-weight: 500">Evidence pass</th>
                 <th scope="col" style="font-weight: 500">Notes approved</th>
                 <th scope="col" style="font-weight: 500">Agent time</th>
                 <th scope="col" style="font-weight: 500">Tokens per run</th>
                 <th scope="col" style="font-weight: 500">Cost per run</th>
+                <th scope="col" style="font-weight: 500">Runs</th>
               </tr>
             </thead>
             <tbody class="num" style="text-align: right">
@@ -254,26 +257,56 @@ tbody tr:hover{background:rgba(255,255,255,0.03)}
                 <th scope="row" style="text-align: left; font-weight: 600">
                   <span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #60A5FA"></span><span style="display: flex; flex-direction: column; gap: 2px">qwen3:8b<span style="font-size: 12px; font-weight: 400; color: #9C9CA8">Local, on this PC</span></span></span>
                 </th>
-                <td>37</td><td>63%</td><td>97% <span style="color: #9C9CA8">(32 of 33)</span></td><td>4m 26s</td><td>38.2k</td>
+                <td>63%</td><td>97% <span style="color: #9C9CA8">(32 of 33)</span></td><td>4m 26s</td><td>38.2k</td>
                 <td><span class="pill" style="height: 22px; color: #BBF7D0; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.28)">Free</span></td>
+                <td>37</td>
               </tr>
               <tr>
                 <th scope="row" style="text-align: left; font-weight: 600">
                   <span style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #FB923C"></span><span style="display: flex; flex-direction: column; gap: 2px">gemini-3.1-flash-lite<span style="font-size: 12px; font-weight: 400; color: #9C9CA8">API, with your key</span></span></span>
                 </th>
-                <td>1</td><td>97%</td><td>100% <span style="color: #9C9CA8">(1 of 1)</span></td><td>3m 01s</td><td>68.1k</td>
+                <td>97%</td><td>100% <span style="color: #9C9CA8">(1 of 1)</span></td><td>3m 01s</td><td>68.1k</td>
                 <td><a href="#" style="font-size: 13px">Add a price</a></td>
+                <td>1</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-    </section>
+    </details>
+
+    <details class="acc">
+      <summary>
+        <h2>Tokens, run by run</h2>
+        <span class="acc-digest num">17k to 68k a run</span>
+        <svg class="acc-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </summary>
+      <div class="acc-body">
+        <span style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #D4D4D8">
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #60A5FA"></span>qwen3:8b</span>
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #FB923C"></span>gemini-3.1-flash-lite</span>
+          <span style="color: #9C9CA8">Each full run, oldest on the left. Hover a bar for its count.</span>
+        </span>
+        <div style="display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; height: 200px">
+          <div class="num" style="display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: #9C9CA8; text-align: right; padding-bottom: 22px; margin-top: -6px">
+            <span>80k</span><span>60k</span><span>40k</span><span>20k</span><span>0</span>
+          </div>
+          <div style="display: flex; flex-direction: column; min-width: 0">
+            <div style="flex: 1; display: flex; align-items: flex-end; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.18); background: repeating-linear-gradient(to top, rgba(255,255,255,0.06) 0 1px, transparent 1px 25%)">
+              <sc-for list="{{tokenBars}}" as="b" hint-placeholder-count="31">
+                <span class="bar" title="{{b.tip}}" style="{{b.style}}"></span>
+              </sc-for>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9C9CA8; padding-top: 8px"><span>Oct 28</span><span>Latest</span></div>
+          </div>
+        </div>
+      </div>
+    </details>
   </main>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
 class Component extends DCLogic {
   renderVals() {
     var tokens = [19, 17, 21, 26, 23, 26, 25, 24, 21, 18, 18, 18, 26, 31, 37, 33, 41, 60, 55, 51, 47, 50, 45, 45, 42, 39, 47, 47, 42, 59, 68];
@@ -285,7 +318,7 @@ class Component extends DCLogic {
       };
     });
     var rates = [0.5, 0.8, 0.66, 0.58, 0.21, 0.35, 0.82, 0.92, 0.79, 0.8, 0.75, 0.66, 0.6, 0.71, 0.64, 0.76, 1.0, 0.75, 0.76, 0.93, 0.53, 0.6];
-    var pts = rates.map(function (r, i) { return [40 + i * (480 / (rates.length - 1)), 180 - r * 160]; });
+    var pts = rates.map(function (r, i) { return [40 + i * (900 / (rates.length - 1)), 180 - r * 160]; });
     var line = "M" + pts.map(function (p) { return p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" L");
     var last = pts[pts.length - 1];
     var area = line + " L" + last[0].toFixed(1) + " 180 L40 180 Z";
