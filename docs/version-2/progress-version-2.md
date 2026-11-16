@@ -2621,3 +2621,28 @@ Per case: Nexora 100 → 99, Cranes 38 → 43, Tag-N-Trac 22 → 23, project-onl
 Tag-N-Trac (scores 23 / 18 / 27). No change beyond run-to-run noise: step 2's
 code wasn't touched, and the `langchain-core` 1.7 → 1.8 update didn't move it.
 You checked the app by hand: "its good".
+
+## v1.2.0 prepared (16 Nov 2026, D3) — not released yet
+- **Version 1.2.0** in `job_agent/__init__.py`; README has the 1.2.0 notes.
+- pytest: 464 passed. Fit evals as the 3 Nov baseline (above). You checked
+  the app by hand ("its good").
+- `build_installer.py --test-install`: self-test PASS and window test 1.2.0
+  for the build and its installed copy; it uninstalled clean.
+- **`check_real_update.py`, all four checks pass:**
+  - an installed **1.1.1** updates to 1.2.0 (it quits by itself), and an
+    installed **1.0.3** too (Setup has to end it, as expected);
+  - 1.2.0 updates to the next version; Setup run by hand while it sits in
+    the tray; a failed update reopens the old one and says so.
+  - **Fixed in the test itself:** `new_from_old` expected Setup to *end* the
+    old JobLens, true only before 1.1.1. From 1.1.1 it quits by itself, so
+    the check now expects that. Your JobLens (1.1.1) was not touched.
+- **The release build:** self-test PASS, window test 1.2.0. Nothing private
+  in the app folder (no settings file, tracker or resumes; none of the 2
+  saved keys and no personal name inside any file).
+  - `JobLens-Setup-1.2.0.exe`: 68 MB (1.1.1: 59 MB; +9 MB for OpenAI and
+    Gemini), SHA-256 `fc35552b…9d06`
+  - portable zip: 83 MB, SHA-256 `05952214…49ec`, the same 1,096 files
+- **Still open before publishing:**
+  - OpenAI / Gemini with a real key (16c): waiting for your key.
+  - A real Windows shutdown with JobLens open: needs you (it shuts the PC down).
+  - The tray's "Did you apply?" notification, seen live.

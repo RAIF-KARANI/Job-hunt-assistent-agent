@@ -281,7 +281,12 @@ def check_updated(case, old_pid, log_says):
 
 
 def new_from_old(case):
-    check_updated(case, case.click_install(), "it was ended.")
+    # Up to 1.1.0 JobLens hid to the tray instead of quitting, so Setup had to end
+    # it. Since 1.1.1 it quits by itself (D42). Found 16 Nov: --old 1.1.1 failed
+    # here only because this line expected the old behaviour.
+    old = tuple(int(n) for n in case.client_version.split("."))
+    check_updated(case, case.click_install(),
+                  "it was ended." if old < (1, 1, 1) else "JobLens is closed (check result 0).")
     # A stale dist/JobLens shows up here: the page reports the frozen app's version.
     check(page("window.pywebview.api.update_status().then(s => s.current)") == __version__, f"the app says {__version__}")
 

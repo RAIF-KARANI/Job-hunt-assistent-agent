@@ -43,6 +43,12 @@ use the achievements that fit the job, Stop and Quit free the GPU at once,
 and JobLens cleans up after itself.
 **v1.1.1** fixes in-app updates, which failed while JobLens stayed in the
 tray: every older version can update to it from Settings → Updates.
+**v1.2.0** (Phase 16) comes from daily use: it keeps each **job
+description** (postings disappear once applications close), adds an
+**interview prep sheet**, a **follow-up email** written when you ask,
+**"Did you apply?"** a day after a cover note, **OpenAI and Gemini**
+beside Claude, more **Evals charts** with the cost of cloud runs, and
+web searches that find something for small companies too.
 
 ---
 
@@ -134,16 +140,31 @@ with five screens:
   evidence, the cover note (**save as Word, PDF or text**), the company
   research, and **your notes**: interview date, contact, notes. **Export
   CSV** for Excel. **Delete** a job you no longer want (after a confirmation).
+  Newest changes come first.
+- **Job description:** the posting's full text is saved with each job, so
+  it's still there after the company takes it down.
+- **Interview prep:** everything saved about a job on one page (what they
+  ask for, what your resume proves in its own words, your gaps, the
+  company, your cover note and notes, the job description). Save as PDF,
+  Word or text. Built without an AI call, so nothing in it is invented.
+- **Did you apply?** a day after a cover note is approved: Yes / Not yet /
+  Ignore (no answer for a day counts as Ignore). The Dashboard lists your
+  best fits that are ready to apply.
 - **Follow-up reminders:** a job in Applied or Interviewing with no news for
   a week gets a "Follow up?" badge, and one tray notification a day.
+  **Draft a follow-up email** when you ask (never by itself): the facts
+  are filled in by code, the AI adds one sentence from your cover note.
+  JobLens sends nothing.
 - **Resume prompt:** how many of the job's required skills your resume
   visibly shows (keyword coverage), and a prompt to paste into another AI
   with your resume. It's built without an AI call, and it tells the AI never
   to invent experience.
-- **Evals:** how well the agent did: evidence pass rate, your ratings,
-  safety-net checks, time and tokens per step, models compared, recent
-  runs (with Langfuse / LangSmith trace links when tracing is on).
-- **Settings:** model (a list of your installed models), API key, resumes,
+- **Evals:** how well the agent did: evidence pass rate (also per model),
+  your ratings, safety-net checks, tokens and time per run and per step,
+  models compared, recent runs (with Langfuse / LangSmith trace links when
+  tracing is on), and the **cost** of cloud runs from the prices you enter.
+- **Settings:** where the AI runs (this PC, **Claude, OpenAI or Gemini**,
+  each with its own API key), the model, its price, resumes,
   theme, 3D level, short or detailed fit answer, reminders, the
   quick-analyze shortcut, updates.
 
