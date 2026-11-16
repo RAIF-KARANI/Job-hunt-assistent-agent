@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JobLens Analyze</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0F17}
+a{color:#93C5FD}a:hover{color:#BFDBFE}
+.nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:#A1A1AA;text-decoration:none;font-size:14px;font-weight:500;transition:background .2s,color .2s}
+.nav:hover{background:rgba(255,255,255,0.06);color:#FFFFFF}
+.btn-ghost{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#E4E4E7;border-radius:12px;height:40px;padding:0 16px;font:600 14px Inter,sans-serif;cursor:pointer}
+.btn-ghost:hover{background:rgba(255,255,255,0.10)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.55)}50%{box-shadow:0 0 0 8px rgba(167,139,250,0)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="min-height: 1240px; display: flex; flex-wrap: wrap; font-family: Inter, system-ui, sans-serif; color: #FFFFFF; background: radial-gradient(1200px 700px at 85% -10%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(900px 600px at 10% 110%, rgba(167,139,250,0.14), transparent 60%), linear-gradient(135deg, #0B0F17 0%, #131A29 45%, #1A1F2E 70%, #2A2230 100%)">
+
+  <nav aria-label="Main" style="flex: 1 1 232px; max-width: 256px; box-sizing: border-box; padding: 28px 18px; display: flex; flex-direction: column; gap: 28px; background: rgba(11,15,23,0.72); border-right: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px)">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+      <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #60A5FA, #A78BFA); display: grid; place-items: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B0F17" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.2-4.2"></path></svg>
+      </div>
+      <span style="font-size: 19px; font-weight: 700; letter-spacing: -0.02em">JobLens</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <a class="nav" href="Main.dc.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg>
+        Dashboard
+      </a>
+      <a class="nav" href="Analyze.dc.html" aria-current="page" style="background: linear-gradient(90deg, rgba(96,165,250,0.95), rgba(167,139,250,0.85)); color: #0B0F17; font-weight: 600">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 4l14 8-14 8z"></path></svg>
+        Analyze
+        <span style="margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #0B0F17"></span>
+      </a>
+      <a class="nav" href="Tracker.dc.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="11" rx="1.5"></rect><rect x="17" y="4" width="4" height="7" rx="1.5"></rect></svg>
+        Tracker
+      </a>
+      <a class="nav" href="Evals.dc.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 20h18"></path><path d="M6 16l4-5 3 3 5-7"></path></svg>
+        Evals
+      </a>
+    </div>
+    <div style="margin-top: auto; padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10)">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A1A1AA"><span style="width: 8px; height: 8px; border-radius: 50%; background: #A78BFA; animation: pulse 1.6s infinite"></span>Working · step 2 of 5</div>
+      <div style="margin-top: 6px; font-size: 14px; font-weight: 600">qwen3:8b</div>
+    </div>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 36px 40px; display: flex; flex-direction: column; gap: 22px">
+    <header>
+      <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.02em">Analyze a job</h1>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #A1A1AA">Paste a link. JobLens reads it, compares your resumes, researches the company and drafts a cover note for you to approve.</p>
+    </header>
+
+    <form style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 18px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px)">
+      <label style="flex: 999 1 420px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A1A1AA">Job posting link
+        <input type="url" value="https://job-boards.greenhouse.io/gitlab/jobs/8771512002" style="height: 46px; border-radius: 12px; background: #131A29; color: #FFFFFF; border: 1px solid rgba(147,197,253,0.45); padding: 0 14px; font: 14px Inter, sans-serif; outline: none; box-shadow: 0 0 0 4px rgba(96,165,250,0.12)">
+      </label>
+      <button type="button" style="height: 46px; padding: 0 22px; border-radius: 12px; border: 0; cursor: default; font: 600 14px Inter, sans-serif; color: #0B0F17; background: linear-gradient(135deg, #A78BFA, #F472B6)">Running · 2m 41s</button>
+      <button type="button" class="btn-ghost" style="height: 46px">Stop</button>
+      <div style="flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: #A1A1AA">
+        Comparing:
+        <span style="color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 999px; padding: 4px 10px">AI Engineer</span>
+        <span style="color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 999px; padding: 4px 10px">Software Engineer</span>
+        <span style="color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 999px; padding: 4px 10px">AI Engineer (UAE)</span>
+        <span style="color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 999px; padding: 4px 10px">Software Engineer (UAE)</span>
+      </div>
+    </form>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+      <section aria-labelledby="steps-title" style="flex: 1 1 360px; min-width: 0; padding: 22px; border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); display: flex; flex-direction: column; gap: 6px">
+        <h2 id="steps-title" style="margin: 0 0 10px; font-size: 18px; font-weight: 600">What the agent is doing</h2>
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+          <div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 10px 0">
+            <span style="{{s.badge}}">{{s.num}}</span>
+            <span style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 15px; font-weight: 600; color: {{s.ink}}">{{s.title}}</span>
+              <span style="font-size: 13px; color: #A1A1AA; line-height: 1.45">{{s.detail}}</span>
+              <sc-if value="{{s.running}}" hint-placeholder-val="{{false}}">
+                <span style="display: block; height: 6px; margin-top: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden"><span style="display: block; height: 100%; width: 58%; border-radius: 999px; background: linear-gradient(90deg, #60A5FA, #A78BFA, #F472B6)"></span></span>
+              </sc-if>
+            </span>
+            <span style="font-size: 13px; color: #D4D4D8; font-variant-numeric: tabular-nums">{{s.time}}</span>
+          </div>
+        </sc-for>
+      </section>
+
+      <section aria-labelledby="log-title" style="flex: 1 1 420px; min-width: 0; padding: 22px; border-radius: 22px; background: rgba(7,11,21,0.72); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(18px); display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <h2 id="log-title" style="margin: 0 auto 0 0; font-size: 18px; font-weight: 600">Live log</h2>
+          <span style="font-size: 12px; color: #A1A1AA">Langfuse off · run log on</span>
+        </div>
+        <pre style="margin: 0; flex: 1; min-height: 300px; white-space: pre-wrap; font: 12px/1.7 'JetBrains Mono', ui-monospace, monospace; color: #A1A1AA">[1/5] Reading the job posting...
+  -&gt; Backend Engineer, GitLab Orbit @ GitLab (Remote, Canada)
+<span style="color: #D4D4D8">[2/5] Comparing your resumes with the job...</span>
+  - scoring 'AI Engineer'...  second look at 2 requirement(s)
+    [judge] 1 claim(s) not actually proven by their quote
+  - scoring 'Software Engineer'...
+<span style="color: #C4B5FD">  50/100  AI Engineer   [Required: 3 of 7 shown, 4 partly]</span>
+<span style="color: #C4B5FD">  44/100  AI Engineer (UAE)</span>
+  - scoring 'Software Engineer (UAE)'...</pre>
+      </section>
+    </div>
+
+    <section aria-labelledby="draft-title" style="padding: 22px; border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px">
+        <h2 id="draft-title" style="margin: 0 auto 0 0; font-size: 18px; font-weight: 600">Cover note draft</h2>
+        <span style="font-size: 13px; color: #A1A1AA">Appears here after step 5 — you approve, rewrite or reject it.</span>
+      </div>
+      <div style="padding: 18px; border-radius: 16px; border: 1px dashed rgba(255,255,255,0.14); color: #8E8E99; font-size: 14px; line-height: 1.7">Dear Hiring Team,<br>…the draft streams in here…</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <button type="button" disabled="disabled" style="height: 42px; padding: 0 18px; border-radius: 12px; border: 0; font: 600 14px Inter, sans-serif; color: #0B0F17; background: linear-gradient(135deg, #60A5FA, #A78BFA); opacity: 0.45">Approve and save</button>
+        <button type="button" class="btn-ghost" disabled="disabled" style="opacity: 0.45">Rewrite with my notes</button>
+        <button type="button" class="btn-ghost" disabled="disabled" style="opacity: 0.45; border: 0; background: transparent">Reject</button>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var rows = [
+      ["1", "Read the posting", "Backend Engineer, GitLab Orbit @ GitLab", "38 s", "done"],
+      ["2", "Compare with your resumes", "3 of 4 resumes scored · best so far: AI Engineer, fit 50", "2m 03s", "running"],
+      ["3", "Research the company", "Web and news search, only results about GitLab", "usually 56 s", "next"],
+      ["4", "Save to tracker", "With the job description, for later", "", "next"],
+      ["5", "Cover note", "Drafted from the achievements that fit this job", "usually 13 s", "next"]
+    ];
+    var steps = rows.map(function (r) {
+      var done = r[4] === "done";
+      var running = r[4] === "running";
+      var bg = done ? "linear-gradient(135deg,#60A5FA,#A78BFA)" : running ? "linear-gradient(135deg,#A78BFA,#F472B6)" : "rgba(255,255,255,0.06)";
+      return {
+        num: done ? "✓" : r[0],
+        title: r[1], detail: r[2], time: r[3], running: running,
+        ink: r[4] === "next" ? "#A1A1AA" : "#FFFFFF",
+        badge: "width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:14px;font-weight:700;color:" + (r[4] === "next" ? "#A1A1AA" : "#0B0F17") + ";background:" + bg + ";border:1px solid " + (r[4] === "next" ? "rgba(255,255,255,0.10)" : "transparent") + (running ? ";animation:pulse 1.6s infinite" : "")
+      };
+    });
+    return { steps: steps };
+  }
+}
+</script>
+</body>
+</html>

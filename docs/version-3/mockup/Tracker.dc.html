@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JobLens Tracker</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0F17}
+a{color:#93C5FD}a:hover{color:#BFDBFE}
+.nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:#A1A1AA;text-decoration:none;font-size:14px;font-weight:500;transition:background .2s,color .2s}
+.nav:hover{background:rgba(255,255,255,0.06);color:#FFFFFF}
+.card{transition:transform .2s ease,border-color .2s ease}
+.card:hover{transform:translateY(-2px);border-color:rgba(147,197,253,0.45)}
+.btn-ghost{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#E4E4E7;border-radius:12px;height:38px;padding:0 14px;font:600 13px Inter,sans-serif;cursor:pointer}
+.btn-ghost:hover{background:rgba(255,255,255,0.10)}
+</style>
+</helmet>
+<div style="min-height: 1240px; display: flex; flex-wrap: wrap; font-family: Inter, system-ui, sans-serif; color: #FFFFFF; background: radial-gradient(1200px 700px at 85% -10%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(900px 600px at 10% 110%, rgba(167,139,250,0.14), transparent 60%), linear-gradient(135deg, #0B0F17 0%, #131A29 45%, #1A1F2E 70%, #2A2230 100%)">
+
+  <nav aria-label="Main" style="flex: 1 1 232px; max-width: 256px; box-sizing: border-box; padding: 28px 18px; display: flex; flex-direction: column; gap: 28px; background: rgba(11,15,23,0.72); border-right: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px)">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+      <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #60A5FA, #A78BFA); display: grid; place-items: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B0F17" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.2-4.2"></path></svg>
+      </div>
+      <span style="font-size: 19px; font-weight: 700; letter-spacing: -0.02em">JobLens</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <a class="nav" href="Main.dc.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg>
+        Dashboard
+      </a>
+      <a class="nav" href="Analyze.dc.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 4l14 8-14 8z"></path></svg>
+        Analyze
+      </a>
+      <a class="nav" href="Tracker.dc.html" aria-current="page" style="background: linear-gradient(90deg, rgba(96,165,250,0.95), rgba(167,139,250,0.85)); color: #0B0F17; font-weight: 600">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="11" rx="1.5"></rect><rect x="17" y="4" width="4" height="7" rx="1.5"></rect></svg>
+        Tracker
+        <span style="margin-left: auto; font-size: 11px; font-weight: 700; color: #FB923C; background: #0B0F17; border-radius: 999px; padding: 2px 7px">2</span>
+      </a>
+      <a class="nav" href="Evals.dc.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 20h18"></path><path d="M6 16l4-5 3 3 5-7"></path></svg>
+        Evals
+      </a>
+    </div>
+    <div style="margin-top: auto; padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10)">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A1A1AA"><span style="width: 8px; height: 8px; border-radius: 50%; background: #4ADE80; box-shadow: 0 0 10px #4ADE80"></span>Model ready</div>
+      <div style="margin-top: 6px; font-size: 14px; font-weight: 600">qwen3:8b</div>
+    </div>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 36px 40px; display: flex; flex-direction: column; gap: 20px">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+      <div style="margin-right: auto">
+        <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.02em">Tracker</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #A1A1AA">Drag a card to change its status. Newest changes first.</p>
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: #A1A1AA">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search jobs</span>
+        <input type="search" placeholder="Company, role, contact or notes" style="border: 0; outline: 0; background: transparent; color: #FFFFFF; font: 13px Inter, sans-serif; width: 210px">
+      </label>
+      <div role="group" aria-label="View" style="display: flex; padding: 4px; gap: 4px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10)">
+        <button type="button" class="btn-ghost" style="height: 32px; border: 0; background: rgba(96,165,250,0.18); color: #BFDBFE">Board</button>
+        <button type="button" class="btn-ghost" style="height: 32px; border: 0; background: transparent">List</button>
+      </div>
+      <button type="button" class="btn-ghost">Export CSV</button>
+    </header>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px">
+      <div role="status" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(251,146,60,0.16), rgba(250,204,21,0.08)); border: 1px solid rgba(251,146,60,0.35)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FDBA74" stroke-width="2" aria-hidden="true"><path d="M4 4h16v12H5.2L4 17.2z"></path><path d="M8 9h8M8 12h5"></path></svg>
+        <span style="flex: 1; font-size: 13px; color: #FED7AA">1 application has had no news for a while. A short follow-up email can help.</span>
+        <button type="button" class="btn-ghost" style="height: 32px">Show it</button>
+      </div>
+      <div role="status" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(244,114,182,0.16), rgba(167,139,250,0.10)); border: 1px solid rgba(244,114,182,0.35)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"></path></svg>
+        <span style="flex: 1; font-size: 13px; color: #FBCFE8">11 cover notes have been ready for a day. Did you apply?</span>
+        <button type="button" class="btn-ghost" style="height: 32px">Show them</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <div style="flex: 999 1 640px; min-width: 0; overflow-x: auto">
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(178px, 1fr)); gap: 14px; min-width: 1120px">
+          <sc-for list="{{columns}}" as="col" hint-placeholder-count="6">
+            <section aria-label="{{col.name}}" style="border-radius: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 12px; display: flex; flex-direction: column; gap: 10px">
+              <header style="display: flex; align-items: center; gap: 8px; padding: 2px 4px 4px">
+                <span style="{{col.dot}}"></span>
+                <h2 style="margin: 0 auto 0 0; font-size: 13px; font-weight: 600">{{col.name}}</h2>
+                <span style="font-size: 12px; color: #A1A1AA; font-variant-numeric: tabular-nums">{{col.count}}</span>
+              </header>
+              <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="3">
+                <button type="button" class="card" style="{{c.style}}">
+                  <span style="display: flex; gap: 8px; align-items: flex-start">
+                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left">
+                      <span style="font-size: 11px; color: #A1A1AA">{{c.company}}</span>
+                      <span style="font-size: 13px; font-weight: 600; line-height: 1.3; color: #FFFFFF">{{c.title}}</span>
+                    </span>
+                    <span style="{{c.chip}}">{{c.fit}}</span>
+                  </span>
+                  <span style="display: block; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden"><span style="{{c.bar}}"></span></span>
+                  <span style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: #A1A1AA">
+                    {{c.note}}
+                    <sc-if value="{{c.ask}}" hint-placeholder-val="{{false}}"><span style="font-weight: 600; color: #FBCFE8; background: rgba(244,114,182,0.16); border: 1px solid rgba(244,114,182,0.35); border-radius: 999px; padding: 1px 7px">Applied?</span></sc-if>
+                    <sc-if value="{{c.follow}}" hint-placeholder-val="{{false}}"><span style="font-weight: 600; color: #FED7AA; background: rgba(251,146,60,0.16); border: 1px solid rgba(251,146,60,0.35); border-radius: 999px; padding: 1px 7px">Follow up?</span></sc-if>
+                  </span>
+                </button>
+              </sc-for>
+              <sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 18px 8px; text-align: center; font-size: 12px; color: #8E8E99; border: 1px dashed rgba(255,255,255,0.10); border-radius: 12px">No jobs</p></sc-if>
+            </section>
+          </sc-for>
+        </div>
+      </div>
+
+      <aside aria-labelledby="details-title" style="flex: 1 1 340px; max-width: 420px; box-sizing: border-box; border-radius: 22px; background: rgba(30,36,51,0.78); border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(24px); box-shadow: 0 24px 64px rgba(0,0,0,0.45); padding: 22px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <div style="margin-right: auto">
+            <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #A1A1AA">GITLAB</div>
+            <h2 id="details-title" style="margin: 4px 0 0; font-size: 19px; font-weight: 600">Backend Engineer, GitLab Orbit</h2>
+            <div style="margin-top: 4px; font-size: 12px; color: #A1A1AA">Remote, Canada · Mid level · Full-time</div>
+          </div>
+          <button type="button" aria-label="Close" style="width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #E4E4E7; cursor: pointer">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
+          </button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #A1A1AA">Status
+            <select style="height: 38px; border-radius: 11px; background: #131A29; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.14); padding: 0 10px; font: 13px Inter, sans-serif"><option>Cover note ready</option><option>Applied</option><option>Interviewing</option></select>
+          </label>
+          <span style="align-self: flex-end; display: flex; gap: 8px; flex-wrap: wrap">
+            <button type="button" class="btn-ghost">Open posting</button>
+            <button type="button" class="btn-ghost" style="background: linear-gradient(135deg, #A78BFA, #F472B6); color: #0B0F17; border: 0">Interview prep</button>
+          </span>
+        </div>
+        <section aria-labelledby="ask-title" style="padding: 14px; border-radius: 16px; background: linear-gradient(135deg, rgba(244,114,182,0.14), rgba(167,139,250,0.10)); border: 1px solid rgba(244,114,182,0.32)">
+          <h3 id="ask-title" style="margin: 0; font-size: 15px; font-weight: 600; color: #FBCFE8">Did you apply?</h3>
+          <p style="margin: 6px 0 12px; font-size: 13px; line-height: 1.5; color: #E4E4E7">The cover note has been ready for a day, and postings close. With no answer for a day, JobLens stops asking.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <button type="button" class="btn-ghost" style="background: #FFFFFF; color: #0B0F17; border: 0">Yes, I applied</button>
+            <button type="button" class="btn-ghost">Not yet</button>
+            <button type="button" class="btn-ghost" style="border: 0; background: transparent">Ignore</button>
+          </div>
+        </section>
+        <section aria-labelledby="fit-title" style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: baseline; gap: 10px">
+            <h3 id="fit-title" style="margin: 0 auto 0 0; font-size: 15px; font-weight: 600">Fit</h3>
+            <span style="font-size: 12px; color: #A1A1AA">AI Engineer resume · 50</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; font-size: 12px">
+            <div><div style="color: #93C5FD; font-weight: 600; margin-bottom: 6px">Proven</div><div style="color: #D4D4D8; line-height: 1.6">Python, Git<br>REST APIs<br>Testing</div></div>
+            <div><div style="color: #F9A8D4; font-weight: 600; margin-bottom: 6px">Gaps</div><div style="color: #D4D4D8; line-height: 1.6">Ruby on Rails<br>Graph databases<br>Rust</div></div>
+          </div>
+        </section>
+        <section aria-labelledby="desc-title" style="padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08)">
+          <h3 id="desc-title" style="margin: 0; font-size: 15px; font-weight: 600">Job description</h3>
+          <p style="margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: #A1A1AA">Saved on this PC when the job was analyzed, so it's still here after the posting is taken down. <a href="#">Show</a></p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var spec = [
+      ["Researched", "#A1A1AA", [["GE HealthCare", "Graduate Engineer Trainee", 20, "Analyzed 13 days ago"], ["Intel", "AI Software Development Engineer", 33, "Analyzed 2 weeks ago"]]],
+      ["Cover note ready", "#60A5FA", [["GitLab", "Backend Engineer, GitLab Orbit", 50, "Note approved today", 1, 0, 1], ["Jobgether", "Full Stack Software Engineer", 78, "Note approved today"], ["Barclays", "Software Engineer", 53, "3 days ago", 1], ["Nike", "Software Engineer I, ITC", 89, "4 days ago", 1]]],
+      ["Applied", "#A78BFA", [["AiPrise", "Software Engineer I", 69, "Applied 2 days ago"], ["ServiceNow", "Software Engineer", 85, "Applied 2 days ago"], ["HTC Global", "Java Full stack Developer", 83, "Applied 2 weeks ago", 0, 1], ["Amazon", "Software Dev Engineer I FTC", 100, "Applied 3 days ago"]]],
+      ["Interviewing", "#FB923C", []],
+      ["Offer", "#FACC15", []],
+      ["Rejected", "#F472B6", [["Secfix", "Backend Engineer – GTM", 73, "Updated 2 days ago"], ["Oracle", "Application Software Engineer 1", 78, "Updated 4 days ago"]]]
+    ];
+    var counts = { "Researched": 3, "Cover note ready": 13, "Applied": 14, "Interviewing": 0, "Offer": 0, "Rejected": 3 };
+    function band(fit) { return fit >= 75 ? "#60A5FA" : fit >= 55 ? "#A78BFA" : "#F472B6"; }
+    var columns = spec.map(function (col) {
+      return {
+        name: col[0],
+        count: counts[col[0]],
+        empty: col[2].length === 0,
+        dot: "width:9px;height:9px;border-radius:50%;background:" + col[1] + ";box-shadow:0 0 8px " + col[1],
+        cards: col[2].map(function (c) {
+          var open = c[6] === 1;
+          return {
+            company: c[0], title: c[1], fit: c[2], note: c[3], ask: c[4] === 1, follow: c[5] === 1,
+            style: "display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;border-radius:14px;cursor:pointer;font:inherit;color:inherit;text-align:left;background:" + (open ? "rgba(96,165,250,0.12)" : "rgba(30,36,51,0.85)") + ";border:1px solid " + (open ? "rgba(147,197,253,0.6)" : "rgba(255,255,255,0.08)"),
+            chip: "min-width:32px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#0B0F17;background:" + band(c[2]),
+            bar: "display:block;height:100%;border-radius:999px;width:" + c[2] + "%;background:linear-gradient(90deg," + band(c[2]) + ",#A78BFA)"
+          };
+        })
+      };
+    });
+    return { columns: columns };
+  }
+}
+</script>
+</body>
+</html>

@@ -2,7 +2,9 @@
 
 Continues [version 2](../version-2/plan-version-2.md) (phases 12–16, released
 up to **v1.2.0**). Decisions behind this plan are in
-[decisions-version-3.md](decisions-version-3.md).
+[decisions-version-3.md](decisions-version-3.md). What was done:
+[progress-version-3.md](progress-version-3.md). Picking the work up again:
+[handoff-version-3.md](handoff-version-3.md).
 
 Legend: ✅ done · 🚧 in progress · ⏳ not started · 🟡 waiting for a decision
 
@@ -32,6 +34,7 @@ Inter, gradient KPI cards, 16–24 px radii.
 **Mockup:** https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 —
 Dashboard, Tracker, Analyze, Evals, linked like the app (click the sidebar).
 Made from JobLens's real screens and numbers; nothing in the app changed.
+Source kept in [mockup/](mockup/).
 
 ### How the reference is adapted (see E3)
 | In the reference | In JobLens |

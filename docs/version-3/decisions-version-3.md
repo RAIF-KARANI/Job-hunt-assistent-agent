@@ -21,6 +21,7 @@ learning project.
 Your reference image and prompt set the direction: dark glassmorphism,
 Inter, your five accents, gradient KPI cards. A mockup of four screens came
 first, before any app code: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4
+(source in [mockup/](mockup/)).
 - **Adapted where the reference doesn't fit JobLens:** no accounts, so no
   avatar or profile (the model status instead); the bell is the reminders.
 - **Changed for readability:** dark text on the bright gradient cards
@@ -44,4 +45,5 @@ A new look in every screen is a big change for the people using it.
 - Your review of the mockup (E3).
 - Light theme (E4).
 - "Clearly better" for Rust (E2).
+- The release number (E5).
 - Your feature list (Phase 19).

@@ -1,0 +1,206 @@
+# Handoff — JobLens version 3
+
+Last updated **16 Nov 2026**. Read this first when picking the work up
+again (a new chat, a new machine, or after a break). It says where
+everything is, what is decided, what is waiting, and the rules the work
+follows.
+
+Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
+[decisions-version-3.md](decisions-version-3.md) · Progress:
+[progress-version-3.md](progress-version-3.md)
+
+---
+
+## 1. Where things stand (one minute)
+
+| | |
+|---|---|
+| Released | **v1.2.0** (16 Nov 2026): https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.2.0 |
+| `main` | `d90dea6`, the same as `version-2` (v1.2.0) |
+| Working branch | **`version-3`**, pushed; ahead of `main` by the v3 docs only. No app code changed yet |
+| Open pull requests | none |
+| Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
+| Next step | **17a: your review of the mockup.** Nothing in Phase 17 starts before you say go |
+| Waiting on you | the 5 questions in section 3 |
+
+## 2. Version 3 in short
+
+| # | Phase | Status |
+|---|---|---|
+| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🟡 mockup ready, waiting for your OK |
+| 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
+| 19 | **Your features**: your list | 🟡 waiting for the list |
+| 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
+
+**One release at the end** (E1), proposed as **v2.0.0** (E5). The agent stays
+Python whatever happens in Phase 18; only the window/tray/updater shell
+could move to Rust.
+
+## 3. Open questions (answer these to unblock work)
+
+1. **The mockup (E3, step 17a):** what to keep, change, drop.
+2. **Light theme (E4):** drop it / a light glass version (more work in
+   every step) / keep light in today's old style.
+3. **"Clearly better" for Rust (E2):** proposed: installer ≥ 25 % smaller
+   **or** window ready ≥ 30 % sooner, and nothing worse (tray, shortcut,
+   updates, memory).
+4. **Release number (E5):** 2.0.0?
+5. **Your feature list (Phase 19).**
+
+When one is answered: record it in `decisions-version-3.md` (✅ + date),
+update the plan's status column, commit and push.
+
+## 4. The mockup
+
+- **Link:** https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 (private to
+  you until you share it from its Share menu).
+- **Source in the repo:** [mockup/](mockup/): `canvas.json` and four
+  artboards (`Main.dc.html` = Dashboard, `Tracker.dc.html`,
+  `Analyze.dc.html`, `Evals.dc.html`), each 1440 × 1240, linked by the
+  sidebar.
+- **To change it:** edit the files in `mockup/` and republish to the same
+  link (Artifact tool, `url` = the link above; read it first). Don't
+  publish from a Windows 8.3 short temp path; that was refused.
+- **What each screen shows**
+  - *Dashboard:* gradient KPI cards, the job galaxy restyled, the selected
+    job, Ready to apply, time per step, status bars, safety nets.
+  - *Tracker:* the board, the two reminders, a job's details with
+    "Did you apply?".
+  - *Analyze:* a run in the middle: steps, live log, the cover note slot.
+  - *Evals:* tiles, gradient token bars, pass rate by model, the models
+    table with cost.
+
+### How your reference was adapted (E3)
+| Reference | JobLens | Why |
+|---|---|---|
+| Profile + avatar | Model status (ready / working, which model) | no accounts in JobLens |
+| Notifications bell | Reminders (follow-ups, "Did you apply?") | that's what JobLens notifies about |
+| Top-bar search | Search jobs | today only the Tracker has it |
+| White text on gradient cards | Dark text (switch `kpiInk` in the mockup shows white) | white is ~2.5:1 there |
+| Muted `#71717A` | `#8E8E99` | 3.2:1 → 4.8:1 on a card |
+| Tailwind, Recharts, Framer Motion | not added | your prompt: no unnecessary dependencies; the app works offline |
+
+## 5. The design reference (kept here because `referance/` is not committed)
+
+`referance/` stays untracked: it also holds the Gemini key screenshot.
+The two design files in it are `Glassmorphism Dashboard Design Kit.png`
+and `ui promt`. Their tokens:
+
+| Group | Values |
+|---|---|
+| Accents | blue `#60A5FA`, purple `#A78BFA`, pink `#F472B6`, orange `#FB923C`, yellow `#FACC15` |
+| Backgrounds | main `#0B0F17`, secondary `#131A29`, card `#1E2433`, elevated `#2A3245` |
+| Text | primary `#FFFFFF`, secondary `#A1A1AA`, muted `#71717A` (→ `#8E8E99` in JobLens) |
+| Border | `rgba(255,255,255,0.10)` |
+| Glass | `rgba(255,255,255,0.06)`, `backdrop-filter: blur(12–24px)` |
+| Gradients | blue→purple, purple→pink, pink→orange, orange→yellow; only for KPI cards, active nav, main buttons, chart accents, selected items |
+| Type | Inter. Page 28–32 bold, section 20–24 semibold, card 16–18 medium, body 14–16, labels 12–14, KPI 18–24 semibold |
+| Radii | cards 16–24, buttons 12–16, inputs 10–12 |
+| Motion | subtle: page transitions, card hover lift, nav active state, chart entrance, modal/dropdown |
+
+The prompt's own last rule: plan first, then change the app step by step
+with every feature still working. That is how Phase 17 is laid out.
+
+## 6. Notes for each phase
+
+### Phase 17: new look
+- **Frontend:** React 19 + TypeScript + Vite in `frontend/`, built into
+  `desktop_web/web/` (`cd frontend; npm ci; npm run build`).
+- **Styles are plain CSS** in `frontend/src/styles/`: `tokens.css`
+  (colours, dark + light), `base.css`, `controls.css`, `app.css`, then one
+  file per screen (`dashboard`, `tracker`, `analyze`, `evals`,
+  `settings`, `quick`, `resume`). Step 17b starts in `tokens.css`.
+- **Fonts today:** IBM Plex Sans, IBM Plex Mono, Sora via `@fontsource`
+  (bundled, offline). Inter would come the same way
+  (`@fontsource/inter`): a font package, not a UI library.
+- **Screens by folder:** `app/` (shell, `Sidebar.tsx`, `routes.ts`,
+  `useTheme.ts`), `dashboard/` (+ `galaxy/`: `Galaxy3D.tsx`, `scene.ts`,
+  `OrbitMap.tsx`, `declutter.ts`, `layout.ts`), `tracker/`, `analyze/`,
+  `evals/` (`RunCharts.tsx`, `PassRateChart.tsx`), `settings/`, `setup/`,
+  `quick/`, `resume/`.
+- **Chart colours** today are `--series-1..4` in `tokens.css`, checked
+  with the palette validator (dark `#3987e5 #d95926 #199e70 #c98500`,
+  light `#2a78d6 #eb6834 #1baf7a #eda100`). New chart colours from the
+  accents must pass the validator again (step 17g).
+- **The galaxy stays** (your choice): restyle the 3D view, the flat map,
+  and the "3D off" fallback together.
+- **Look at it in the real window**, not only the browser:
+  `.venv\Scripts\python -m desktop_web` (or `--dev` with `npm run dev`).
+  Check sizes from 720 px wide to a 2560 px monitor.
+- `frontend/.impeccable/` is a design tool's working folder: leave it
+  untracked.
+
+### Phase 18: Rust spike
+- **Numbers to beat (v1.2.0):** installer 68 MB, app folder 161 MB,
+  window ready in about 3 s.
+- Only the shell could move: window, tray (`desktop_web/tray.py`),
+  global shortcut, updater, the JS ↔ Python bridge
+  (`desktop_web/bridge.py`). The agent (`job_agent/`) stays Python and
+  ships beside it (a sidecar).
+- If adopted, the real update test (`scripts/check_real_update.py`) must
+  be redone for the new shell before the release.
+
+### Phase 20: interview practice
+- 1.2.0's prep sheet (`job_agent/interview_prep.py`) is code only, no
+  model, on purpose (D43). Practice questions + answers would use the
+  model and must be checked against the resume the way the cover note
+  is: no claim the resume doesn't show. Measure on a few real jobs.
+
+## 7. Working rules (yours, carried over from version 2)
+
+- **Before each commit:** `git status`; check `version-3` is up to date
+  with `main` (`git fetch`, compare); check for open PRs (`gh pr list`).
+- **Commit and push on `version-3` after each step.**
+- **No CI** (Actions minutes are used up): run the checks locally.
+  Before merging: pytest, look at the app, `scripts/build_installer.py
+  --test-install`, `scripts/check_real_update.py`.
+- **At the very end:** merge into `main`, then one release.
+- **Docs in the same turn as the decision:** plans, decisions (E1, E2…),
+  progress, all in `docs/version-3/*-version-3.md`.
+
+## 8. Handle with care
+
+- **The Gemini API key** is only in `.env` (git-ignored). Never print it,
+  copy it into docs, or commit it. Same for any other key.
+- **`referance/`** stays untracked (key screenshot).
+- **Your installed JobLens** (`%LOCALAPPDATA%\JobLens`) is hands-off:
+  copy data from it, never change it.
+- **Resumes in `data/`** include two friends' resumes; the test tracker
+  has 22 jobs copied from your installed app. Keep them out of
+  screenshots and anything shared.
+- Use **`.venv\Scripts\python`**, not the system Python.
+
+## 9. Commands
+
+```powershell
+.venv\Scripts\python -m pytest                       # 471 tests
+cd frontend; npm ci; npm run build; cd ..            # UI -> desktop_web\web\
+.venv\Scripts\python -m desktop_web                  # run from source (repo data\ and .env)
+.venv\Scripts\python -m desktop_web --dev            # with `npm run dev`: live React edits
+.venv\Scripts\python scripts\build_installer.py --test-install
+.venv\Scripts\python scripts\check_real_update.py    # before a release
+.venv\Scripts\python -m evals.fit run --runs 3       # fit evals (baseline: 83 % accuracy)
+```
+
+## 10. Things learned the hard way
+
+- **Two apps, one port:** the installed app and the source app both used
+  42001, so the source window showed the old UI. `free_page_port()` now
+  takes the first free port.
+- **Fit evals and low memory:** a full eval run was killed once; run it in
+  halves and merge the results.
+- **Gemini free tier:** a small daily limit per model (gemini-3.5-flash
+  ran out after about 20 calls; 3.1-flash-lite finished a 38-call job).
+  A run that hits the limit stops as `out_of_quota` and can be continued.
+- **Running resumes in parallel was slower** (16h dropped): one after
+  another is fastest on this machine.
+- **Shell quoting on Windows:** for edits with tricky quoting, write a
+  small script to the scratchpad and run it, instead of inline commands.
+
+## 11. Left for you (you said you'd do these)
+
+- Update your own JobLens to 1.2.0 (the app offers it).
+- The Windows shutdown test with 1.2.0 installed.
+- Try OpenAI with your key.
+- Gemini: choose a Flash Lite model, or turn on billing.
+- Answer section 3, and write your Phase 19 feature list.
