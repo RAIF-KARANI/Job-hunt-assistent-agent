@@ -9,236 +9,313 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap" rel="stylesheet">
 <style>
 body{margin:0;background:#0B0F17}
-a{color:#93C5FD}a:hover{color:#BFDBFE}
-.nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:#A1A1AA;text-decoration:none;font-size:14px;font-weight:500;transition:background .2s,color .2s}
-.nav:hover{background:rgba(255,255,255,0.06);color:#FFFFFF}
-.lift{transition:transform .2s ease,box-shadow .2s ease}
-.lift:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,0.45)}
-.chip-btn{border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:#E4E4E7;border-radius:10px;padding:8px 14px;font:500 13px Inter,sans-serif;cursor:pointer}
-.chip-btn:hover{background:rgba(255,255,255,0.08)}
+a{color:#93C5FD;text-underline-offset:3px}a:hover{color:#BFDBFE}
+::selection{background:rgba(167,139,250,0.40);color:#FFFFFF}
+:focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.18) transparent}
+.app{min-height:100vh;display:flex;flex-wrap:wrap;font-family:Inter,"Segoe UI",system-ui,sans-serif;font-optical-sizing:auto;color:#FFFFFF;background:radial-gradient(900px 520px at 92% -10%,rgba(251,146,60,0.17),transparent 62%),radial-gradient(760px 520px at 38% -12%,rgba(96,165,250,0.10),transparent 60%),radial-gradient(900px 700px at -5% 105%,rgba(167,139,250,0.13),transparent 60%),#0B0F17}
+.side{flex:1 1 220px;max-width:244px;box-sizing:border-box;padding:24px 14px;display:flex;flex-direction:column;gap:26px;background:rgba(8,11,18,0.55);border-right:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(24px)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 10px;font-size:17px;font-weight:650;letter-spacing:-0.02em}
+.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 6px 14px -6px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.35)}
+.navlist{display:flex;flex-direction:column;gap:2px}
+.nav{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:12px;color:#A1A1AA;text-decoration:none;font-size:14px;font-weight:500;transition:background .2s ease,color .2s ease}
+.nav svg{flex:none}
+.nav:hover{background:rgba(255,255,255,0.05);color:#FFFFFF}
+.nav[aria-current="page"]{color:#FFFFFF;background:linear-gradient(90deg,rgba(96,165,250,0.30),rgba(167,139,250,0.12));box-shadow:inset 0 0 0 1px rgba(147,197,253,0.22)}
+.nav[aria-current="page"] svg{color:#93C5FD}
+.count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;display:grid;place-items:center;font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;color:#0B0F17;background:#FB923C}
+.model{margin-top:auto;padding:14px;border-radius:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:4px}
+.main{flex:999 1 560px;min-width:0;box-sizing:border-box;padding:28px clamp(16px,3vw,36px) 48px;display:flex;flex-direction:column;gap:24px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.title{margin:0;font-size:30px;font-weight:700;letter-spacing:-0.025em;line-height:1.15;text-wrap:balance}
+.sub{margin:6px 0 0;font-size:14px;line-height:1.5;color:#A1A1AA;max-width:62ch}
+.panel{box-sizing:border-box;min-width:0;padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.09);box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 24px 48px -28px rgba(0,0,0,0.75);backdrop-filter:blur(20px) saturate(140%);display:flex;flex-direction:column;gap:18px}
+.ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.ph h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em}
+.ph p{flex-basis:100%;margin:0;font-size:13px;line-height:1.5;color:#A1A1AA}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#F4F4F5;font:600 13px/1 Inter,"Segoe UI",system-ui,sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease}
+.btn:hover{background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.18);color:#FFFFFF}
+.btn-primary{border:0;color:#0B0F17;background:linear-gradient(135deg,#60A5FA,#A78BFA);box-shadow:0 8px 20px -10px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.35)}
+.btn-primary:hover{color:#0B0F17;background:linear-gradient(135deg,#7AB6FB,#B69DFB);transform:translateY(-1px)}
+.btn-quiet{border-color:transparent;background:transparent;color:#C4B5FD}
+.icon-btn{width:40px;padding:0;position:relative}
+.field{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;box-sizing:border-box;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);color:#8E8E99;transition:border-color .2s ease,box-shadow .2s ease}
+.field:focus-within{border-color:rgba(147,197,253,0.55);box-shadow:0 0 0 4px rgba(96,165,250,0.14)}
+.field input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#FFFFFF;font:14px Inter,"Segoe UI",system-ui,sans-serif}
+.field input::placeholder{color:#8E8E99}
+.seg{display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09)}
+.seg button{height:30px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:#A1A1AA;font:500 13px Inter,"Segoe UI",system-ui,sans-serif;cursor:pointer}
+.seg button:hover{color:#FFFFFF}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,0.10);color:#FFFFFF;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;box-sizing:border-box;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);color:#E4E4E7}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+.num{font-variant-numeric:tabular-nums}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.kpi{position:relative;overflow:hidden;box-sizing:border-box;padding:20px;border-radius:20px;display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.14);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 22px 44px -26px rgba(0,0,0,0.85);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26),0 28px 50px -24px rgba(0,0,0,0.9)}
+.k-label{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:550}
+.k-ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,0.16);flex:none}
+.k-val{font-size:28px;font-weight:650;letter-spacing:-0.025em;line-height:1;font-variant-numeric:tabular-nums}
+.k-note{font-size:12.5px;line-height:1.4;opacity:0.86}
+.row{display:grid;align-items:center;gap:14px;padding:12px 4px;border-top:1px solid rgba(255,255,255,0.07);color:inherit;text-decoration:none;border-radius:10px;transition:background .2s ease}
+a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
+.node{position:absolute;border-radius:50%;padding:0;cursor:pointer;transition:transform .2s ease}
+.node:hover{transform:scale(1.35)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </helmet>
-<div style="min-height: 1240px; display: flex; flex-wrap: wrap; font-family: Inter, system-ui, sans-serif; color: #FFFFFF; background: radial-gradient(1200px 700px at 85% -10%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(900px 600px at 10% 110%, rgba(167,139,250,0.14), transparent 60%), linear-gradient(135deg, #0B0F17 0%, #131A29 45%, #1A1F2E 70%, #2A2230 100%)">
+<div class="app">
 
-  <nav aria-label="Main" style="flex: 1 1 232px; max-width: 256px; box-sizing: border-box; padding: 28px 18px; display: flex; flex-direction: column; gap: 28px; background: rgba(11,15,23,0.72); border-right: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px)">
-    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
-      <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #60A5FA, #A78BFA); display: grid; place-items: center">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B0F17" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.2-4.2"></path></svg>
-      </div>
-      <span style="font-size: 19px; font-weight: 700; letter-spacing: -0.02em">JobLens</span>
+  <nav class="side" aria-label="Main">
+    <div class="brand">
+      <span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B0F17" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"></circle><circle cx="12" cy="12" r="2.6"></circle><path d="M12 4.5v2.4"></path></svg></span>
+      JobLens
     </div>
-    <div style="display: flex; flex-direction: column; gap: 4px">
-      <a class="nav" href="Main.dc.html" aria-current="page" style="background: linear-gradient(90deg, rgba(96,165,250,0.95), rgba(167,139,250,0.85)); color: #0B0F17; font-weight: 600">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"></rect><rect x="14" y="3" width="7" height="7" rx="2"></rect><rect x="3" y="14" width="7" height="7" rx="2"></rect><rect x="14" y="14" width="7" height="7" rx="2"></rect></svg>
+    <div class="navlist">
+      <a class="nav" href="Main.dc.html" aria-current="page">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2"></rect></svg>
         Dashboard
       </a>
       <a class="nav" href="Analyze.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 4l14 8-14 8z"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5l12 7.5-12 7.5z"></path></svg>
         Analyze
       </a>
       <a class="nav" href="Tracker.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"></rect><rect x="10" y="4" width="5" height="11" rx="1.5"></rect><rect x="17" y="4" width="4" height="7" rx="1.5"></rect></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"></rect><rect x="10.5" y="4" width="5" height="11" rx="1.5"></rect><rect x="17.5" y="4" width="3.5" height="7" rx="1.5"></rect></svg>
         Tracker
-        <span style="margin-left: auto; font-size: 11px; font-weight: 600; color: #0B0F17; background: #FB923C; border-radius: 999px; padding: 2px 7px">2</span>
+        <span class="count" aria-label="2 reminders">2</span>
       </a>
       <a class="nav" href="Evals.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 20h18"></path><path d="M6 16l4-5 3 3 5-7"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16"></path><path d="M6 15l4-5 3 3 5-6"></path></svg>
         Evals
       </a>
-      <a class="nav" href="Main.dc.html">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"></path></svg>
+      <a class="nav" href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
         Settings
       </a>
     </div>
-    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px">
-      <div style="padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10)">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A1A1AA">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background: #4ADE80; box-shadow: 0 0 10px #4ADE80"></span>
-          Model ready
-        </div>
-        <div style="margin-top: 6px; font-size: 14px; font-weight: 600">qwen3:8b</div>
-        <div style="margin-top: 2px; font-size: 12px; color: #A1A1AA">On this PC · free, private</div>
-      </div>
-      <div style="font-size: 11px; color: #8E8E99; padding: 0 6px">JobLens 2.0.0 · mockup</div>
+    <div class="model">
+      <span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A1A1AA"><span class="dot" style="background: #4ADE80; box-shadow: 0 0 0 3px rgba(74,222,128,0.18)"></span>Model ready</span>
+      <span style="font-size: 14px; font-weight: 600">qwen3:8b</span>
+      <span style="font-size: 12px; color: #8E8E99">On this PC · free and private</span>
     </div>
+    <span style="padding: 0 10px; font-size: 11px; color: #8E8E99">JobLens 2.0.0 · mockup</span>
   </nav>
 
-  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 36px 40px; display: flex; flex-direction: column; gap: 24px">
-    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+  <main class="main">
+    <header class="top">
       <div style="margin-right: auto">
-        <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.02em">Dashboard</h1>
-        <p style="margin: 4px 0 0; font-size: 14px; color: #A1A1AA">Every job you analyzed, and how well JobLens did.</p>
+        <h1 class="title">Dashboard</h1>
+        <p class="sub">Every job you analyzed, and how well JobLens did.</p>
       </div>
-      <div role="group" aria-label="Run numbers from" style="display: flex; padding: 4px; gap: 4px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10)">
-        <button type="button" class="chip-btn" style="border: 0; background: transparent">7 days</button>
-        <button type="button" class="chip-btn" style="border: 0; background: rgba(96,165,250,0.18); color: #BFDBFE">30 days</button>
-        <button type="button" class="chip-btn" style="border: 0; background: transparent">All</button>
+      <div class="seg" role="group" aria-label="Numbers from">
+        <button type="button" aria-pressed="false">7 days</button>
+        <button type="button" aria-pressed="true">30 days</button>
+        <button type="button" aria-pressed="false">All</button>
       </div>
-      <label style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: #A1A1AA; font-size: 13px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search jobs</span>
-        <input type="search" placeholder="Search jobs, companies, notes" style="border: 0; outline: 0; background: transparent; color: #FFFFFF; font: 13px Inter, sans-serif; width: 200px">
+      <label class="field" style="width: 240px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4-4"></path></svg>
+        <span class="vh">Search jobs</span>
+        <input type="search" id="dash-search" placeholder="Search jobs and companies">
       </label>
-      <button type="button" aria-label="Reminders: 1 follow-up, 1 Did you apply?" style="position: relative; width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: #E4E4E7; cursor: pointer; display: grid; place-items: center">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"></path></svg>
-        <span style="position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: #F472B6"></span>
+      <button type="button" class="btn icon-btn" aria-label="Reminders: 1 follow-up, 1 Did you apply?">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6.5 2.5 8 2.5 8h-17S6 15.5 6 9"></path><path d="M10.3 20.5a1.9 1.9 0 0 0 3.4 0"></path></svg>
+        <span style="position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: #F472B6; box-shadow: 0 0 0 2px #121725"></span>
       </button>
-      <a href="Analyze.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 12px; background: linear-gradient(135deg, #60A5FA, #A78BFA); color: #0B0F17; font-weight: 600; font-size: 14px; text-decoration: none; box-shadow: 0 8px 24px rgba(96,165,250,0.30)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      <a class="btn btn-primary" href="Analyze.dc.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
         New analysis
       </a>
     </header>
 
-    <section aria-label="Key numbers" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px">
-      <div class="lift" style="padding: 22px; border-radius: 20px; background: linear-gradient(135deg, #60A5FA, #A78BFA); color: {{kpiInk}}">
-        <div style="font-size: 13px; font-weight: 600; opacity: 0.85">Jobs tracked</div>
-        <div style="margin-top: 10px; font-size: 34px; font-weight: 700; letter-spacing: -0.02em">33</div>
-        <div style="margin-top: 6px; font-size: 13px; font-weight: 500; opacity: 0.85">14 applied · 0 interviewing</div>
+    <section aria-label="Key numbers" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 16px">
+      <div class="kpi" style="{{kpiA}}">
+        <span class="k-label"><span class="k-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12.5" rx="2.5"></rect><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"></path></svg></span>Jobs tracked</span>
+        <span class="k-val">33</span>
+        <span class="k-note">14 applied · 0 interviewing yet</span>
       </div>
-      <div class="lift" style="padding: 22px; border-radius: 20px; background: linear-gradient(135deg, #A78BFA, #F472B6); color: {{kpiInk}}">
-        <div style="font-size: 13px; font-weight: 600; opacity: 0.85">Median full run</div>
-        <div style="margin-top: 10px; font-size: 34px; font-weight: 700; letter-spacing: -0.02em">4m 26s</div>
-        <div style="margin-top: 6px; font-size: 13px; font-weight: 500; opacity: 0.85">37 runs · 659 AI calls</div>
+      <div class="kpi" style="{{kpiB}}">
+        <span class="k-label"><span class="k-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg></span>Median full run</span>
+        <span class="k-val">4m 26s</span>
+        <span class="k-note">37 runs · 659 AI calls</span>
       </div>
-      <div class="lift" style="padding: 22px; border-radius: 20px; background: linear-gradient(135deg, #F472B6, #FB923C); color: {{kpiInk}}">
-        <div style="font-size: 13px; font-weight: 600; opacity: 0.85">Evidence verified</div>
-        <div style="margin-top: 10px; font-size: 34px; font-weight: 700; letter-spacing: -0.02em">63%</div>
-        <div style="margin-top: 6px; font-size: 13px; font-weight: 500; opacity: 0.85">the judge rejected 121 claims</div>
+      <div class="kpi" style="{{kpiC}}">
+        <span class="k-label"><span class="k-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.4c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6.1z"></path><path d="M9 12l2 2 4-4"></path></svg></span>Evidence verified</span>
+        <span class="k-val">63%</span>
+        <span class="k-note">The judge rejected 121 claims</span>
       </div>
-      <div class="lift" style="padding: 22px; border-radius: 20px; background: linear-gradient(135deg, #FB923C, #FACC15); color: {{kpiInk}}">
-        <div style="font-size: 13px; font-weight: 600; opacity: 0.85">Cover notes approved</div>
-        <div style="margin-top: 10px; font-size: 34px; font-weight: 700; letter-spacing: -0.02em">32</div>
-        <div style="margin-top: 6px; font-size: 13px; font-weight: 500; opacity: 0.85">97% of decided · 1 rejected</div>
+      <div class="kpi" style="{{kpiD}}">
+        <span class="k-label"><span class="k-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3.5H7A2.5 2.5 0 0 0 4.5 6v12A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V9z"></path><path d="M9 14l2 2 4-4"></path></svg></span>Cover notes approved</span>
+        <span class="k-val">32</span>
+        <span class="k-note">97% of your decisions · 1 rejected</span>
       </div>
     </section>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px">
-      <section aria-labelledby="galaxy-title" class="lift" style="grid-column: span 2; min-width: 0; border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); padding: 22px; display: flex; flex-direction: column; gap: 14px">
-        <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px">
-          <h2 id="galaxy-title" style="margin: 0; font-size: 18px; font-weight: 600">Job galaxy</h2>
-          <span style="font-size: 13px; color: #A1A1AA; margin-right: auto">Closer to the center = better fit. Pick a job.</span>
-          <span style="display: flex; gap: 14px; font-size: 12px; color: #D4D4D8">
-            <span style="display: flex; align-items: center; gap: 6px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #60A5FA"></i>75+</span>
-            <span style="display: flex; align-items: center; gap: 6px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #A78BFA"></i>55–74</span>
-            <span style="display: flex; align-items: center; gap: 6px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #F472B6"></i>below 55</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+      <section class="panel" aria-labelledby="galaxy-title" style="flex: 2 1 560px; gap: 14px">
+        <div class="ph">
+          <h2 id="galaxy-title">Job galaxy</h2>
+          <span style="display: flex; flex-wrap: wrap; gap: 14px; margin-left: auto; font-size: 12px; color: #D4D4D8">
+            <span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 9px; height: 9px; background: #93C5FD"></span>Fit 75+</span>
+            <span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 9px; height: 9px; background: #6F8BC4"></span>55 to 74</span>
+            <span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 9px; height: 9px; background: #4E5970"></span>Below 55</span>
           </span>
+          <div class="seg" role="group" aria-label="Galaxy view">
+            <button type="button" aria-pressed="false">3D</button>
+            <button type="button" aria-pressed="true">Map</button>
+          </div>
+          <p>Each dot is a job. The closer to the center, the better your best resume fits it.</p>
         </div>
-        <div style="position: relative; height: 400px; border-radius: 16px; overflow: hidden; background: radial-gradient(closest-side at 50% 52%, rgba(96,165,250,0.22), rgba(167,139,250,0.10) 45%, rgba(11,15,23,0) 75%), #0E1320">
-          <div aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; margin: -180px 0 0 -180px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.12)"></div>
-          <div aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 236px; height: 236px; margin: -118px 0 0 -118px; border-radius: 50%; border: 1px solid rgba(167,139,250,0.22)"></div>
-          <div aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 1px solid rgba(96,165,250,0.30)"></div>
-          <div style="position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #0B0F17; background: radial-gradient(circle at 35% 30%, #FFFFFF, #93C5FD 45%, #A78BFA); box-shadow: 0 0 40px rgba(147,197,253,0.65)">You</div>
-          <sc-for list="{{nodes}}" as="n" hint-placeholder-count="20">
-            <button type="button" aria-label="{{n.label}}" style="{{n.style}}"></button>
+        <div style="position: relative; height: 390px; border-radius: 16px; overflow: hidden; background: radial-gradient(closest-side at 50% 50%, rgba(96,165,250,0.16), rgba(167,139,250,0.06) 55%, rgba(11,15,23,0) 100%), rgba(7,10,17,0.55); border: 1px solid rgba(255,255,255,0.05)">
+          <sc-for list="{{rings}}" as="rg" hint-placeholder-count="3">
+            <span aria-hidden="true" style="{{rg.style}}"></span>
+            <span aria-hidden="true" style="{{rg.labelStyle}}">{{rg.label}}</span>
           </sc-for>
-          <sc-for list="{{tags}}" as="t" hint-placeholder-count="6">
+          <span aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 650; color: #0B0F17; background: radial-gradient(circle at 35% 30%, #FFFFFF, #BFDBFE 40%, #A78BFA); box-shadow: 0 0 0 6px rgba(147,197,253,0.10), 0 0 36px rgba(147,197,253,0.55)">You</span>
+          <sc-for list="{{nodes}}" as="n" hint-placeholder-count="27">
+            <button type="button" class="node" aria-label="{{n.label}}" style="{{n.style}}"></button>
+          </sc-for>
+          <sc-for list="{{tags}}" as="t" hint-placeholder-count="7">
             <span aria-hidden="true" style="{{t.style}}">{{t.name}}</span>
           </sc-for>
         </div>
       </section>
 
-      <section aria-labelledby="sel-title" class="lift" style="min-width: 0; border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); padding: 22px; display: flex; flex-direction: column; gap: 14px">
-        <div style="display: flex; align-items: flex-start; gap: 12px">
-          <div style="margin-right: auto">
-            <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #A1A1AA">AMAZON</div>
-            <h2 id="sel-title" style="margin: 4px 0 0; font-size: 20px; font-weight: 600">Software Dev Engineer I FTC</h2>
-            <span style="display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600; color: #DDD6FE; background: rgba(167,139,250,0.18); border: 1px solid rgba(167,139,250,0.35); border-radius: 999px; padding: 3px 10px">Applied</span>
+      <section class="panel" aria-labelledby="sel-title" style="flex: 1 1 320px">
+        <div style="display: flex; align-items: flex-start; gap: 14px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 13px; color: #A1A1AA">Amazon</span>
+            <h2 id="sel-title" style="margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.25; text-wrap: balance">Software Dev Engineer I, FTC</h2>
+            <span style="display: flex; gap: 6px; margin-top: 4px"><span class="pill"><span class="dot" style="background: #A78BFA"></span>Applied 3 days ago</span></span>
           </div>
-          <div style="width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; font-size: 22px; font-weight: 700; color: #0B0F17; background: linear-gradient(135deg, #60A5FA, #A78BFA)">100</div>
-        </div>
-        <div>
-          <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: #A1A1AA">PROVEN BY YOUR RESUME</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px">
-            <span style="font-size: 12px; color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 10px; padding: 6px 10px">Software development experience</span>
-            <span style="font-size: 12px; color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 10px; padding: 6px 10px">A programming language</span>
-            <span style="font-size: 12px; color: #BFDBFE; background: rgba(96,165,250,0.14); border: 1px solid rgba(96,165,250,0.30); border-radius: 10px; padding: 6px 10px">CS degree or equivalent</span>
+          <div style="flex: none; width: 64px; height: 64px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #0B0F17; background: linear-gradient(135deg, #93C5FD, #60A5FA); box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 22px -12px rgba(0,0,0,0.8)">
+            <span class="num" style="font-size: 22px; font-weight: 700; line-height: 1">100</span>
+            <span style="font-size: 11px; font-weight: 600; margin-top: 2px">fit</span>
           </div>
         </div>
-        <div>
-          <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; color: #A1A1AA">GAPS</div>
-          <p style="margin: 8px 0 0; font-size: 14px; color: #D4D4D8">No gaps found.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <h3 style="margin: 0; font-size: 13px; font-weight: 600; color: #D4D4D8">Proven by your resume</h3>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+            <li style="display: flex; gap: 10px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Software development experience</li>
+            <li style="display: flex; gap: 10px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>At least one programming language</li>
+            <li style="display: flex; gap: 10px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>CS degree or equivalent</li>
+          </ul>
         </div>
-        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #A1A1AA">Amazon offers e-commerce, cloud computing (AWS), AI, devices and more. This 12-month contract is on the AmazonPay team.</p>
-        <div style="margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px">
-          <a href="Tracker.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 12px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.14); color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none">Open details</a>
-          <a href="Tracker.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 12px; color: #C4B5FD; font-size: 14px; font-weight: 600; text-decoration: none">Interview prep</a>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h3 style="margin: 0; font-size: 13px; font-weight: 600; color: #D4D4D8">Gaps</h3>
+          <p style="margin: 0; font-size: 14px; color: #A1A1AA">None found for this job.</p>
+        </div>
+        <p style="margin: 0; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 13px; line-height: 1.6; color: #A1A1AA">A 12-month contract on the AmazonPay team. Amazon works across e-commerce, AWS cloud, AI and devices.</p>
+        <div style="margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px">
+          <a class="btn" href="Tracker.dc.html">Open details</a>
+          <a class="btn btn-quiet" href="Tracker.dc.html">Interview prep</a>
         </div>
       </section>
     </div>
 
-    <section aria-labelledby="ready-title" style="border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); padding: 22px; display: flex; flex-direction: column; gap: 16px">
-      <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px">
-        <h2 id="ready-title" style="margin: 0; font-size: 18px; font-weight: 600">Ready to apply</h2>
-        <span style="font-size: 13px; color: #A1A1AA">5 strong fits have a cover note and no application yet. Oldest first.</span>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px">
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+      <section class="panel" aria-labelledby="ready-title" style="flex: 3 1 520px; gap: 8px">
+        <div class="ph" style="padding-bottom: 8px">
+          <h2 id="ready-title">Ready to apply</h2>
+          <span class="pill" style="color: #BFDBFE; background: rgba(96,165,250,0.12); border-color: rgba(96,165,250,0.28)">5 jobs</span>
+          <a href="Tracker.dc.html" style="margin-left: auto; font-size: 13px">Open the tracker</a>
+          <p>Strong fits with an approved cover note and no application yet. Oldest first.</p>
+        </div>
         <sc-for list="{{ready}}" as="r" hint-placeholder-count="5">
-          <a href="Tracker.dc.html" class="lift" style="display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #FFFFFF; text-decoration: none">
-            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+          <a class="row" href="Tracker.dc.html" style="grid-template-columns: 40px minmax(0, 1fr) auto 16px">
+            <span style="{{r.chip}}">{{r.fit}}</span>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
               <span style="font-size: 14px; font-weight: 600">{{r.company}}</span>
-              <span style="font-size: 12px; color: #A1A1AA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.title}}</span>
-              <span style="font-size: 12px; color: #8E8E99">{{r.when}}</span>
+              <span style="font-size: 13px; color: #A1A1AA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.title}}</span>
             </span>
-            <span style="min-width: 36px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #0B0F17; background: #60A5FA">{{r.fit}}</span>
+            <span style="font-size: 12px; color: #8E8E99; white-space: nowrap">{{r.when}}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E99" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
           </a>
         </sc-for>
-      </div>
-    </section>
+      </section>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px">
-      <section aria-labelledby="time-title" style="border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); padding: 22px; display: flex; flex-direction: column; gap: 14px">
-        <div>
-          <h2 id="time-title" style="margin: 0; font-size: 18px; font-weight: 600">Time per step</h2>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #A1A1AA">Average agent time; waiting for you isn't counted.</p>
+      <section class="panel" aria-labelledby="where-title" style="flex: 2 1 340px">
+        <div class="ph">
+          <h2 id="where-title">Where your applications are</h2>
+          <p>All 33 tracked jobs, by status.</p>
         </div>
-        <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
-          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 56px; align-items: center; gap: 12px; font-size: 13px">
-            <span style="color: #D4D4D8">{{s.name}}</span>
-            <span style="height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden"><span style="{{s.bar}}"></span></span>
-            <span style="text-align: right; font-variant-numeric: tabular-nums; color: #FFFFFF">{{s.time}}</span>
+        <div role="img" aria-label="Researched 3, cover note ready 13, applied 14, interviewing 0, offer 0, rejected 3" style="display: flex; gap: 3px; height: 14px">
+          <sc-for list="{{segments}}" as="sg" hint-placeholder-count="4">
+            <span style="{{sg.style}}"></span>
+          </sc-for>
+        </div>
+        <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px">
+          <sc-for list="{{statuses}}" as="st" hint-placeholder-count="6">
+            <li style="display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px">
+              <span class="dot" style="{{st.dot}}"></span>
+              <span style="flex: 1; color: {{st.ink}}">{{st.name}}</span>
+              <span class="num" style="font-weight: 600; color: {{st.ink}}">{{st.count}}</span>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 16px">
+      <section class="panel" aria-labelledby="time-title">
+        <div class="ph">
+          <h2 id="time-title">Time per step</h2>
+          <p>Comparing your resumes takes about two thirds of a run. Time spent waiting for you isn't counted.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+            <div style="display: grid; grid-template-columns: 128px minmax(0, 1fr) 56px; align-items: center; gap: 12px; font-size: 13px">
+              <span style="color: {{s.ink}}">{{s.name}}</span>
+              <span style="height: 8px; border-radius: 999px; background: rgba(255,255,255,0.05); overflow: hidden"><span style="{{s.bar}}"></span></span>
+              <span class="num" style="text-align: right; color: {{s.ink}}">{{s.time}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="nets-title" style="gap: 8px">
+        <div class="ph" style="padding-bottom: 8px">
+          <h2 id="nets-title">Safety nets caught</h2>
+          <a href="Evals.dc.html" style="margin-left: auto; font-size: 13px">All agent evals</a>
+          <p>Mistakes the model made that JobLens stopped before you saw them.</p>
+        </div>
+        <sc-for list="{{nets}}" as="nt" hint-placeholder-count="4">
+          <div class="row" style="grid-template-columns: minmax(0, 1fr) auto 64px">
+            <span style="font-size: 14px">{{nt.label}}</span>
+            <span class="num" style="font-size: 12px; color: #8E8E99">{{nt.rate}}</span>
+            <span class="num" style="text-align: right; font-size: 18px; font-weight: 650; color: {{nt.ink}}">{{nt.value}}</span>
           </div>
         </sc-for>
-      </section>
-      <section aria-labelledby="where-title" style="border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); padding: 22px; display: flex; flex-direction: column; gap: 14px">
-        <div>
-          <h2 id="where-title" style="margin: 0; font-size: 18px; font-weight: 600">Where your applications are</h2>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #A1A1AA">Every tracked job, by status.</p>
-        </div>
-        <div style="display: flex; align-items: flex-end; gap: 14px; height: 180px; padding: 0 4px">
-          <sc-for list="{{statuses}}" as="st" hint-placeholder-count="6">
-            <div style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px">
-              <span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums">{{st.count}}</span>
-              <span style="{{st.bar}}"></span>
-              <span style="font-size: 11px; color: #A1A1AA; text-align: center; line-height: 1.25">{{st.name}}</span>
-            </div>
-          </sc-for>
-        </div>
-      </section>
-      <section aria-labelledby="nets-title" style="border-radius: 22px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(18px); padding: 22px; display: flex; flex-direction: column; gap: 14px">
-        <div style="display: flex; align-items: baseline; gap: 8px">
-          <h2 id="nets-title" style="margin: 0 auto 0 0; font-size: 18px; font-weight: 600">Safety nets caught</h2>
-          <a href="Evals.dc.html" style="font-size: 13px">All agent evals</a>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
-          <sc-for list="{{nets}}" as="nt" hint-placeholder-count="4">
-            <div style="padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08)">
-              <div style="font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums">{{nt.value}}</div>
-              <div style="margin-top: 4px; font-size: 12px; line-height: 1.35; color: #D4D4D8">{{nt.label}}</div>
-              <div style="margin-top: 4px; font-size: 11px; color: #8E8E99">{{nt.rate}}</div>
-            </div>
-          </sc-for>
-        </div>
       </section>
     </div>
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"kpiInk":{"editor":"enum","options":["dark","white"],"default":"dark","section":"Look"},"$preview":{"width":1440,"height":1240}}'>
+<script type="text/x-dc" data-dc-script data-props='{"kpiFill":{"editor":"enum","options":["tinted","vivid"],"default":"tinted","section":"Look"},"$preview":{"width":1440,"height":1560}}'>
 class Component extends DCLogic {
   renderVals() {
+    var vivid = (this.props.kpiFill ?? "tinted") === "vivid";
+    var pairs = [["96,165,250", "167,139,250"], ["167,139,250", "244,114,182"], ["244,114,182", "251,146,60"], ["251,146,60", "250,204,21"]];
+    var kpi = pairs.map(function (p) {
+      return vivid
+        ? "color:#0B0F17;background:radial-gradient(120% 90% at 0% 0%,rgba(255,255,255,0.28),transparent 55%),linear-gradient(135deg,rgb(" + p[0] + "),rgb(" + p[1] + "))"
+        : "color:#FFFFFF;background:radial-gradient(120% 90% at 0% 0%,rgba(255,255,255,0.14),transparent 55%),linear-gradient(135deg,rgba(" + p[0] + ",0.55),rgba(" + p[1] + ",0.26)),rgba(11,15,23,0.5)";
+    });
+
+    function ring(fit) { return 44 + (100 - fit) * 2.0; }
+    var rings = [[75, "75"], [55, "55"], [25, "25"]].map(function (d) {
+      var r = ring(d[0]);
+      var w = r * 1.35 * 2, h = r * 0.82 * 2;
+      return {
+        label: "fit " + d[1],
+        style: "position:absolute;left:50%;top:50%;width:" + w.toFixed(0) + "px;height:" + h.toFixed(0) + "px;margin:-" + (h / 2).toFixed(0) + "px 0 0 -" + (w / 2).toFixed(0) + "px;border-radius:50%;border:1px " + (d[0] === 25 ? "dashed rgba(255,255,255,0.10)" : "solid rgba(147,197,253," + (d[0] === 75 ? "0.26" : "0.14") + ")"),
+        labelStyle: "position:absolute;left:50%;top:calc(50% - " + (h / 2).toFixed(0) + "px);transform:translate(-50%,-50%);padding:1px 6px;border-radius:6px;background:#0C111B;font-size:10px;font-weight:500;letter-spacing:0.02em;color:#8E8E99"
+      };
+    });
+
     var jobs = [
       ["Amazon", 100], ["Honeywell", 93], ["Nike", 89], ["ByteDance", 87], ["Heizen", 87], ["ServiceNow", 85],
       ["HTC Global", 83], ["American Express", 82], ["Brahman Studios", 80], ["Stripe", 80], ["Zycus", 79],
@@ -246,60 +323,71 @@ class Component extends DCLogic {
       ["ServiceNow", 63], ["AiPrise", 55], ["Barclays", 53], ["HackerRank", 51], ["GitLab", 50],
       ["Siemens", 40], ["Intellect", 34], ["Intel", 33], ["One75mb", 22], ["GE HealthCare", 20]
     ];
-    var labelled = { "Amazon": 1, "Nike": 1, "ByteDance": 1, "Stripe": 1, "Oracle": 1, "Barclays": 1, "GitLab": 1 };
-    var nodes = [];
-    var tags = [];
-    var seen = {};
+    var labelled = { "Amazon": 1, "Nike": 1, "ByteDance": 1, "Stripe": 1, "Oracle": 1, "GitLab": 1, "Intel": 1 };
+    var nodes = [], tags = [], seen = {};
     for (var i = 0; i < jobs.length; i++) {
-      var name = jobs[i][0];
-      var fit = jobs[i][1];
-      var r = 44 + (100 - fit) * 2.0;
-      var a = i * 2.39996;
-      var x = Math.cos(a) * r * 1.35;
-      var y = Math.sin(a) * r * 0.82;
-      var color = fit >= 75 ? "#60A5FA" : fit >= 55 ? "#A78BFA" : "#F472B6";
-      var size = Math.round(10 + fit / 9);
-      var selected = name === "Amazon";
+      var name = jobs[i][0], fit = jobs[i][1];
+      var r = ring(fit), a = i * 2.39996 + 0.6;
+      var x = Math.cos(a) * r * 1.35, y = Math.sin(a) * r * 0.82;
+      var sel = name === "Amazon";
+      var size = fit >= 75 ? 13 : fit >= 55 ? 11 : 9;
+      if (sel) size = 16;
+      var fill = fit >= 75 ? "radial-gradient(circle at 35% 30%,#FFFFFF,#93C5FD 45%,#60A5FA)" : fit >= 55 ? "#6F8BC4" : "#4E5970";
+      var glow = fit >= 75 ? "0 0 14px rgba(96,165,250,0.85)" : fit >= 55 ? "0 0 6px rgba(111,139,196,0.5)" : "none";
+      if (sel) glow = "0 0 0 3px #0B0F17,0 0 0 5px #FFFFFF,0 0 28px rgba(147,197,253,0.9)";
       nodes.push({
         label: name + ", fit " + fit,
-        style: "position:absolute;left:calc(50% + " + x.toFixed(1) + "px);top:calc(50% + " + y.toFixed(1) + "px);width:" + size + "px;height:" + size + "px;margin:-" + size / 2 + "px 0 0 -" + size / 2 + "px;border-radius:50%;padding:0;cursor:pointer;background:radial-gradient(circle at 35% 30%,#FFFFFF," + color + " 55%);box-shadow:0 0 " + (selected ? 26 : 14) + "px " + color + ";border:" + (selected ? "2px solid #FFFFFF" : "0") + ";outline-offset:3px"
+        style: "left:calc(50% + " + x.toFixed(1) + "px);top:calc(50% + " + y.toFixed(1) + "px);width:" + size + "px;height:" + size + "px;margin:-" + size / 2 + "px 0 0 -" + size / 2 + "px;border:0;background:" + fill + ";box-shadow:" + glow
       });
       if (labelled[name] && !seen[name]) {
         seen[name] = 1;
         tags.push({
-          name: name,
-          style: "position:absolute;left:calc(50% + " + x.toFixed(1) + "px);top:calc(50% + " + (y + size / 2 + 6).toFixed(1) + "px);transform:translateX(-50%);font-size:11px;font-weight:" + (selected ? 700 : 500) + ";color:" + (selected ? "#FFFFFF" : "#D4D4D8") + ";background:rgba(11,15,23,0.72);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:2px 7px;white-space:nowrap;pointer-events:none"
+          name: sel ? name + " · 100" : name,
+          style: "position:absolute;left:calc(50% + " + x.toFixed(1) + "px);top:calc(50% + " + (y + size / 2 + 7).toFixed(1) + "px);transform:translateX(-50%);font-size:11px;font-weight:" + (sel ? 650 : 500) + ";color:" + (sel ? "#FFFFFF" : "#C8CBD3") + ";background:" + (sel ? "rgba(96,165,250,0.28)" : "rgba(11,15,23,0.72)") + ";border:1px solid " + (sel ? "rgba(147,197,253,0.45)" : "rgba(255,255,255,0.08)") + ";border-radius:7px;padding:2px 7px;white-space:nowrap;pointer-events:none"
         });
       }
     }
+
+    function chip(fit) {
+      var base = "width:40px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;";
+      if (fit >= 75) return base + "color:#0B0F17;background:#60A5FA;box-shadow:inset 0 1px 0 rgba(255,255,255,0.35)";
+      if (fit >= 55) return base + "color:#BFDBFE;background:rgba(96,165,250,0.16);border:1px solid rgba(96,165,250,0.32)";
+      return base + "color:#A1A1AA;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10)";
+    }
+    var ready = [
+      ["ByteDance", "AI Application Development Engineer", 87, "Approved 2 weeks ago"],
+      ["Stripe", "Software Engineer, New Grad", 80, "Approved 2 weeks ago"],
+      ["Rubrik", "Software Engineer, Cloud: Azure", 78, "Approved 2 weeks ago"],
+      ["Nike", "Software Engineer I, ITC", 89, "Approved 4 days ago"],
+      ["Jobgether", "Full Stack Software Engineer, AI-First", 78, "Approved today"]
+    ].map(function (r) { return { company: r[0], title: r[1], fit: r[2], when: r[3], chip: chip(r[2]) }; });
+
+    var statusRows = [["Researched", 3, "#8E8E99"], ["Cover note ready", 13, "#60A5FA"], ["Applied", 14, "#A78BFA"], ["Interviewing", 0, "#FB923C"], ["Offer", 0, "#FACC15"], ["Rejected", 3, "#F472B6"]];
+    var total = 33;
+    var segments = statusRows.filter(function (s) { return s[1] > 0; }).map(function (s) {
+      return { style: "display:block;height:100%;flex:" + s[1] + " 1 0;border-radius:4px;background:" + s[2] + ";box-shadow:inset 0 1px 0 rgba(255,255,255,0.3)" };
+    });
+    var statuses = statusRows.map(function (s) {
+      return { name: s[0], count: s[1], dot: "width:8px;height:8px;background:" + s[2] + (s[1] === 0 ? ";opacity:0.4" : ""), ink: s[1] === 0 ? "#8E8E99" : "#E4E4E7" };
+    });
+
     var stepRows = [["Check tracker", 1, "<1 s"], ["Read posting", 29, "29 s"], ["Compare resumes", 182, "3m 02s"], ["Research company", 56, "56 s"], ["Save", 1, "<1 s"], ["Draft cover note", 13, "13 s"]];
     var steps = stepRows.map(function (s) {
-      return { name: s[0], time: s[2], bar: "display:block;height:100%;border-radius:999px;width:max(" + (s[1] / 182 * 100).toFixed(1) + "%,6px);background:linear-gradient(90deg,#60A5FA,#A78BFA)" };
+      var top = s[1] === 182;
+      return {
+        name: s[0], time: s[2], ink: top ? "#FFFFFF" : "#C8CBD3",
+        bar: "display:block;height:100%;border-radius:999px;width:max(" + (s[1] / 182 * 100).toFixed(1) + "%,4px);background:" + (top ? "linear-gradient(90deg,#60A5FA,#A78BFA)" : "rgba(147,197,253,0.38)")
+      };
     });
-    var statusRows = [["Researched", 3, "#71717A,#A1A1AA"], ["Cover note ready", 13, "#60A5FA,#93C5FD"], ["Applied", 14, "#A78BFA,#C4B5FD"], ["Interviewing", 0, "#FB923C,#FDBA74"], ["Offer", 0, "#FACC15,#FDE68A"], ["Rejected", 3, "#F472B6,#F9A8D4"]];
-    var statuses = statusRows.map(function (s) {
-      return { name: s[0], count: s[1], bar: "display:block;width:100%;max-width:40px;border-radius:10px 10px 4px 4px;height:" + Math.max(4, s[1] / 14 * 110).toFixed(0) + "px;background:linear-gradient(180deg," + s[2].split(",")[1] + "," + s[2].split(",")[0] + ")" };
-    });
-    return {
-      kpiInk: (this.props.kpiInk ?? "dark") === "white" ? "#FFFFFF" : "#0B0F17",
-      nodes: nodes,
-      tags: tags,
-      steps: steps,
-      statuses: statuses,
-      ready: [
-        { company: "ByteDance", title: "AI Application Development Engineer", fit: 87, when: "Note approved 2 weeks ago" },
-        { company: "Rubrik", title: "Software Engineer - Cloud: Azure", fit: 78, when: "Note approved 2 weeks ago" },
-        { company: "Stripe", title: "Software Engineer, New Grad", fit: 80, when: "Note approved 2 weeks ago" },
-        { company: "Nike", title: "Software Engineer I, ITC", fit: 89, when: "Note approved 4 days ago" },
-        { company: "Jobgether", title: "Full Stack Software Engineer - AI-First", fit: 78, when: "Note approved today" }
-      ],
-      nets: [
-        { value: "100", label: "Fake resume quotes caught", rate: "3.3 per run" },
-        { value: "121", label: "Claims rejected by the judge", rate: "4.0 per run" },
-        { value: "3", label: "Invented source URLs removed", rate: "0.1 per run" },
-        { value: "0", label: "Invented news dates removed", rate: "0.0 per run" }
-      ]
-    };
+
+    var nets = [
+      ["Made-up resume quotes", "3.3 per run", "100"],
+      ["Claims the judge rejected", "4.0 per run", "121"],
+      ["Invented source links removed", "0.1 per run", "3"],
+      ["Invented news dates removed", "none so far", "0"]
+    ].map(function (n) { return { label: n[0], rate: n[1], value: n[2], ink: n[2] === "0" ? "#8E8E99" : "#FFFFFF" }; });
+
+    return { kpiA: kpi[0], kpiB: kpi[1], kpiC: kpi[2], kpiD: kpi[3], rings: rings, nodes: nodes, tags: tags, ready: ready, segments: segments, statuses: statuses, steps: steps, nets: nets };
   }
 }
 </script>

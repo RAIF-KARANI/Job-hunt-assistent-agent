@@ -9,6 +9,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 |---|---|---|
 | Planning | ✅ | 4 phases (17 new look, 18 Rust spike, 19 your features, 20 interview practice); E1–E5 recorded |
 | Mockup | ✅ | 4 linked screens in your glass style: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 (source in [mockup/](mockup/)) |
+| Mockup round 2 | ✅ | same link, elevated after your "looks AI slop" review (see below) |
 | 17a Your review of the mockup | 🟡 | waiting for you |
 | 17b–17j | ⏳ | after your go |
 | 18 Rust spike | ⏳ | |
@@ -57,3 +58,27 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
   long path works.
 - White text on the bright gradient cards is about 2.5:1; dark text is
   needed. The mockup has a switch (`kpiInk`) to compare.
+
+## Mockup round 2 ✅ (16 Nov 2026)
+
+You said the first mockup looked like AI slop. Same link, all four screens
+rebuilt inside your brief (Inter, your five accents, glass, gradient KPI cards).
+
+### What changed
+- **KPI cards:** translucent gradient over the dark glass, with white text
+  that passes contrast, closer to your reference. The old bright fill is
+  still there behind the `kpiFill` switch (tinted / vivid).
+- **One colour job per colour:** fit is now one blue scale (bright = strong
+  fit, dim = weak) everywhere: galaxy, chips, Ready to apply. Status
+  colours stay fixed per status. Before, the rainbow was used for both.
+- **Galaxy:** the rings are now drawn where the fit thresholds really fall
+  (75, 55, 25), so the dots and rings agree; 3D / Map switch added.
+- **Less boxing:** no cards inside cards. Ready to apply, Safety nets and
+  the Evals numbers are rows or one strip; hover lift only on things you
+  can click.
+- **Data stories:** "Compare resumes" is highlighted as about two thirds of
+  a run; applications are one stacked bar with counts.
+- **Details:** drawn check icons instead of text glyphs, a step timeline in
+  Analyze, sensible empty columns ("Drop a job here"), themed focus rings,
+  selection and scrollbars, neutral shadows instead of coloured glows.
+- One shared style block in every screen, so the four look like one app.
