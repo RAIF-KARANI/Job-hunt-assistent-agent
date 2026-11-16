@@ -75,6 +75,20 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
 .node{position:absolute;border-radius:50%;padding:0;cursor:pointer;transition:transform .2s ease}
 .node:hover{transform:scale(1.35)}
 .ic-tile{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}
+.cta{overflow:hidden}
+.cta-ico{display:grid;width:16px;height:16px;flex:none}
+.cta-ico svg{grid-area:1/1;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
+.cta-lens{opacity:0;transform:scale(0.4) rotate(-45deg)}
+.cta-lbl{display:grid;justify-items:start}
+.cta-lbl span{grid-area:1/1;padding:4px 0;transition:transform .4s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+.cta-b{opacity:0;transform:translateY(130%)}
+.cta:hover .cta-a,.cta:focus-visible .cta-a{opacity:0;transform:translateY(-130%)}
+.cta:hover .cta-b,.cta:focus-visible .cta-b{opacity:1;transform:none}
+.cta:hover .cta-plus,.cta:focus-visible .cta-plus{opacity:0;transform:scale(0.4) rotate(90deg)}
+.cta:hover .cta-lens,.cta:focus-visible .cta-lens{opacity:1;transform:none;animation:cta-scan 1.6s cubic-bezier(.45,0,.55,1) .35s infinite}
+.cta:hover .cta-glint,.cta:focus-visible .cta-glint{animation:cta-glint 1.6s ease-in-out .35s infinite}
+@keyframes cta-scan{0%,100%{transform:translate(0,0)}25%{transform:translate(2px,-2px)}50%{transform:translate(3px,1px) rotate(8deg)}75%{transform:translate(-1px,2px)}}
+@keyframes cta-glint{0%,40%,100%{opacity:0}55%,75%{opacity:1}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 .col{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06)}
 .jcard{display:flex;flex-direction:column;gap:10px;width:100%;padding:12px;box-sizing:border-box;border-radius:13px;cursor:grab;font:inherit;color:inherit;text-align:left;background:rgba(22,28,42,0.88);border:1px solid rgba(255,255,255,0.07);box-shadow:0 10px 20px -16px rgba(0,0,0,0.9);transition:transform .2s ease,border-color .2s ease}
@@ -133,9 +147,12 @@ a.row:hover{background:rgba(255,255,255,0.04);color:inherit}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"></path></svg>
         Export CSV
       </button>
-      <a class="btn btn-primary" href="Analyze.dc.html">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
-        New analysis
+      <a class="btn btn-primary cta" href="Analyze.dc.html" aria-label="New analysis">
+        <span class="cta-ico" aria-hidden="true">
+          <svg class="cta-plus" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          <svg class="cta-lens" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"></circle><path d="M19.5 19.5l-4.6-4.6"></path><path class="cta-glint" d="M8 10.5a2.5 2.5 0 0 1 2.5-2.5"></path></svg>
+        </span>
+        <span class="cta-lbl" aria-hidden="true"><span class="cta-a">New analysis</span><span class="cta-b">Land the next one</span></span>
       </a>
     </header>
 

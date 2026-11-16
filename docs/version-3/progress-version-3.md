@@ -108,3 +108,11 @@ Same link. Checked against Impeccable's layout guide (updated to 4.9.2).
   compared.
 - Spacing has a rhythm: 40 px between groups, 16 px inside a group;
   section headings 20 px, panel titles 16 px.
+
+## Mockup: primary button delight ✅ (16 Nov 2026)
+
+On hover (or keyboard focus), **New analysis** on the Dashboard and
+Tracker changes to **Land the next one**: the old label slides up and the
+new one slides in, the plus turns into a magnifying lens, and the lens
+keeps scanning in a loop with a small glint. The button's width doesn't
+change, and with reduced motion on, the text still swaps but nothing moves.
