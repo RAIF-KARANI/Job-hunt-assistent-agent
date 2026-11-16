@@ -36,6 +36,9 @@ and journal in
 [docs/version-2/](docs/version-2/): [plan](docs/version-2/plan-version-2.md),
 [decisions](docs/version-2/decisions-version-2.md),
 [progress](docs/version-2/progress-version-2.md).
+Version 3 (a new look, a Rust spike, interview practice) is being planned in
+[docs/version-3/](docs/version-3/): [plan](docs/version-3/plan-version-3.md),
+[decisions](docs/version-3/decisions-version-3.md).
 **v1.1.0** (Phase 15) is about output quality, measured with an eval set
 before and after every change: the fit check went from 50 % to 85 %
 accuracy, research ignores other companies with the same name, cover notes
