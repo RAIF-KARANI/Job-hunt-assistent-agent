@@ -348,3 +348,60 @@ def test_the_notification_sender_is_registered_for_this_user(tmp_path):
         winreg.DeleteKey(parent, name)
 
     drop(winreg.HKEY_CURRENT_USER, base)
+
+
+# ---- 18d4: the quick-analyze box ----
+
+class FakeQuick:
+    def clipboard_link(self):
+        return ""
+
+    def quick_start(self, url):
+        return {"started": url}
+
+
+def test_calls_from_the_quick_box_go_to_its_own_api():
+    out = []
+    shell = Shell(out.append)
+    engine = Engine(FakeApi(), out.append, shell, quick_api=FakeQuick())
+    engine.receive(line({"id": 1, "method": "quick_start", "args": ["https://x.example/job"], "window": "quick"}))
+    assert wait_until(lambda: {"id": 1, "result": {"started": "https://x.example/job"}} in out)
+    assert engine.quick_calls == ["quick_start"]
+
+
+def test_the_quick_box_cant_reach_the_main_api():
+    out = []
+    shell = Shell(out.append)
+    engine = Engine(FakeApi(), out.append, shell, quick_api=FakeQuick())
+    engine.receive(line({"id": 2, "method": "list_jobs", "args": [], "window": "quick"}))
+    assert wait_until(lambda: any(m.get("id") == 2 for m in out))
+    assert "error" in next(m for m in out if m.get("id") == 2)
+
+
+def test_the_shortcut_asks_the_window_for_the_box(monkeypatch):
+    from desktop_web import engine as engine_module
+    from desktop_web import hotkey
+
+    pressed = {}
+
+    class FakeListener:
+        def __init__(self, on_press):
+            pressed["press"] = on_press
+            self.key, self.error = None, None
+
+        def start(self, key):
+            self.key = key
+
+        def stop(self):
+            pass
+
+    monkeypatch.setattr(hotkey, "HotkeyListener", FakeListener)
+    out = []
+    shell = Shell(out.append)
+    api = FakeApi()
+    quick_api, listener = engine_module._start_quick_box(shell, api, None)
+    assert api._hotkey is listener and listener.key
+    pressed["press"]()
+    assert {"do": "quick_show", "args": {}} in out
+    quick_api.close()
+    assert {"do": "quick_hide", "args": {}} in out

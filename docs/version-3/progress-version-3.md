@@ -27,7 +27,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d1 The Rust window in the app | ✅ | `desktop_tauri/` + `engine.py`; your data in the Rust window; smoke test |
 | 18d2 File dialogs | ✅ | Add PDFs and Save as through the Rust window |
 | 18d3 The tray | ✅ | Icon, menu, notifications, hide on close; decisions still tray.py's |
-| 18d4–18d8 | ⏳ | 18d4 (the quick box) next |
+| 18d4 Quick box | ✅ | Ctrl+Alt+J opens the box in the Rust window |
+| 18d5–18d8 | ⏳ | 18d5 (one copy, autostart, shutdown) next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -865,3 +866,37 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
 - Right-clicking the tray icon and choosing each item; closing during a
   run (it should hide, with the "still working" notification); clicking
   a notification with Do Not Disturb off.
+
+## 18d4 The quick-analyze box ✅ (17 Nov 2026)
+
+### What was done
+- **The shortcut stays in Python** (E6): the same `HotkeyListener`, started
+  by the engine; Settings still changes it and shows whether it works.
+- **Rust has the box ready**: a second small window (480 × 210, no frame,
+  on top, not in the taskbar), made hidden at start so Ctrl+Alt+J opens it
+  at once. Each time it's shown it is centred, focused, and cleared, with a
+  copied link filled in (the page's own `joblensQuick.opened()`).
+- **Its own small API**: every call from the page now says which window it
+  came from; calls from the box go to `QuickApi` (clipboard link, start,
+  close) and can't reach the main window's API, as with pywebview.
+- Events go only to the main window. Alt+F4 on the box hides it. When the
+  main window is gone the app ends: the hidden box can't keep JobLens
+  running (the 1.0.0-1.0.1 bug).
+
+### Checked
+- pytest: 498 pass (3 new: the box's calls go to its API, it can't reach the
+  main API, the shortcut asks the window for the box and Close hides it).
+- In the Rust window (smoke test with `JOBLENS_SMOKE_QUICK=1`, no keys
+  pressed): the box became visible, its page called `app_info` and
+  `clipboard_link` through the engine, then it hid again. The whole run took
+  4.5 s, and nothing was left running.
+- The old window still starts.
+
+### Not checked yet (one real try)
+- Pressing Ctrl+Alt+J itself in the Rust window: the installed JobLens holds
+  the shortcut while it runs, so a second copy can't register it. Close the
+  installed JobLens first, then try it.
+
+### Learned
+- A process check that matches "desktop_web.engine" in command lines also
+  matches itself. Filter by process name, or leave out your own process.

@@ -8,6 +8,7 @@ From the window (Rust -> Python):
     {"answer": 3, "result": ...}  or  {"answer": 3, "error": "..."}
                                                   the window answers an `ask`
     {"shell": "page_loaded"}                      what happened to the window
+    a call may carry "window": "quick"            18d4: from the quick-analyze box (QuickApi)
     {"shell": "visibility", "visible": false}
 
 From the engine (Python -> Rust):
@@ -181,9 +182,12 @@ class Engine:
     `ask` are handled at once, never queued behind the calls waiting for them."""
 
     def __init__(self, api, write: Write, shell: Shell, on_page_loaded: Callable[[], None] = lambda: None,
-                 smoke: Path | None = None, smoke_shot: Path | None = None, tray: "ShellTray | None" = None):
+                 smoke: Path | None = None, smoke_shot: Path | None = None, tray: "ShellTray | None" = None,
+                 quick_api=None):
         self.api = api
         self.tray = tray
+        self.quick_api = quick_api  # 18d4: what the quick box may call; nothing else
+        self.quick_calls: list[str] = []  # names only (never what was passed): for the smoke test
         self.write = write
         self.shell = shell
         self._on_page_loaded = on_page_loaded
@@ -211,13 +215,18 @@ class Engine:
     def call(self, message: dict) -> None:
         call_id = message.get("id")
         name = str(message.get("method", ""))
+        # 18d4: the quick box gets its own small API, as with pywebview's js_api.
+        quick = message.get("window") == "quick"
+        target = self.quick_api if quick else self.api
         try:
             # Underscore names are the app's own (as in pywebview, they stay hidden from the page).
-            if name.startswith("_") or not callable(getattr(self.api, name, None)):
+            if target is None or name.startswith("_") or not callable(getattr(target, name, None)):
                 raise AttributeError(f"JobLens has no '{name}'")
-            result = getattr(self.api, name)(*message.get("args", []))
+            if quick:
+                self.quick_calls.append(name)
+            result = getattr(target, name)(*message.get("args", []))
             self.write({"id": call_id, "result": result})
-            if name == "app_info" and self._smoke and not self._smoked.is_set():
+            if name == "app_info" and not quick and self._smoke and not self._smoked.is_set():
                 self._smoked.set()
                 threading.Thread(target=self._smoke_report, args=(result,), daemon=True).start()
         except Exception as e:  # the page shows the message, as with pywebview
@@ -231,6 +240,14 @@ class Engine:
             self.shell.do("notify", title="JobLens test", body="If you can read this, notifications work.")
             report["notified"] = True
             time.sleep(2)  # leave it on screen for the picture
+        if os.environ.get("JOBLENS_SMOKE_QUICK"):  # 18d4: the shortcut's box, without pressing keys
+            self.shell.do("quick_show")
+            time.sleep(2.5)
+            report["quick"] = {"visible": self.shell.ask("is_visible", timeout=5, window="quick"),
+                               "calls": sorted(set(self.quick_calls))}
+            self.shell.do("quick_hide")
+            time.sleep(0.5)
+            report["quick"]["hidden_after"] = not self.shell.ask("is_visible", timeout=5, window="quick")
         dialog = os.environ.get("JOBLENS_SMOKE_DIALOG")  # 18d2: "open" or "save"
         if dialog in ("open", "save"):
             dialogs = Dialogs(self.shell)
@@ -311,6 +328,27 @@ def _start_tray(shell: Shell, api) -> "ShellTray | None":
     return shell_tray
 
 
+def _start_quick_box(shell: Shell, api, tray: "ShellTray | None"):
+    """14f: Ctrl+Alt+J anywhere -> the quick-analyze box. The shortcut stays in
+    Python (E6, the same HotkeyListener); the Rust window has the box ready,
+    hidden, and shows it when asked."""
+    from job_agent import settings
+    from desktop_web.hotkey import HotkeyListener
+    from desktop_web.quick import QuickApi
+
+    def started() -> None:
+        if tray:
+            tray.tray.quick = True  # 14f: you'll be told about this run, window hidden or not
+
+    quick_api = QuickApi(api, hide=lambda: shell.do("quick_hide"), on_started=started)
+    listener = HotkeyListener(on_press=lambda: shell.do("quick_show"))
+    listener.start(settings.read_settings().get("QUICK_KEY", "Ctrl+Alt+J"))
+    if listener.error:
+        print(f"! quick analyze shortcut: {listener.error}")
+    api._hotkey = listener  # Settings changes and shows the shortcut, as before
+    return quick_api, listener
+
+
 def _pipe_writer() -> Write:
     """The pipe is the engine's alone: anything the agent prints goes to
     stderr, or one stray print() would break the protocol."""
@@ -350,10 +388,12 @@ def main(argv=None) -> int:
     tray = _start_tray(shell, api)
     if tray:
         tray_box["tray"] = tray.tray
+    quick_api, hotkey = _start_quick_box(shell, api, tray)
     smoke = os.environ.get("JOBLENS_SMOKE")
     shot = os.environ.get("JOBLENS_SMOKE_SHOT")
     engine = Engine(api, write, shell, on_page_loaded=lambda: startup.check_for_updates_soon(api),
-                    smoke=Path(smoke) if smoke else None, smoke_shot=Path(shot) if shot else None, tray=tray)
+                    smoke=Path(smoke) if smoke else None, smoke_shot=Path(shot) if shot else None, tray=tray,
+                    quick_api=quick_api)
     write({"event": {"type": "engine_ready"}})
 
     stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8")
@@ -361,6 +401,7 @@ def main(argv=None) -> int:
         engine.receive(line)
     # The window closed its end: stop a running step and free the model, like Quit.
     shell.give_up()
+    hotkey.stop()
     startup.free_the_gpu(api, tidy=True)
     os._exit(0)  # a run's threads must not keep the engine alive
 

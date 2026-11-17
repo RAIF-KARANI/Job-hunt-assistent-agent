@@ -33,6 +33,8 @@ npx tauri build                                   # target/release/joblens.exe
 
 # smoke test: the page answers, a report (and a picture) is written, the window closes
 JOBLENS_SMOKE=smoke.json JOBLENS_SMOKE_SHOT=shot.png ./target/release/joblens.exe
+# also: JOBLENS_SMOKE_QUICK=1 (show and hide the quick box), JOBLENS_SMOKE_NOTIFY=1,
+# JOBLENS_SMOKE_DIALOG=open|save (needs you to answer the dialog)
 ```
 
 `CARGO_BUILD_JOBS=2` keeps the build's memory down (2-3 GB the first time).

@@ -51,11 +51,18 @@ impl Engine {
 /// Every call from the page goes through here: the page's bridge turns
 /// `api.list_jobs()` into `call("list_jobs", [])`.
 #[tauri::command]
-async fn call(method: String, args: Vec<Value>, engine: State<'_, Engine>) -> Result<Value, String> {
+async fn call(
+    method: String,
+    args: Vec<Value>,
+    window: tauri::WebviewWindow,
+    engine: State<'_, Engine>,
+) -> Result<Value, String> {
     let id = engine.next.fetch_add(1, Ordering::SeqCst);
     let (tx, rx) = oneshot::channel();
     engine.pending.lock().unwrap().insert(id, tx);
-    if let Err(e) = engine.send(&json!({ "id": id, "method": method, "args": args })) {
+    // 18d4: the engine answers the quick box with its own small API.
+    let message = json!({ "id": id, "method": method, "args": args, "window": window.label() });
+    if let Err(e) = engine.send(&message) {
         engine.pending.lock().unwrap().remove(&id);
         return Err(e);
     }
@@ -68,6 +75,34 @@ async fn call(method: String, args: Vec<Value>, engine: State<'_, Engine>) -> Re
 
 fn main_window(app: &AppHandle) -> Option<WebviewWindow> {
     app.get_webview_window("main")
+}
+
+/// 18d4: the quick-analyze box: small, frameless, on top, made once and kept
+/// hidden so the shortcut opens it at once (as in 1.2.0).
+fn make_quick_box(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+    tauri::WebviewWindowBuilder::new(app, "quick", tauri::WebviewUrl::App("index.html".into()))
+        .title("JobLens quick analyze")
+        // The page shows only the box when its address ends in #/quick (main.tsx).
+        .initialization_script("if (location.hash !== '#/quick') location.hash = '#/quick';")
+        .inner_size(480.0, 210.0)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .center()
+        .visible(false)
+        .background_color(tauri::window::Color(10, 13, 22, 255))
+        .build()
+}
+
+fn show_quick_box(app: &AppHandle) {
+    if let Some(box_) = app.get_webview_window("quick") {
+        let _ = box_.center();
+        let _ = box_.show();
+        let _ = box_.set_focus();
+        // A fresh box each time: clear it, focus the field, fill in a copied link.
+        let _ = box_.eval("window.joblensQuick && window.joblensQuick.opened()");
+    }
 }
 
 /// Tell the engine what happened to the window. False if it isn't there to hear it.
@@ -193,7 +228,20 @@ fn handle_request(app: &AppHandle, action: &str, args: &Value) -> Result<Value, 
             show(app);
             Ok(Value::Null)
         }
-        "is_visible" => Ok(json!(main_window(app).and_then(|w| w.is_visible().ok()).unwrap_or(false))),
+        "is_visible" => {
+            let label = args.get("window").and_then(Value::as_str).unwrap_or("main");
+            Ok(json!(app.get_webview_window(label).and_then(|w| w.is_visible().ok()).unwrap_or(false)))
+        }
+        "quick_show" => {
+            show_quick_box(app);
+            Ok(Value::Null)
+        }
+        "quick_hide" => {
+            if let Some(box_) = app.get_webview_window("quick") {
+                let _ = box_.hide();
+            }
+            Ok(Value::Null)
+        }
         "tray" => draw_tray(app, args).map(|_| Value::Null),
         "notify" => notify(app, args).map(|_| Value::Null),
         other => Err(format!("The window can't '{other}' yet.")),
@@ -287,7 +335,7 @@ fn start_engine(app: &AppHandle) -> std::io::Result<Engine> {
             let Ok(line) = line else { break };
             let Ok(message) = serde_json::from_str::<Value>(&line) else { continue };
             if let Some(event) = message.get("event") {
-                let _ = handle.emit("joblens-event", event.clone());
+                let _ = handle.emit_to("main", "joblens-event", event.clone());
             } else if let Some(action) = message.get("do").and_then(Value::as_str) {
                 let args = message.get("args").cloned().unwrap_or(Value::Null);
                 let ask = message.get("ask").cloned();
@@ -345,21 +393,37 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![call])
         .on_page_load(|webview, _payload| {
-            tell_engine(webview.app_handle(), json!({ "shell": "page_loaded" }));
+            if webview.label() == "main" {
+                tell_engine(webview.app_handle(), json!({ "shell": "page_loaded" }));
+            }
         })
         .on_window_event(|window, event| {
             // 18d3: the X asks the engine first: it may hide to the tray instead
             // (a run going, or JobLens kept in the tray). If the engine isn't
             // there to answer, the window just closes.
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" && tell_engine(window.app_handle(), json!({ "shell": "close_requested" })) {
+            match event {
+                WindowEvent::CloseRequested { api, .. } if window.label() == "quick" => {
+                    // Alt+F4 on the box: hide it, it's needed again next time.
                     api.prevent_close();
+                    let _ = window.hide();
                 }
+                WindowEvent::CloseRequested { api, .. } => {
+                    if window.label() == "main"
+                        && tell_engine(window.app_handle(), json!({ "shell": "close_requested" }))
+                    {
+                        api.prevent_close();
+                    }
+                }
+                // The hidden box mustn't keep JobLens running once the main window is gone
+                // (1.0.0-1.0.1 had exactly this bug with pywebview).
+                WindowEvent::Destroyed if window.label() == "main" => window.app_handle().exit(0),
+                _ => {}
             }
         })
         .setup(|app| {
             let engine = start_engine(app.handle())?;
             app.manage(engine);
+            make_quick_box(app.handle())?;
             Ok(())
         })
         .build(tauri::generate_context!())
