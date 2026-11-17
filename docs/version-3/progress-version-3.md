@@ -30,7 +30,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d4 Quick box | ✅ | Ctrl+Alt+J opens the box in the Rust window |
 | 18d5 One copy, autostart, shutdown | ✅ | Second start shows the first; --tray; installer and Windows can close it |
 | 18d6 Packaging | ✅ | Installer builds, installs, passes both tests, uninstalls clean |
-| 18d7–18d8 | ⏳ | 18d7 (the real update test) next |
+| 18d7 Real update test | ✅ | 1.2.0 → version 3 and 3 → 3: all four update checks pass |
+| 18d8 | ⏳ | measure the installed app next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -982,3 +983,47 @@ not the 5 % smaller the spike measured. The engine is 152 MB; the biggest
 parts are numpy (27 MB with its libraries), primp (15 MB, the web search),
 pandas (13 MB), Pillow (13 MB) and cryptography (10 MB). For 18d8: measure
 properly, and see what the engine can still leave out.
+
+## 18d7 The real update test ✅ (17 Nov 2026)
+
+`python scripts/check_real_update.py --old 1.2.1 --new 2.0.0`: **all four
+checks pass.** Real installers, real apps, a local stand-in for GitHub; the
+real JobLens 1.2.0 install was not touched.
+
+| Check | What happened |
+|---|---|
+| new_from_old (1.2.0's app → version 3) | 1.2.0's updater downloaded and verified the new installer, quit, Setup installed it and opened the **Rust window** with its engine; data kept; 1.2.0's `_internal\` removed |
+| self_update (version 3 → next) | the Rust app updated itself: the engine ran the installer, the window quit by itself, the new one opened; data kept |
+| hand_run | the X button hid JobLens to the tray; Setup run by hand closed it through the Restart Manager (18d5), nothing force-closed |
+| failure | Setup couldn't replace a file; the old JobLens reopened, knew the update failed, and Settings said so |
+
+The "old" app is `JobLens-TestBuild-Setup-1.2.1.exe`: built from the 1.2.0
+code just before that release (16 Nov), so it is 1.2.0's app numbered 1.2.1.
+The new Test Builds are numbered 2.0.0 and 2.0.1 by `--new`; the version
+inside the code is still 1.2.0 until the release (E5).
+
+### Fixed on the way
+- **A real problem, found by the failure check:** since Phase 17 the Updates
+  section of Settings is a closed accordion, so "The update didn't finish"
+  was hidden. Settings now asks for the update status itself: when an update
+  failed, or a new version is out, the Updates section opens by itself and
+  its one-line summary says so.
+- **The check script** (`check_real_update.py`) learned the Rust window:
+  - it calls the API through either bridge;
+  - it looks for the window titled "JobLens", because .NET's "main window"
+    can be one of Tauri's hidden helper windows;
+  - it writes the saved update check with the app's own version (the
+    updater ignores a record for another version);
+  - it stops the engine when cleaning up;
+  - it checks that the app is the Rust window, that `engine\` is installed,
+    and that `_internal\` is gone.
+
+### Learned
+- `build_installer.py` without `--test-install` writes
+  `dist/JobLens-Setup-<version>.exe`, so while the code says 1.2.0 it
+  replaces the local copy of the released 1.2.0 installer. (The released one
+  is on GitHub.) Keep the old Test Builds; rebuilding one means checking out
+  its tag.
+- The engine's self-test loads the local model (~5 GB) for one real call.
+  On this PC that can be enough for Windows' memory pressure to stop a
+  build: close Chrome first.

@@ -5,7 +5,7 @@
 import { Fold } from "../app/Fold";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
-import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
+import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D, UpdateStatus } from "../bridge/types";
 import { CloudModelPicker } from "./CloudModelPicker";
 import { LevelPicker } from "./LevelPicker";
 import { ModelPicker } from "./ModelPicker";
@@ -86,6 +86,19 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [autostart, setAutostart] = useState<Autostart | null>(null);
+  // 18d7: a failed update or a new version must not hide in a closed fold.
+  const [update, setUpdate] = useState<UpdateStatus | null>(null);
+  useEffect(() => {
+    getApi()
+      .then((api) => api.update_status())
+      .then(setUpdate)
+      .catch(() => undefined);
+  }, []);
+  const updateNews = update?.install_problem
+    ? `The update to v${update.install_problem.version} didn't finish`
+    : update?.newer && update.latest
+      ? `Version ${update.latest.replace(/^v/, "")} is available`
+      : null;
 
   const wasPrice = savedPrice(settings.MODEL_PRICES, model);
   const priceChanged = provider !== "ollama" && (price.input.trim() !== wasPrice.input || price.output.trim() !== wasPrice.output);
@@ -221,7 +234,7 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
         : `Follow up ${label(FOLLOW_UP_DAYS, String(settings.FOLLOW_UP_DAYS ?? "7")).toLowerCase()}`) +
       (autostart?.enabled ? " · starts with Windows" : ""),
     quick: settings.QUICK_KEY === "" ? "Shortcut off" : `Shortcut ${String(settings.QUICK_KEY ?? "Ctrl+Alt+J")}`,
-    updates: (settings.UPDATE_CHECK ?? "true") !== "false" ? "Checked once a day" : "Automatic checks off",
+    updates: updateNews ?? ((settings.UPDATE_CHECK ?? "true") !== "false" ? "Checked once a day" : "Automatic checks off"),
   };
 
   return (
@@ -506,7 +519,8 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
         </div>
       </Fold>
 
-      <Fold level={2} title="Updates" digest={digests.updates}>
+      {/* 18d7: opens by itself when there's news (key: the status arrives after the first paint). */}
+      <Fold key={updateNews ? "news" : "quiet"} level={2} title="Updates" digest={digests.updates} defaultOpen={Boolean(updateNews)}>
         <div className="settings-card fold-card">
           {saved === "updates" && (
             <span className="saved fold-saved" role="status">

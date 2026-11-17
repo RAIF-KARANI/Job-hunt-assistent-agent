@@ -15,7 +15,7 @@ Produces:
     dist/JobLens-Setup-<version>.exe         the installer (Inno Setup)
     dist/JobLens-TestBuild-Setup-<version>.exe   with --test-install
 
-Needs: Node.js (only to build, D13), Rust (%USERPROFILE%\.cargo\bin) and
+Needs: Node.js (only to build, D13), Rust (in %USERPROFILE%/.cargo/bin) and
 the Visual Studio C++ build tools, Inno Setup 6, internet for the first
 build (the WebView2 bootstrapper is downloaded once into build/webview2/).
 
