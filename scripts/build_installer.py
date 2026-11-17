@@ -1,6 +1,7 @@
 """
-Build JobLens end to end:
-    front end -> WebView2 bootstrapper -> PyInstaller -> self-test + window test -> installer
+Build JobLens end to end (version 3, 18d6):
+    front end -> WebView2 bootstrapper -> Rust window (Tauri) -> engine (PyInstaller)
+    -> the app folder -> engine self-test + window test -> installer
 
 Run (venv activated, from the repo root):
     python scripts/build_installer.py                  # the real installer
@@ -8,11 +9,14 @@ Run (venv activated, from the repo root):
 
 Produces:
     desktop_web/web/                         the built React UI (from frontend/)
-    dist/JobLens/JobLens.exe                 the app folder
+    desktop_tauri/target/release/joblens.exe the window, with the UI built in
+    dist/engine/joblens-engine.exe           the engine (Python), PyInstaller
+    dist/JobLens/                            the app folder: JobLens.exe + engine/
     dist/JobLens-Setup-<version>.exe         the installer (Inno Setup)
     dist/JobLens-TestBuild-Setup-<version>.exe   with --test-install
 
-Needs: Node.js (only to build, D13), Inno Setup 6, internet for the first
+Needs: Node.js (only to build, D13), Rust (%USERPROFILE%\.cargo\bin) and
+the Visual Studio C++ build tools, Inno Setup 6, internet for the first
 build (the WebView2 bootstrapper is downloaded once into build/webview2/).
 
 The version comes from job_agent/__init__.py (one place), and the frozen app
@@ -66,8 +70,8 @@ def build_front_end() -> None:
     if not npm:
         sys.exit("Node.js is needed to build the UI (not to run the app): winget install OpenJS.NodeJS.LTS")
     # `npm ci`: exactly the versions in package-lock.json, from a clean folder.
-    step("1/5 Front end: install exact packages", [npm, "ci", "--no-audit", "--no-fund"], cwd=ROOT / "frontend")
-    step("1/5 Front end: typecheck + build", [npm, "run", "build"], cwd=ROOT / "frontend")
+    step("1/6 Front end: install exact packages", [npm, "ci", "--no-audit", "--no-fund"], cwd=ROOT / "frontend")
+    step("1/6 Front end: typecheck + build", [npm, "run", "build"], cwd=ROOT / "frontend")
     built = ROOT / "desktop_web" / "web" / "index.html"
     if not built.exists():
         sys.exit(f"The front-end build didn't produce {built}")
@@ -87,7 +91,7 @@ def signer(path: Path) -> tuple[str, str]:
 def webview2_bootstrapper() -> None:
     """Download Microsoft's WebView2 bootstrapper once; refuse it unless it is
     validly signed by Microsoft (it runs on users' PCs)."""
-    print("\n=== 2/5 WebView2 bootstrapper ===", flush=True)
+    print("\n=== 2/6 WebView2 bootstrapper ===", flush=True)
     if not WEBVIEW2_EXE.exists():
         WEBVIEW2_EXE.parent.mkdir(parents=True, exist_ok=True)
         print(f"Downloading {WEBVIEW2_URL}")
@@ -100,25 +104,62 @@ def webview2_bootstrapper() -> None:
     print(f"OK: {WEBVIEW2_EXE.name}, {WEBVIEW2_EXE.stat().st_size / 1e6:.1f} MB, signed by Microsoft")
 
 
+def build_window() -> Path:
+    """18d6: the Rust window (desktop_tauri/), with the built UI inside it."""
+    cargo_bin = Path(os.environ.get("USERPROFILE", "")) / ".cargo" / "bin"
+    env = {**os.environ, "PATH": f"{cargo_bin}{os.pathsep}{os.environ.get('PATH', '')}",
+           "CARGO_BUILD_JOBS": os.environ.get("CARGO_BUILD_JOBS", "2")}  # 2-3 GB, not 6+
+    npx = shutil.which("npx")
+    if not npx:
+        sys.exit("Node.js is needed to build the window: winget install OpenJS.NodeJS.LTS")
+    step("3/6 Rust window: the command-line tool", [shutil.which("npm"), "ci", "--no-audit", "--no-fund"],
+         cwd=ROOT / "desktop_tauri", env=env)
+    step("3/6 Rust window: build", [npx, "tauri", "build"], cwd=ROOT / "desktop_tauri", env=env)
+    exe = ROOT / "desktop_tauri" / "target" / "release" / "joblens.exe"
+    if not exe.exists():
+        sys.exit(f"The Rust build didn't produce {exe}")
+    return exe
+
+
+def assemble(window_exe: Path) -> Path:
+    """dist/JobLens/ = JobLens.exe (the window) + engine/ (PyInstaller's folder)."""
+    app = ROOT / "dist" / "JobLens"
+    if app.exists():
+        shutil.rmtree(app)
+    app.mkdir(parents=True)
+    shutil.copy2(window_exe, app / "JobLens.exe")
+    shutil.copytree(ROOT / "dist" / "engine", app / "engine")
+    return app
+
+
 def check_frozen_app(exe: Path, title: str) -> None:
-    """--self-test (no window) and --smoke (the real window and page), with
-    AppData pointed at a temp folder so the build PC's real data is never touched."""
+    """The engine's --self-test (no window) and a window test (the real Rust
+    window, its engine and page), with AppData pointed at a temp folder so the
+    build PC's real data is never touched. `exe`: the app folder's JobLens.exe."""
+    engine = exe.parent / "engine" / "joblens-engine.exe"
     with tempfile.TemporaryDirectory() as fake_appdata:
         env = {**os.environ, "LOCALAPPDATA": fake_appdata}
+        env.pop("JOBLENS_PYTHON", None)
         report = Path(fake_appdata) / "selftest.txt"
-        print(f"\n=== {title}: self-test ===", flush=True)
-        result = subprocess.run([str(exe), "--self-test", str(report)], env=env, timeout=600)
+        print(f"\n=== {title}: engine self-test ===", flush=True)
+        result = subprocess.run([str(engine), "--self-test", str(report)], env=env, timeout=600,
+                                stdin=subprocess.DEVNULL)
         print(report.read_text(encoding="utf-8") if report.exists() else "(no report written)")
         if result.returncode != 0:
             sys.exit("Self-test FAILED - not building an installer.")
 
         print(f"\n=== {title}: window test ===", flush=True)
         smoke = Path(fake_appdata) / "smoke.json"
-        subprocess.run([str(exe), "--smoke", str(smoke)], env=env, timeout=120)
+        subprocess.run([str(exe)], env={**env, "JOBLENS_SMOKE": str(smoke), "JOBLENS_SMOKE_QUICK": "1"},
+                       timeout=120)
         data = json.loads(smoke.read_text()) if smoke.exists() else {"ok": False, "error": "no result"}
         print(json.dumps(data, indent=2))
-        if not data.get("ok"):
+        quick = data.get("quick") or {}
+        if not data.get("ok") or data.get("window") != "tauri" or not quick.get("visible"):
             sys.exit("The window test FAILED - not building an installer.")
+        log = Path(fake_appdata) / "JobLens" / "engine.log"
+        if log.exists() and log.stat().st_size:
+            print("Engine log:\n" + log.read_text(encoding="utf-8", errors="replace")[-2000:])
 
 
 def uninstall_entry(app_id: str) -> dict | None:
@@ -177,12 +218,14 @@ def main() -> None:
     print(f"Building JobLens {__version__}")
     build_front_end()
     webview2_bootstrapper()
-    step("3/5 PyInstaller: app folder",
+    window_exe = build_window()
+    step("4/6 PyInstaller: the engine",
          [sys.executable, "-m", "PyInstaller", "joblens.spec", "--noconfirm", "--log-level", "WARN"])
-    check_frozen_app(ROOT / "dist" / "JobLens" / "JobLens.exe", "4/5 Frozen app")
+    app = assemble(window_exe)
+    check_frozen_app(app / "JobLens.exe", "5/6 The app folder")
 
     defines = [f"/DAppVersion={__version__}"] + (["/DTestBuild"] if args.test_install else [])
-    step("5/5 Inno Setup: installer", [str(find_iscc()), *defines, "/Q", "installer/joblens.iss"])
+    step("6/6 Inno Setup: installer", [str(find_iscc()), *defines, "/Q", "installer/joblens.iss"])
     name = f"JobLens-{'TestBuild-' if args.test_install else ''}Setup-{__version__}.exe"
     setup = ROOT / "dist" / name
     app_mb = sum(f.stat().st_size for f in (ROOT / "dist" / "JobLens").rglob("*") if f.is_file()) / 1e6

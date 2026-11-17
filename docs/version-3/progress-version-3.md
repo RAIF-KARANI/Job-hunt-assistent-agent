@@ -29,7 +29,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d3 The tray | ✅ | Icon, menu, notifications, hide on close; decisions still tray.py's |
 | 18d4 Quick box | ✅ | Ctrl+Alt+J opens the box in the Rust window |
 | 18d5 One copy, autostart, shutdown | ✅ | Second start shows the first; --tray; installer and Windows can close it |
-| 18d6–18d8 | ⏳ | 18d6 (packaging) next |
+| 18d6 Packaging | ✅ | Installer builds, installs, passes both tests, uninstalls clean |
+| 18d7–18d8 | ⏳ | 18d7 (the real update test) next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -937,3 +938,47 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
 ### Not checked
 - A real Windows shutdown or sign-out (same messages as the Restart
   Manager's, but untested); worth noticing once after 2.0.0 is installed.
+
+## 18d6 Packaging ✅ (17 Nov 2026)
+
+### What was done
+- **The installed app is now two programs** in the same folder as before
+  (`%LOCALAPPDATA%\Programs\JobLens`):
+  - `JobLens.exe`: the Rust window (4 MB, the UI built in);
+  - `engine\joblens-engine.exe` + `engine\_internal\`: Python and the
+    agent (PyInstaller, `joblens.spec`). It's a console program, so its
+    stdin and stdout are the pipe; it's started with no console window.
+    It no longer bundles pywebview, pythonnet or pystray.
+- **What the installed engine prints** goes to
+  `%LOCALAPPDATA%\JobLens\engine.log`, new on each start (from source it
+  still goes to the terminal).
+- **The engine checks itself**: `joblens-engine.exe --self-test report.txt`
+  runs the same self-test as before, without the window-only checks.
+- **The installer** has the same app id and folder, so 1.2.0 updates in
+  place. It removes 1.2.0's `_internal\` folder first, so ~150 MB isn't
+  left behind. The uninstaller also removes the notification entry (18d3)
+  and, as before, the Start with Windows value.
+- **`scripts/build_installer.py`** builds in this order: front end, WebView2
+  bootstrapper, Rust window, engine, app folder, checks, installer. A build
+  is refused unless the engine's self-test passes **and** the real window
+  opens with its engine, shows the page, and shows and hides the quick box.
+- **THIRD_PARTY_NOTICES.md**: Tauri and its Rust libraries (MIT or
+  Apache-2.0); the pywebview and pystray sections are marked "up to 1.2.0".
+
+### Checked: `scripts/build_installer.py --test-install` passes
+- **The app folder:** engine self-test PASS, including a real web search
+  and a real structured call to the local model ("Paris"). Window test OK:
+  Rust window, page answering, quick box shown and hidden.
+- **The Test Build installer:** 68 MB; app folder 161 MB.
+- **Installed silently into a temp folder:** the installed copy passed the
+  same two tests.
+- **Uninstalled:** no files and no registry entry left. The real JobLens
+  1.2.0 install was not touched.
+- pytest: 499 pass.
+
+### Size: not smaller yet
+The installer and app folder are the same size as 1.2.0's (68 MB, 161 MB),
+not the 5 % smaller the spike measured. The engine is 152 MB; the biggest
+parts are numpy (27 MB with its libraries), primp (15 MB, the web search),
+pandas (13 MB), Pillow (13 MB) and cryptography (10 MB). For 18d8: measure
+properly, and see what the engine can still leave out.

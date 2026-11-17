@@ -9,7 +9,30 @@ Versions are the ones used for the version-2 build (web UI, since step 12h).
 Since version 2 the app no longer contains Qt / PySide6 or Matplotlib: the
 window is a web page shown by Microsoft Edge WebView2.
 
-## The tray icon: pystray — LGPL-3.0
+Since version 3 (2.0.0) the window, the tray icon, notifications and file
+dialogs are a Rust program (`JobLens.exe`, built with Tauri), and Python runs
+beside it in `engine\`. pywebview and pystray are no longer shipped; the
+sections about them below apply to versions up to 1.2.0.
+
+## The window (version 3): Tauri and Rust libraries
+
+`JobLens.exe` is built from `desktop_tauri/` with these Rust libraries and
+the libraries they use, all under the **MIT** or **Apache-2.0** license
+(dual-licensed: you may use either):
+
+| Component | Version | License |
+|---|---|---|
+| Tauri (tauri, tao, wry, tray-icon, muda) | 2.x | MIT or Apache-2.0 |
+| tauri-plugin-dialog, tauri-plugin-single-instance | 2.x | MIT or Apache-2.0 |
+| tauri-winrt-notification | 0.8 | MIT or Apache-2.0 |
+| windows-sys, windows (Microsoft) | 0.5x-0.6x | MIT or Apache-2.0 |
+| webview2-com | 0.3x | MIT; links Microsoft's WebView2 loader (WebView2 SDK license: https://www.nuget.org/packages/Microsoft.Web.WebView2) |
+| serde, serde_json, tokio | 1.x | MIT or Apache-2.0 |
+
+The exact list and versions are in `desktop_tauri/Cargo.lock` in the source
+code. The Rust standard library is MIT or Apache-2.0.
+
+## The tray icon (up to 1.2.0): pystray — LGPL-3.0
 
 The tray icon uses **pystray 0.19.5** (Moses Palmér), used under the **GNU
 Lesser General Public License v3.0** (LGPL-3.0). The full license texts
@@ -24,7 +47,7 @@ Lesser General Public License v3.0** (LGPL-3.0). The full license texts
 
 pystray needs **Pillow** (MIT-CMU license) and **six** (MIT), both bundled.
 
-## The window: pywebview + Microsoft Edge WebView2
+## The window (up to 1.2.0): pywebview + Microsoft Edge WebView2
 
 | Component | Version | License |
 |---|---|---|
@@ -40,7 +63,7 @@ distributed under Microsoft's WebView2 distribution terms:
 https://developer.microsoft.com/microsoft-edge/webview2/), which downloads
 and installs the runtime from Microsoft.
 
-## The user interface (built into `_internal\desktop_web\web\`)
+## The user interface (built into `JobLens.exe`; up to 1.2.0 in `_internal\desktop_web\web\`)
 
 | Component | Version | License |
 |---|---|---|

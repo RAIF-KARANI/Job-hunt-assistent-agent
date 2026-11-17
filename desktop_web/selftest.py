@@ -16,7 +16,9 @@ import sys
 import traceback
 
 
-def self_test(report_path: str) -> int:
+def self_test(report_path: str, engine: bool = False) -> int:
+    """`engine`: the version-3 engine (18d6), which has no window or tray
+    library of its own (JobLens.exe has them) and no UI files."""
     lines, ok = [], True
 
     def check(name, fn):
@@ -43,10 +45,11 @@ def self_test(report_path: str) -> int:
         if not any(p.name.startswith("Galaxy3D") for p in js):
             raise FileNotFoundError("the 3D galaxy file (Galaxy3D-*.js) wasn't bundled")
         return f"index.html + {len(js)} scripts"
-    check("built UI bundled", web_files)
+    if not engine:
+        check("built UI bundled", web_files)
     check("icon bundled", lambda: paths.resource_path("assets/joblens.png").exists() or 1 / 0)
 
-    for module in ["webview", "langchain_ollama", "langchain_anthropic", "langchain_openai", "langchain_google_genai",
+    for module in ([] if engine else ["webview"]) + ["langchain_ollama", "langchain_anthropic", "langchain_openai", "langchain_google_genai",
                    "ddgs", "pypdf", "pandas"]:
         check(f"import {module}", lambda m=module: __import__(m) and None)
 
@@ -77,7 +80,18 @@ def self_test(report_path: str) -> int:
         import pystray
         where = "replaceable .py files" if pystray.__file__.endswith(".py") else "inside the archive"
         return f"icon {size[0]}x{size[1]}; pystray as {where}"
-    check("tray icon (pystray + Pillow)", tray_parts)
+    if engine:
+        def engine_parts():
+            # 18d3-18d4: the tray's decisions and the shortcut stay in Python.
+            from PIL import Image
+
+            from desktop_web import engine as engine_module, hotkey, quick, tray  # noqa: F401
+            with Image.open(paths.resource_path("assets/joblens.png")) as img:
+                size = img.size
+            return f"tray decisions, quick box API, shortcut; icon {size[0]}x{size[1]}"
+        check("engine parts (tray, quick box, shortcut)", engine_parts)
+    else:
+        check("tray icon (pystray + Pillow)", tray_parts)
 
     def documents():
         # 14i: a cover note as .docx and .pdf (ReportLab + Windows' Arial), in a temp folder.

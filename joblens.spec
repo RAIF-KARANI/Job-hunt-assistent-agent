@@ -1,30 +1,29 @@
-# PyInstaller recipe for JobLens.exe (Phase 9f; web UI since 12h).
+# PyInstaller recipe for JobLens's engine (18d6, version 3; the pywebview
+# app's recipe before that).
 #
-# Build (venv activated, from the repo root) - normally via
+# Version 3 (E2, E6): the window is the Rust program (desktop_tauri/,
+# JobLens.exe), which starts this engine beside it and talks to it over a
+# pipe. So this builds Python and the agent only: no window, no tray library.
+#
+# Build - normally via
 #     python scripts/build_installer.py
-# which builds the front end first (frontend -> desktop_web/web) and then:
+# which builds the front end and the Rust window first, then:
 #     pyinstaller joblens.spec --noconfirm
 # Result:
-#     dist\JobLens\JobLens.exe     (+ dist\JobLens\_internal\ with Python and libraries)
-# Check the build:
-#     dist\JobLens\JobLens.exe --self-test selftest.txt     (no window)
-#     dist\JobLens\JobLens.exe --smoke smoke.json           (opens the window)
+#     dist\engine\joblens-engine.exe   (+ dist\engine\_internal\ with Python and libraries)
+# The installer puts it in {app}\engine\, where JobLens.exe looks for it.
+# Check it alone (no window):
+#     dist\engine\joblens-engine.exe --self-test selftest.txt
 #
 # How PyInstaller works: it starts from the entry script, follows every
 # `import` to find the modules the app needs, and copies them - plus a
 # Python interpreter - into one folder. "Freezing" = bundling, not compiling.
 
-from pathlib import Path
-
 from PyInstaller.utils.hooks import copy_metadata
 
-if not Path("desktop_web/web/index.html").exists():
-    raise SystemExit("The UI isn't built: run `npm ci && npm run build` in frontend/ first "
-                     "(scripts/build_installer.py does it for you).")
-
-# Files the app opens at runtime (read via paths.resource_path()).
-datas = [("desktop_web/web", "desktop_web/web"),   # the built React UI (12h)
-         ("assets/joblens.png", "assets"), ("assets/joblens.ico", "assets"),
+# Files the engine opens at runtime (read via paths.resource_path()). The UI
+# itself is built into JobLens.exe, so it isn't needed here.
+datas = [("assets/joblens.png", "assets"), ("assets/joblens.ico", "assets"),
          ("LICENSE", "."), ("THIRD_PARTY_NOTICES.md", ".")]
 
 # Some libraries look up their own version at import time
@@ -32,33 +31,29 @@ datas = [("desktop_web/web", "desktop_web/web"),   # the built React UI (12h)
 # the package's *.dist-info folder, which PyInstaller doesn't copy unless asked.
 for package in ["langchain", "langchain-core", "langgraph", "langgraph-checkpoint",
                 "langgraph-checkpoint-sqlite", "langsmith", "langchain-ollama", "ollama",
-                "langchain-anthropic", "anthropic", "ddgs", "pydantic", "langfuse", "pywebview",
+                "langchain-anthropic", "anthropic", "ddgs", "pydantic", "langfuse",
                 # 16c: OpenAI and Gemini can be chosen in Settings since 1.2.0
-                "langchain-openai", "openai", "tiktoken", "langchain-google-genai", "google-genai",
-                "pystray"]:  # pystray's metadata carries its LGPL license texts (13a)
+                "langchain-openai", "openai", "tiktoken", "langchain-google-genai", "google-genai"]:
     try:
         datas += copy_metadata(package)
     except Exception as e:  # not installed -> skip, but say so in the build log
         print(f"[joblens.spec] no metadata for {package}: {e}")
 
 a = Analysis(
-    ["desktop_web/__main__.py"],
+    ["desktop_web/engine.py"],
     pathex=["."],
     datas=datas,
     # Imported inside functions (only when that provider / screen is used), so be explicit.
     hiddenimports=["langchain_ollama", "langchain_anthropic", "langchain_openai", "langchain_google_genai",
                    "tiktoken_ext.openai_public", "tiktoken_ext",  # tiktoken finds its encodings by name
                    "desktop_web.selftest", "job_agent.providers",
-                   "job_agent.monitoring", "job_agent.system_check", "job_agent.ollama_setup",
-                   # pystray picks its backend by name at runtime: PyInstaller can't see it.
-                   "pystray._win32"],
-    # The web app never uses these. PySide6 / matplotlib belonged to the Qt UI
-    # (removed in 12i): excluded in case a developer still has them installed.
-    excludes=["PySide6", "shiboken6", "matplotlib", "streamlit", "altair", "pydeck",
+                   "job_agent.monitoring", "job_agent.system_check", "job_agent.ollama_setup"],
+    # Not in the engine: the window and the tray are Rust's now (pywebview,
+    # pystray and pythonnet stay for `python -m desktop_web` from source).
+    # PySide6 / matplotlib belonged to the Qt UI (removed in 12i).
+    excludes=["webview", "pystray", "pythonnet", "clr_loader", "bottle", "proxy_tools",
+              "PySide6", "shiboken6", "matplotlib", "streamlit", "altair", "pydeck",
               "pyarrow", "pytest", "_pytest", "IPython", "jupyter", "notebook", "tkinter"],
-    # pystray is LGPL-3.0: ship it as plain .py files in _internal\pystray\
-    # (not inside the compressed archive), so a user can replace it (13a, D24).
-    module_collection_mode={"pystray": "py"},
     noarchive=False,
 )
 pyz = PYZ(a.pure)
@@ -68,10 +63,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,   # "one folder" build: starts fast, easy to inspect
-    name="JobLens",
+    name="joblens-engine",
     icon="assets/joblens.ico",
-    console=False,           # a windowed app: no black console window behind it
+    # A console program, so its stdin/stdout are the pipe to JobLens.exe.
+    # JobLens.exe starts it with CREATE_NO_WINDOW: no console box appears.
+    console=True,
     upx=False,
 )
 
-coll = COLLECT(exe, a.binaries, a.datas, name="JobLens", upx=False)
+coll = COLLECT(exe, a.binaries, a.datas, name="engine", upx=False)

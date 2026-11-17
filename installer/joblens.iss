@@ -68,8 +68,14 @@ RestartApplications=no
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
+[InstallDelete]
+; 18d6: up to 1.2.0 the app was one PyInstaller folder (JobLens.exe + _internal\).
+; Since version 3 JobLens.exe is the Rust window and Python lives in engine\,
+; so an update from 1.2.0 removes the old _internal\ (~150 MB) first.
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Files]
-; The whole PyInstaller folder: JobLens.exe + _internal\
+; Version 3 (18d6): JobLens.exe (the Rust window) + engine\ (Python, PyInstaller)
 Source: "..\dist\JobLens\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Licenses: JobLens (MIT) + bundled components
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
@@ -86,6 +92,8 @@ Name: "{autodesktop}\{#TheAppName}"; Filename: "{app}\JobLens.exe"; Tasks: deskt
 ; never by the installer. The uninstaller removes it (ValueType none: nothing is written).
 #ifndef TestBuild
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "JobLens"; Flags: uninsdeletevalue
+; 18d3: the engine registers JobLens as a notification sender at each start; the uninstaller removes it.
+Root: HKCU; Subkey: "Software\Classes\AppUserModelId\JobLens.Desktop"; ValueType: none; Flags: uninsdeletekey
 #endif
 
 [Run]

@@ -301,7 +301,9 @@ fn engine_command() -> Command {
     let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(PathBuf::from));
     if let Some(installed) = exe_dir.map(|d| d.join("engine").join("joblens-engine.exe")) {
         if installed.exists() && std::env::var("JOBLENS_PYTHON").is_err() {
-            return Command::new(installed);
+            let mut command = Command::new(installed);
+            command.stderr(engine_log()); // no terminal to print to: a file
+            return command;
         }
     }
     // From source: the repo this program was built in.
@@ -360,13 +362,30 @@ mod windows_closing {
     }
 }
 
+/// 18d6: what the installed engine prints (warnings, "! ..." lines) goes to
+/// %LOCALAPPDATA%\JobLens\engine.log, new each start, for troubleshooting.
+fn engine_log() -> Stdio {
+    if let Ok(base) = std::env::var("LOCALAPPDATA") {
+        let folder = PathBuf::from(base).join("JobLens");
+        if std::fs::create_dir_all(&folder).is_ok() {
+            if let Ok(file) = std::fs::File::create(folder.join("engine.log")) {
+                return Stdio::from(file);
+            }
+        }
+    }
+    Stdio::null()
+}
+
 fn start_engine(app: &AppHandle) -> std::io::Result<Engine> {
     let mut command = engine_command();
     // 18d5: Start with Windows must name this program, not the engine.
     if let Ok(exe) = std::env::current_exe() {
         command.env("JOBLENS_APP_EXE", exe);
     }
-    command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::inherit());
+    command.stdin(Stdio::piped()).stdout(Stdio::piped());
+    if std::env::var("JOBLENS_PYTHON").is_ok() || !std::env::current_exe().map(|e| e.with_file_name("engine").exists()).unwrap_or(false) {
+        command.stderr(Stdio::inherit()); // from source: the terminal you started it in
+    }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

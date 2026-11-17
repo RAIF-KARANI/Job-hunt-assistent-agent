@@ -366,6 +366,11 @@ def _pipe_writer() -> Write:
 
 
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["--self-test"] and len(argv) > 1:  # 18d6: the packaged engine, checked alone
+        from desktop_web.selftest import self_test
+
+        return self_test(argv[1], engine=True)
     write = _pipe_writer()
     from desktop_web import startup
     from desktop_web.bridge import Api
