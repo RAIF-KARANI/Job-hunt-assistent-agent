@@ -37,7 +37,6 @@ from pathlib import Path
 from typing import Callable
 from urllib.parse import urlparse
 
-import webview
 
 from job_agent import __version__, applyreminder, followup, paths, providers, runlog, settings, tracker
 from job_agent.llm import llm_status
@@ -555,7 +554,9 @@ class Api:
     def _choose_files(self):
         if not self._window:
             raise RuntimeError("No window to show a file dialog in.")
-        return self._window.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=True,
+        from webview import FileDialog
+
+        return self._window.create_file_dialog(FileDialog.OPEN, allow_multiple=True,
                                                file_types=("PDF files (*.pdf)",))
 
     def _attach(self, window) -> None:

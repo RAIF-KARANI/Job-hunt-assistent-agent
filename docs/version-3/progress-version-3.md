@@ -24,7 +24,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18a The Tauri window | ✅ | your real UI and data in a Rust window, Python beside it |
 | 18b Measured | ✅ | 36% faster to your data, 19–24% less memory, only 5% smaller |
 | 18c Decide | ✅ | adopt Tauri (your choice) |
-| 18d The Rust window, feature by feature | ⏳ | 18d1 next; plan in the plan file, design in E6 |
+| 18d1 The Rust window in the app | ✅ | `desktop_tauri/` + `engine.py`; your data in the Rust window; smoke test |
+| 18d2–18d8 | ⏳ | 18d2 (file dialogs) next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -752,3 +753,39 @@ You chose to adopt Tauri: version 3's window moves to Rust, the agent stays
 Python. The bar for 18d is "nothing worse": every feature of today's
 window works the same before the release, and the real update test
 passes. How it is built: decision E6. The steps: the plan, Phase 18.
+
+## 18d1 The Rust window in the app ✅ (17 Nov 2026)
+
+### What was done
+- **`desktop_tauri/`**: the Rust program, out of the spike and into the app
+  (README there). It finds the engine next to itself once installed, or
+  the repo's Python from source.
+- **`desktop_web/engine.py`**: the Python side. Besides answering the page,
+  it can now ask the window for things and wait for the answer (show,
+  hide, quit, open a page; the file dialogs and the tray next). The window
+  tells it when the page has loaded and when it is shown or hidden.
+- **`desktop_web/startup.py`**: the start-up and quit work (cut-off runs,
+  old scores, the update check, tidying, freeing the model on quit) moved
+  out of `app.py`, so the old and new windows do exactly the same.
+- `bridge.py` no longer loads pywebview when it is imported (only when the
+  old window opens a file dialog), so the engine runs without it.
+- On close, the window closes the pipe and gives the engine up to 8 s to
+  end a running step and free the model, like Quit today.
+- **A smoke test**: `JOBLENS_SMOKE=out.json` (and `JOBLENS_SMOKE_SHOT` for a
+  picture): once the page asks for its first data, a report is written and
+  the window closes.
+
+### Checked
+- pytest: 484 pass (13 new: the engine's protocol, without a window and
+  without your data).
+- The Rust window from source: your real Dashboard (33 jobs, the galaxy,
+  Do next), engine running beside it. Smoke test: start, data on screen,
+  report, both processes ended in 1.5 s; no engine left behind.
+- The old window still works (`python -m desktop_web --smoke`).
+
+### Learned
+- **Two copies of the window can't share WebView2's profile**: a second
+  one crashed at start ("the requested resource is in use") while the
+  first was still closing. One copy at a time (18d5) prevents it.
+- A filter that kills processes by command line must not match its own
+  command (it stopped itself once; nothing else was touched).

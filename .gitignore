@@ -32,3 +32,5 @@ webview/
 spikes/18_tauri/src-tauri/target/
 spikes/18_tauri/src-tauri/gen/
 spikes/18_tauri/timing*.json
+desktop_tauri/target/
+desktop_tauri/gen/

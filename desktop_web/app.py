@@ -20,7 +20,13 @@ from pathlib import Path
 import webview
 
 from job_agent import paths, settings
+from desktop_web import startup
 from desktop_web.bridge import Api, window_sender
+# 18d1: these moved to startup.py (shared with the Rust window's engine);
+# the old names stay for the code and tests that use them.
+from desktop_web.startup import clean_temp as _clean_temp  # noqa: F401
+from desktop_web.startup import free_the_gpu as _free_the_gpu
+from desktop_web.startup import keep_old_descriptions as _keep_old_descriptions  # noqa: F401
 
 DEV_URL = "http://localhost:5173"
 WEB_DIR = paths.resource_path("desktop_web/web")
@@ -157,23 +163,9 @@ def main(argv=None) -> int:
         if instance.ask_running_copy_to_show():
             return 0
 
-    # 12j: runs still marked "running" were cut off when the app last closed.
+    # 12j, v1.1.0: cut-off runs and old scores, before the screens show them.
     # (After the check above: a second start must not mark the first one's run.)
-    from job_agent import runlog
-    try:
-        runlog.mark_interrupted()
-    except Exception as e:  # the run log must never stop the app from opening
-        print(f"! run log: {e}")
-    # v1.1.0: saved scores were computed with an older formula; re-score them
-    # once, in code (no AI, well under a second), before the screens show them.
-    try:
-        from job_agent.tracker import rescore_all
-
-        changed = rescore_all()
-        if changed:
-            print(f"  re-scored {len(changed)} saved job(s) with the new formula")
-    except Exception as e:  # never stop the app from opening
-        print(f"! re-scoring saved jobs: {e}")
+    startup.prepare()
 
     if args.dev:
         url = DEV_URL
@@ -213,16 +205,9 @@ def main(argv=None) -> int:
     _close_when_windows_asks(window)
     # 13d: the installer takes over -> close (never during a run: refused before)
     api._on_quit(_quit_action(window, tray))
-    from desktop_web import updates
-    from job_agent import __version__
-    # 1.1.1: read the installer's log first: it says whether the last update worked.
-    api._install_problem = updates.review_last_install(paths.APP_HOME / "updates", __version__, paths.APP_HOME)
-    updates.clean_downloads(paths.APP_HOME / "updates")  # last update's installer, no longer needed
+    startup.after_update(api)  # 1.1.1: did the last update work? then tidy its installer
+    startup.background_chores()  # 16e old job descriptions, 15h %TEMP%
     from desktop_web import housekeeping
-    # 16e: once, in the background: the job descriptions of the jobs saved before 1.2.0
-    threading.Thread(target=_keep_old_descriptions, name="joblens-descriptions", daemon=True).start()
-    if paths.IS_INSTALLED:  # a run from source never touches the installed app's leftovers
-        threading.Thread(target=_clean_temp, name="joblens-clean-temp", daemon=True).start()
     try:
         # 15h: one fixed browser profile instead of a new temporary one per start
         # (pywebview's private mode left 162 MB of them in %TEMP%).
@@ -277,79 +262,14 @@ def _close_when_windows_asks(window) -> None:
     window.events.loaded += attach
 
 
-def _keep_old_descriptions() -> None:
-    """16e: a single try to fetch the job description of every job saved
-    before JobLens kept them. Slow on purpose (a pause between pages), in
-    the background, and never again after it ran once."""
-    from job_agent import posting_archive
-
-    time.sleep(30)  # startup, the page and the update check go first
-    try:
-        counts = posting_archive.backfill()
-        if counts:
-            print("  job descriptions of older jobs: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())))
-    except Exception as e:  # never worth a crash
-        print(f"! keeping old job descriptions: {e}")
-
-
-def _clean_temp() -> None:
-    from desktop_web import housekeeping
-
-    try:
-        removed, freed = housekeeping.clean_webview_temp()
-        if removed:
-            print(f"  removed {removed} old browser profile(s) from %TEMP% ({freed / 1e6:.0f} MB)")
-    except Exception as e:  # housekeeping must never stop the app
-        print(f"! cleaning %TEMP%: {e}")
-
-
-def _free_the_gpu(api, grace: float = 5.0, tidy: bool = False) -> None:
-    """15g, on Quit: end a running step (closing its connection makes Ollama
-    stop at once), then free the model's graphics memory. On 1 Nov a quit
-    JobLens lived on without a window for ~8 minutes, waiting for an AI call,
-    with the GPU at 90 %. If the step still hasn't ended after `grace`
-    seconds, the process exits anyway.
-    tidy (15h): also drop the saved state of runs that can't be continued."""
-    import os
-
-    from job_agent.llm import unload_model
-
-    runner = getattr(api, "_runner", None)
-    done = runner.shut_down(grace) if runner else True
-    if tidy:
-        try:
-            from desktop_web import housekeeping
-
-            keep = {runner.run_id} if runner and getattr(runner, "run_id", None) else set()
-            result = housekeeping.prune_checkpoints(keep=keep)
-            if result["runs_removed"]:
-                print(f"  checkpoints: removed {result['runs_removed']} old run(s), "
-                      f"{result['bytes_before'] / 1e6:.1f} -> {result['bytes_after'] / 1e6:.1f} MB")
-        except Exception as e:  # never block quitting
-            print(f"! tidying checkpoints: {e}")
-    unload_model()
-    if not done:
-        print("! the agent didn't stop in time: exiting anyway")
-        sys.stdout.flush()
-        os._exit(0)  # a thread blocked in a call must not keep JobLens alive
-
-
 def _check_for_updates_later(window, api) -> None:
-    """13b: once per app start, a few seconds after the page loaded, on a
-    background thread (startup never waits for GitHub)."""
+    """13b: once per app start, a few seconds after the page loaded."""
     started = threading.Event()
-
-    def later():
-        time.sleep(5)
-        try:
-            api._startup_update_check()
-        except Exception as e:  # an update check must never break the app
-            print(f"! update check: {e}")
 
     def on_loaded():
         if not started.is_set():  # `loaded` fires again on every page reload
             started.set()
-            threading.Thread(target=later, name="joblens-updates", daemon=True).start()
+            startup.check_for_updates_soon(api)
 
     window.events.loaded += on_loaded
 

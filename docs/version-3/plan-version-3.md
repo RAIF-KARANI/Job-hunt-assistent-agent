@@ -79,7 +79,7 @@ shortcut, updater, the bridge). Python still ships beside it.
 
 | Step | What | Done when |
 |---|---|---|
-| 18d1 | **Into the app**: the spike becomes `desktop_tauri/` (Rust) and `desktop_web/engine.py` (Python); the pipe carries Python's requests to the window too (show, hide, notify, a dialog) | the Rust window runs JobLens from source like `python -m desktop_web` does |
+| 18d1 ✅ | **Into the app**: the spike becomes `desktop_tauri/` (Rust) and `desktop_web/engine.py` (Python); the pipe carries Python's requests to the window too (show, hide, notify, a dialog) | the Rust window runs JobLens from source like `python -m desktop_web` does |
 | 18d2 | **File dialogs**: Add PDFs, Save as (CSV, cover notes, prep sheets) | every export and the resume upload work |
 | 18d3 | **Tray**: icon, menu (open, status, follow-ups, stop the run, quit), notifications and their clicks; the close button hides to the tray when it should | the tray behaves like 1.2.0's |
 | 18d4 | **Quick-analyze box**: the global shortcut (kept in Python) opens the small box window | Ctrl+Alt+J works with the window hidden |

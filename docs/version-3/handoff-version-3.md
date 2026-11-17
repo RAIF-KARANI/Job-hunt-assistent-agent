@@ -21,7 +21,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **18d1: the Rust window inside the app** (plan: Phase 18 in the plan; how it's built: E6) |
+| Next step | **18d2: file dialogs in the Rust window** (Add PDFs, Save as) |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
@@ -151,6 +151,10 @@ with every feature still working. That is how Phase 17 is laid out.
   untracked.
 
 ### Phase 18: Rust spike
+- **The Rust window (since 18d1)** is `desktop_tauri/` (README there); its
+  Python side is `desktop_web/engine.py`, the start-up work both windows
+  share is `desktop_web/startup.py`. Run it from source:
+  `desktop_tauri/target/release/joblens.exe`. Smoke test: `JOBLENS_SMOKE=out.json`.
 - **The spike** is in `spikes/18_tauri/` (README there). Rust is installed
   in `%USERPROFILE%\.cargo\bin`, not on PATH. Build with
   `CARGO_BUILD_JOBS=2` to keep memory down.

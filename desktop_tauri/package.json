@@ -1,0 +1,12 @@
+{
+  "name": "joblens-window",
+  "private": true,
+  "version": "2.0.0",
+  "description": "JobLens's window in Rust (Tauri). See README.md.",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}

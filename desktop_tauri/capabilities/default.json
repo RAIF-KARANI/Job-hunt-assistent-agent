@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The page may call JobLens's engine and receive its events.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
