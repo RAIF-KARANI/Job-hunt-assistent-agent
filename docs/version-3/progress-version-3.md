@@ -31,7 +31,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d5 One copy, autostart, shutdown | ✅ | Second start shows the first; --tray; installer and Windows can close it |
 | 18d6 Packaging | ✅ | Installer builds, installs, passes both tests, uninstalls clean |
 | 18d7 Real update test | ✅ | 1.2.0 → version 3 and 3 → 3: all four update checks pass |
-| 18d8 | ⏳ | measure the installed app next |
+| 18d8 Measured, installed | ✅ | 42 % sooner to data, 7 % less memory, same size |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -1027,3 +1027,48 @@ inside the code is still 1.2.0 until the release (E5).
 - The engine's self-test loads the local model (~5 GB) for one real call.
   On this PC that can be enough for Windows' memory pressure to stop a
   build: close Chrome first.
+
+## 18d8 Measured, installed ✅ (17 Nov 2026) — Phase 18 done
+
+`python scripts/measure_installed.py 5`: each Test Build installed silently
+in a temp folder with an empty data folder, started **normally** (as you
+would), watched through WebView2's debug port, closed the way an installer
+closes it, 5 runs after a warm-up, then uninstalled. The real JobLens was
+not touched.
+
+| | 1.2.0 (pywebview) | Version 3 (Rust) | Change |
+|---|---|---|---|
+| Installer | 64.8 MB | 64.5 MB | the same |
+| App folder | 158 MB | 158 MB | the same |
+| Time to data (median) | 1.85 s | **1.07 s** | **42 % sooner** |
+| Memory 1 s after (median) | 567 MB | **526 MB** | **7 % less** |
+| Peak, first 3 s after (median) | 589 MB | 552 MB | 6 % less |
+
+"Time to data": from launching `JobLens.exe` until the page has its first
+answer from Python, i.e. when the screens can show your data. "Memory": the
+app and everything it started (WebView2, Python) added up.
+
+Against the bar proposed for E2 (installer ≥ 25 % smaller **or** ready
+≥ 30 % sooner, nothing worse): **ready 42 % sooner, memory a little lower,
+and the tray, shortcut, notifications and updates pass every check
+(18d2-18d7).** Size is unchanged.
+
+### How not to measure (two wrong first attempts)
+1. **Smoke mode:** 1.2.0's `--smoke` skips the tray, the quick box and the
+   shortcut, and with `--screenshot` it reports 1.5 s after it is ready and
+   is already closing at "one second after". That gave 3.3 s vs 4.0 s and
+   190 MB vs 448 MB, which were wrong in both directions.
+2. **Killing the app between runs:** 1.2.0 then took ~3.9 s on every later
+   start (2.3 s on the first), presumably recovering from the kill. Closing
+   it cleanly (Restart Manager) gave 1.8-2.2 s.
+
+### Size: what's left
+Version 3 drops pywebview, pythonnet and pystray from the app but adds the
+4 MB `JobLens.exe`. The engine is 152 MB, and nothing big in it is unused:
+- numpy + pandas (~40 MB) compute the Dashboard's numbers (`monitoring.py`);
+- primp (15 MB) is the web search;
+- Pillow (13 MB) is needed by the PDF export (ReportLab);
+- cryptography (10 MB) is needed by Google's sign-in library (Gemini).
+
+Making it smaller means rewriting the Dashboard's sums without pandas. That
+would be a separate decision, not part of Phase 18.

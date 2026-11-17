@@ -60,7 +60,7 @@ Source kept in [mockup/](mockup/).
 | 17i ✅ | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
 | 17j ✅ | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
-## Phase 18 — Rust (Tauri) window 🚧
+## Phase 18 — Rust (Tauri) window ✅ (17 Nov)
 **Your goals:** a smaller, faster app, and learning Rust. **Your rule:** move
 the shell to Rust only if it is clearly better; otherwise the spike stays a
 learning project (E2).
@@ -86,7 +86,7 @@ shortcut, updater, the bridge). Python still ships beside it.
 | 18d5 ✅ | **One copy at a time, Start with Windows (in the tray), closing at Windows shutdown** | a second start brings the first back; sign-in starts it hidden |
 | 18d6 ✅ | **Packaging**: PyInstaller builds the agent, Tauri the window, Inno Setup the installer (same app id); `--smoke` and `--self-test` again | `scripts/build_installer.py --test-install` passes |
 | 18d7 ✅ | **Updates**: from an installed 1.2.0 to this build, with the real update test | `scripts/check_real_update.py` passes |
-| 18d8 | **Measure again, installed**: start time, memory, size against 1.2.0 | the numbers are in the progress log |
+| 18d8 ✅ | **Measure again, installed**: start time, memory, size against 1.2.0 | the numbers are in the progress log |
 
 ## Phase 19 — New features 🟡
 Your list, when you have it. A feature that adds a screen is built in the

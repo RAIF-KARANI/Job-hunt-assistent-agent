@@ -18,10 +18,10 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 |---|---|
 | Released | **v1.2.0** (16 Nov 2026): https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v1.2.0 |
 | `main` | `d90dea6`, the same as `version-2` (v1.2.0) |
-| Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
+| Working branch | **`version-3`**, pushed. Phases 17 (new look) and 18 (Rust window) are done |
 | Open pull requests | none |
-| Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **18d8: measure the installed app** (size, start time, memory; what the engine can leave out) |
+| Tests | 499 pass (`.venv\Scripts\python -m pytest`); also `scripts/build_installer.py --test-install` and `scripts/check_real_update.py --old 1.2.1 --new 2.0.0` |
+| Next step | **Phase 19: your feature list** (waiting for it), then Phase 20, then the release |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
@@ -29,7 +29,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | # | Phase | Status |
 |---|---|---|
 | 17 | **New look**: your glass reference, adapted to JobLens, every screen | ✅ done 17 Nov |
-| 18 | **Rust (Tauri) window**: adopted 17 Nov (E2); 18d moves every window feature to Rust | 🚧 18d next |
+| 18 | **Rust (Tauri) window**: adopted 17 Nov (E2); every window feature moved to Rust (18d) | ✅ done 17 Nov |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
 
