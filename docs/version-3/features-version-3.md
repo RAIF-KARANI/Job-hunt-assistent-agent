@@ -104,10 +104,10 @@ private" (both would live in Settings).
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F24 | **Link and Stop** | One row: the job link, and Stop while a run is going | 🎨 |
-| F25 | **Run spine** | The five steps in order with a progress bar, the time so far and the usual time. The resumes being compared sit inside step 2 | 🎨 |
-| F26 | **Decide inside step 5** | Approve and save, Rewrite with my notes, Reject | 🎨 |
-| F27 | **Live log** | An accordion (closed) that shows the current line | 🎨 |
+| F24 | **Link and Stop** | One row: the job link, the Analyze button (it shows the running time), and Stop while a run is going | ✅ built (17f) |
+| F25 | **Run spine** | One card: "Step 2 of 5", its state, the time so far and the usual time, one bar for the whole run, then the five steps in order. Each step says what it found | ✅ built (17f) |
+| F26 | **Decide at step 5** | The draft and Approve and save / Rewrite with my notes / Reject sit directly under the steps, and come into view when the run stops for you | ✅ built (17f) |
+| F27 | **Live log** | An accordion (closed) that shows the current line | ✅ built (17f) |
 
 ## 7. Evals
 

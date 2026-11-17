@@ -15,7 +15,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17c The shell | ✅ | grouped sidebar, top bar, quick actions (Ctrl K), light/dark switch |
 | 17d The Dashboard | ✅ | pipeline card, Do next, galaxy joined to the selected job, agent numbers |
 | 17e The Tracker | ✅ | Needs you, the board, the detail sheet in folds, dialogs |
-| 17f–17j | ⏳ | 17f (Analyze) is next |
+| 17f Analyze | ✅ | one column: the link, the run card with five steps, your decision, the log folded |
+| 17g–17j | ⏳ | 17g (Evals) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -460,3 +461,50 @@ The first change to the app itself.
   About the company): the real sheet holds more than the mockup showed.
 - **The Tracker keeps its search box.** It filters the board in place,
   which quick actions doesn't do.
+
+## 17f Analyze ✅ (17 Nov 2026)
+
+### What was done
+- **One column, in the order things happen** (it was two columns: steps
+  left, the draft right).
+- **The run card**: a heading that says where the run is ("Step 2 of 5",
+  "Step 5 of 5", "All five steps", "Stopped at step 3"), a state pill
+  (Running, Your decision, Needs the posting text, Done, Something went
+  wrong), the time so far next to the usual time, one bar for the whole
+  run, then the five steps. A finished step has a gradient check and a
+  coloured line down to the next; the running step breathes; a step
+  reused from the tracker has a dashed outline.
+- **Your decision** sits directly under the steps and scrolls into view
+  when the run stops for you or ends. Before a run, one sentence under
+  the steps says what happens at step 5.
+- **Live log** is an accordion, closed, and shows the line the agent is
+  on.
+
+### Checked
+- Build passes; pytest: 471 pass; the real window starts.
+- A simulated run in a browser, dark and light: idle, running (heading,
+  bar, step states, the log's line), your decision (the draft is in
+  view), the log opened (9 lines), approve (bar full, "Done"), and a
+  posting that can't be read ("Needs the posting text"); nothing scrolls
+  sideways at 720 px.
+
+### Found and fixed on the way
+- The heading named the wrong step when an earlier step was marked
+  stopped while a later one ran. It now goes by the step in progress.
+
+### Not checked
+- **The "Stopped" and "Something went wrong / API limit" panels.** The
+  simulator keeps sending steps after a stop and has no failing run, so
+  those two panels were not seen. Their markup didn't change (only the
+  shared card look did). Worth a look on a real run: start one, press
+  Stop.
+- A real run with the real model.
+
+### Different from the mockup, on purpose
+- **The draft is under step 5, not inside it.** The real review is an
+  editor with warnings and a "why this fit" section; inside a step row it
+  would be cramped. It sits directly below and comes into view by itself.
+- **The resumes being compared are words, not chips** ("best:
+  AI_Engineer.pdf"): that is what the agent reports for step 2.
+- **The Analyze button stays** and shows the running time; Stop is next
+  to it.

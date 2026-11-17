@@ -1,13 +1,15 @@
 // Analyze screen (12d): paste a link, watch the agent's steps live, then
 // approve, rewrite or reject the cover note.
 //
+//   17f: one column, in the order things happen.
 //   ┌ link ............................................ [Analyze] ┐
-//   ┌ What the agent is doing ┐  ┌ Cover note draft / paste / result ┐
-//   │ 1 ✓ Read the posting 22s │  │                                    │
-//   │ ...                      │  │                                    │
-//   ├ Live log ────────────────┤  │                                    │
+//   ┌ Step 2 of 5 · Running · 2m 41s so far ──────────────────────┐
+//   │ 1 ✓ Read the posting ... 5 Cover note                        │
+//   ┌ the draft to decide on / paste / result / what went wrong ───┐
+//   ┌ Live log (folded; shows the current line) ───────────────────┐
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Fold } from "../app/Fold";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { Answer } from "../bridge/types";
 import { ContinueBanner } from "./ContinueBanner";
@@ -16,6 +18,7 @@ import { PastePanel } from "./PastePanel";
 import { ResultPanel } from "./ResultPanel";
 import { ResumeChoice } from "./ResumeChoice";
 import { ReviewPanel, WarnIcon } from "./ReviewPanel";
+import { RunHead } from "./RunHead";
 import { dismiss, markBusy, useRun, type RunView } from "./runStore";
 import { Steps } from "./Steps";
 import { formatDuration, useNow } from "./time";
@@ -45,6 +48,14 @@ export function Analyze() {
 
   const waiting = run.phase === "review" || run.phase === "paste";
   const locked = checking || run.busy || waiting;
+
+  // 17f: the panel that needs you sits under the steps. When the run stops
+  // for you (or ends), bring it into view; you may be reading the log.
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (run.phase !== "idle" && run.phase !== "running") panel.current?.scrollIntoView({ block: "nearest" });
+  }, [run.phase]);
+  const lastLine = run.log.length ? run.log[run.log.length - 1].trim() : "";
 
   const start = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -98,7 +109,7 @@ export function Analyze() {
     <div className="page analyze">
       <header className="page-head">
         <h1>Analyze a job</h1>
-        <p>The agent reads the posting, scores your resumes, researches the company, then drafts a cover note for you to review.</p>
+        <p>Paste a link. JobLens does the five steps below and stops for your decision at the end.</p>
       </header>
 
       <form className="analyze-form" onSubmit={start}>
@@ -142,15 +153,24 @@ export function Analyze() {
         </div>
       )}
 
-      <div className="analyze-grid">
-        <section className="analyze-progress" aria-label="Agent progress">
-          <Steps steps={run.steps} estimates={estimates} />
-          <LiveLog lines={run.log} />
-        </section>
-        <div className="analyze-panel">
-          <Panel run={run} onAnswer={answer} onPaste={paste} onAnother={another} onRetry={() => void start()} onContinue={() => void carryOn()} />
-        </div>
+      <section className="card run-card" aria-label="Agent progress">
+        <RunHead run={run} estimates={estimates} />
+        <Steps steps={run.steps} estimates={estimates} />
+        {run.phase === "idle" && (
+          <p className="hint run-how">
+            At step 5 the agent stops and waits for you: approve the draft (as it is, or after editing it), ask for a rewrite, or reject it. Nothing
+            is saved as approved without you.
+          </p>
+        )}
+      </section>
+
+      <div className="analyze-panel" ref={panel}>
+        <Panel run={run} onAnswer={answer} onPaste={paste} onAnother={another} onRetry={() => void start()} onContinue={() => void carryOn()} />
       </div>
+
+      <Fold level={2} title="Live log" digest={lastLine || "Every line the agent prints, as it prints it"}>
+        <LiveLog lines={run.log} />
+      </Fold>
     </div>
   );
 }
@@ -287,33 +307,7 @@ function Panel({ run, onAnswer, onPaste, onAnother, onRetry, onContinue }: Panel
           </div>
         </section>
       );
-    default: {
-      const rewriting = run.steps[4].status === "running";
-      return (
-        <section className="card review empty" aria-labelledby="draft-title">
-          <header className="panel-head">
-            <h2 id="draft-title">Cover note draft</h2>
-          </header>
-          {run.phase === "running" ? (
-            <p className="lead">{rewriting ? "The agent is writing the draft..." : "The draft appears here when the agent gets to it."}</p>
-          ) : (
-            <>
-              <p className="lead">Paste a job link above to start. When the draft is ready the agent pauses here and waits for you:</p>
-              <ul className="how">
-                <li>
-                  <strong>Approve</strong> it as it is, or after editing the text yourself
-                </li>
-                <li>
-                  <strong>Rewrite</strong>: tell the agent what to change
-                </li>
-                <li>
-                  <strong>Reject</strong> it: nothing is saved
-                </li>
-              </ul>
-            </>
-          )}
-        </section>
-      );
-    }
+    default:
+      return null; // idle or running: the steps above say where the run is
   }
 }

@@ -24,10 +24,7 @@ export function LiveLog({ lines }: { lines: string[] }) {
   };
 
   return (
-    <section className="log-card" aria-labelledby="log-title">
-      <h2 id="log-title" className="eyebrow">
-        Live log
-      </h2>
+    <section className="log-card" aria-label="Live log">
       {/* aria-live off: a screen reader would read every line; the steps carry the news. */}
       <div ref={box} className="log" role="log" aria-live="off" tabIndex={0} onScroll={onScroll}>
         {lines.length === 0 ? (

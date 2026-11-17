@@ -59,16 +59,9 @@ interface Props {
 export function Steps({ steps, estimates = {} }: Props) {
   const live = steps.some((s) => s.status === "running" || s.status === "waiting");
   const now = useNow(live);
-  const running = steps.some((s) => s.status === "running");
-  const total = Object.values(estimates).reduce<number>((sum, s) => sum + (s ?? 0), 0);
 
   return (
-    <div className="card steps-card">
-      <h2>What the agent is doing</h2>
-      {running && total >= 60 && (
-        <p className="hint steps-estimate">A run usually takes about {formatDuration(total * 1000)} on this PC, plus the time you spend on the draft.</p>
-      )}
-      <ol className="steps">
+      <ol className="steps" aria-label="The five steps">
         {steps.map((step) => {
           const took = timing(step, now);
           const usual = estimates[String(step.n)];
@@ -94,6 +87,5 @@ export function Steps({ steps, estimates = {} }: Props) {
           );
         })}
       </ol>
-    </div>
   );
 }
