@@ -1,0 +1,22 @@
+[package]
+name = "joblens-spike"
+version = "0.1.0"
+description = "Phase 18 spike: JobLens's window in Rust (Tauri)"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde_json = "1"
+tokio = { version = "1", features = ["sync"] }
+
+[profile.release]
+# The usual settings for a small Tauri program.
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

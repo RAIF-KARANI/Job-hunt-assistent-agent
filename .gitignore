@@ -27,3 +27,8 @@ update_check.json
 follow_up_notice.txt
 updates/
 webview/
+
+# ---- Phase 18 Tauri spike: Rust build output and Tauri's generated files ----
+spikes/18_tauri/src-tauri/target/
+spikes/18_tauri/src-tauri/gen/
+spikes/18_tauri/timing*.json

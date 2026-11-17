@@ -16,6 +16,9 @@ learning project.
 - **Open:** what "clearly better" means. Proposal: the installer at least 25 %
   smaller, or the window ready at least 30 % sooner, and nothing worse (tray,
   shortcut, updates, memory).
+- **Measured (18b, 17 Nov):** 36 % faster to your data, 19–24 % less memory,
+  5 % smaller. Passes the proposed bar on speed, not on size; tray,
+  shortcut and updates are not built yet. **Your decision (18c).**
 
 ## E3 — The new look: your glass reference, adapted ✅ (16 Nov 2026; mockup approved the same day)
 Your reference image and prompt set the direction: dark glassmorphism,

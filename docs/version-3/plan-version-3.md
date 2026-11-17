@@ -16,7 +16,7 @@ at the end** (E1).
 | # | Phase | What | Status |
 |---|---|---|---|
 | 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | ✅ 17a to 17j done (17 Nov) |
-| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ⏳ |
+| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | 🟡 18a, 18b done; 18c waits for your decision |
 | 19 | New features | your list (to come) | 🟡 waiting for your list |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
 
@@ -60,7 +60,7 @@ Source kept in [mockup/](mockup/).
 | 17i ✅ | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
 | 17j ✅ | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
-## Phase 18 — Rust (Tauri) spike ⏳
+## Phase 18 — Rust (Tauri) spike 🟡
 **Your goals:** a smaller, faster app, and learning Rust. **Your rule:** move
 the shell to Rust only if it is clearly better; otherwise the spike stays a
 learning project (E2).
@@ -70,8 +70,8 @@ shortcut, updater, the bridge). Python still ships beside it.
 
 | Step | What |
 |---|---|
-| 18a | A Tauri window showing the built UI, one bridge call into the Python agent (a sidecar) |
-| 18b | Measure against 1.2.0: installer size (68 MB), app folder (161 MB), time to a ready window (~3 s), memory, a bridge call's time |
+| 18a ✅ | A Tauri window showing the built UI, one bridge call into the Python agent (a sidecar) |
+| 18b ✅ | Measure against 1.2.0: installer size (68 MB), app folder (161 MB), time to a ready window (~3 s), memory, a bridge call's time |
 | 18c | Decide with the numbers (thresholds: E2, open) |
 | 18d | Only if adopted: tray, shortcut, updater (with its real update test), installer, in Rust |
 

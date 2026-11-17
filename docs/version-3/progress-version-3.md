@@ -21,7 +21,9 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17i Light theme check | ✅ | all text measured in both themes; one blue lightened |
 | 17j Accessibility and sizes | ✅ | keyboard focus, reduced motion, 720 to 2560 px: all pass |
 | **Phase 17** | ✅ | the glass look on every screen, both themes |
-| 18 Rust spike | ⏳ | next |
+| 18a The Tauri window | ✅ | your real UI and data in a Rust window, Python beside it |
+| 18b Measured | ✅ | 36% faster to your data, 19–24% less memory, only 5% smaller |
+| 18c Decide | 🟡 | waiting for you |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -671,3 +673,74 @@ and the dialogs. Commits `03bb5c1` (17b) to this one, all on `version-3`.
 - **Showing the real desktop through the window** (F1) needs a see-through
   window: a question for the Phase 18 spike.
 - **E4:** whether "Like Windows" stays as a theme choice (it does for now).
+
+## 18 Before starting: a size check (17 Nov 2026)
+
+Today's app folder, by part: the window code Tauri would replace is about
+3–4 MB of the libraries; `pandas`/`numpy` are ~40 MB (used only to add up
+Evals and Dashboard numbers); the web search library ~15 MB; `PIL` ~13 MB
+(the tray icon). From that I expected Tauri to be neither clearly smaller
+nor faster, and suggested slimming the Python side instead. You chose to
+run the spike as planned. **The size part of that expectation held; the
+speed part was wrong** (below).
+
+## 18a The Tauri window ✅ (17 Nov 2026)
+
+### What was done
+- **Rust installed** (1.100.0, the minimal toolchain, in
+  `%USERPROFILE%\.cargoin`; not added to PATH, so nothing else on the
+  PC changes). The C++ build tools were already there.
+- **`spikes/18_tauri/`**: a Rust program (Tauri 2) that opens a window
+  with the real built UI, starts the Python side and passes messages:
+  each `api.something(...)` on the page becomes one JSON line to Python,
+  and Python's events (log lines, run steps) come back the same way.
+- **The Python side** (`sidecar.py`) is today's `Api` class, unchanged,
+  behind a pipe. It refuses hidden methods, and keeps the agent's own
+  `print`s out of the pipe.
+- **The page** (`bridge.ts`): a few lines so that inside Tauri it talks to
+  `call(...)`; the normal app is untouched (its build and tests pass).
+
+### Checked
+- The Python side alone: answers `app_info` (v1.2.0) and `list_jobs` (your
+  33 jobs), refuses `_secret`.
+- The Rust build: compiled in about 10 minutes, 3.7 MB program with the UI
+  built in, 1.8 MB installer (without Python).
+- The window started and the page got its data from Python, every time
+  (measured in 18b; it closes itself after measuring).
+
+## 18b Measured ✅ (17 Nov 2026)
+
+Both windows run from source with the same Python and the same start-up
+work, started from outside and timed the same way; 5 runs each after a
+warm-up, alternated. Scripts: `spikes/18_tauri/measure.py`, `size.py`.
+
+| | Today (pywebview) | Tauri | Change |
+|---|---|---|---|
+| Time until your data shows | 2.11 s | 1.34 s | **36% faster** |
+| The page drawn (before data) | – | 0.32 s | |
+| Memory, 1 s after ready | 585 MB | 474 MB | **19% less** |
+| Peak memory at start | 626 MB | 476 MB | **24% less** |
+| Installer, compressed (estimate) | 62.1 MB | 59.0 MB | **5% smaller** |
+
+- **Why faster:** the Rust window draws the page in 0.3 s while Python
+  starts beside it. Today the window waits for Python to load pywebview
+  and .NET (pythonnet) first. Python itself takes about 1.3 s either way.
+- **Why barely smaller:** what only the window and tray need is 16.5 MB of
+  the 153 MB app folder (webview, pythonnet, the tray's PIL and pystray,
+  the UI files). The rest is Python and the agent, which ship either way.
+  The installer size is an estimate: today's v1.2.0 folder minus those
+  files plus the Rust program, compressed the same way (LZMA) as today's.
+
+### Against the bar proposed in E2
+"The installer at least 25% smaller, **or** the window ready at least 30%
+sooner, **and** nothing worse (tray, shortcut, updates, memory)."
+- Size: 5%, no. Speed: 36%, **yes**. Memory: better, yes.
+- Tray, shortcut, updates: **not known yet.** The spike doesn't have them;
+  they would be rewritten in Rust (18d), with the real update test again.
+
+### Not measured
+- The frozen (installed) app. Both were run from source; the installed
+  app may start a little differently.
+- How long 18d would take, and whether any of today's features are harder
+  in Tauri (Add PDFs dialog, the tray, the global shortcut, Start with
+  Windows, one copy at a time, the updater).

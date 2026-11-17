@@ -12,11 +12,18 @@
 import { mockApi } from "./mock";
 import type { AgentEvent, PyApi } from "./types";
 
+/** 18a: what Tauri puts on the page (withGlobalTauri). Only the Tauri spike has it. */
+interface TauriGlobal {
+  core: { invoke(command: string, args?: Record<string, unknown>): Promise<unknown> };
+  event: { listen(name: string, handler: (event: { payload: unknown }) => void): Promise<unknown> };
+}
+
 declare global {
   interface Window {
     pywebview?: { api: PyApi };
     joblens?: { onEvent(event: AgentEvent): void };
-    __joblens_ready?: { bridge: "pywebview" | "mock"; version: string };
+    __joblens_ready?: { bridge: "pywebview" | "mock" | "tauri"; version: string };
+    __TAURI__?: TauriGlobal;
   }
 }
 
@@ -35,12 +42,32 @@ export function onEvent(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-export let bridgeKind: "pywebview" | "mock" = "pywebview";
+export let bridgeKind: "pywebview" | "mock" | "tauri" = "pywebview";
+
+/**
+ * 18a: in the Tauri spike every `api.name(...args)` becomes one Rust
+ * command, call(name, args), which passes it to the Python side; Python's
+ * events arrive as "joblens-event". The page itself doesn't change.
+ */
+function tauriApi(tauri: TauriGlobal): PyApi {
+  void tauri.event.listen("joblens-event", (e) => window.joblens?.onEvent(e.payload as AgentEvent));
+  return new Proxy({} as PyApi, {
+    get(_target, name) {
+      // "then": a Promise resolving with this object checks for it; it must stay undefined.
+      if (typeof name !== "string" || name === "then") return undefined;
+      return (...args: unknown[]) => tauri.core.invoke("call", { method: name, args });
+    },
+  });
+}
 
 let apiPromise: Promise<PyApi> | null = null;
 
 export function getApi(): Promise<PyApi> {
   apiPromise ??= new Promise<PyApi>((resolve, reject) => {
+    if (window.__TAURI__) {
+      bridgeKind = "tauri";
+      return resolve(tauriApi(window.__TAURI__));
+    }
     const hasApi = () => typeof window.pywebview?.api?.app_info === "function";
     if (hasApi()) return resolve(window.pywebview!.api);
 

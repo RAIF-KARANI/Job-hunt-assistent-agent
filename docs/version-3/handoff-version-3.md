@@ -21,7 +21,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **Phase 18: the Rust (Tauri) spike**, or Phase 19 when your feature list is ready. Phase 17 is done |
+| Next step | **18c: your decision** on Rust, with the numbers in the progress log (18b) |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
@@ -29,7 +29,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | # | Phase | Status |
 |---|---|---|
 | 17 | **New look**: your glass reference, adapted to JobLens, every screen | ✅ done 17 Nov |
-| 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
+| 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | 🟡 measured; your decision |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
 
@@ -151,6 +151,9 @@ with every feature still working. That is how Phase 17 is laid out.
   untracked.
 
 ### Phase 18: Rust spike
+- **The spike** is in `spikes/18_tauri/` (README there). Rust is installed
+  in `%USERPROFILE%\.cargoin`, not on PATH. Build with
+  `CARGO_BUILD_JOBS=2` to keep memory down.
 - **Numbers to beat (v1.2.0):** installer 68 MB, app folder 161 MB,
   window ready in about 3 s.
 - Only the shell could move: window, tray (`desktop_web/tray.py`),
