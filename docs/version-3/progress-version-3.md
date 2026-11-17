@@ -26,7 +26,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18c Decide | ✅ | adopt Tauri (your choice) |
 | 18d1 The Rust window in the app | ✅ | `desktop_tauri/` + `engine.py`; your data in the Rust window; smoke test |
 | 18d2 File dialogs | ✅ | Add PDFs and Save as through the Rust window |
-| 18d3–18d8 | ⏳ | 18d3 (the tray) next |
+| 18d3 The tray | ✅ | Icon, menu, notifications, hide on close; decisions still tray.py's |
+| 18d4–18d8 | ⏳ | 18d4 (the quick box) next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -825,3 +826,42 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
   whichever window has the focus, which was VS Code. Checked afterwards:
   no file in the project changed. The keys may have landed in an open
   editor or terminal without being saved.
+
+## 18d3 The tray ✅ (17 Nov 2026)
+
+### What was done
+- **Python decides, unchanged.** The Rust window uses the same `Tray`
+  class as the pywebview window (`tray.py`): the menu's words, which
+  notification to show, whether the X hides or quits. `engine.ShellTray`
+  sends only the drawing to the window: the menu and tooltip after every
+  change, and each notification.
+- **Rust draws.** The tray icon with its menu (Open JobLens, the status,
+  Follow up on N jobs, Stop the run, Quit); a left click on the icon opens
+  JobLens. Notifications are Windows' own, with their sound; clicking one
+  opens the screen it is about (Analyze or the Tracker).
+- **The X asks the engine first.** While a run is going (or JobLens is
+  kept in the tray) the window hides; otherwise it quits, as in 1.2.0. If
+  the engine isn't there to answer, the window simply closes.
+- Windows shows notifications only for an app it knows, so the engine
+  registers "JobLens" (name and icon) for the user under
+  `HKCU\Software\Classes\AppUserModelId\JobLens.Desktop` at each start.
+  **18d6: the uninstaller must remove this key.**
+- `keeps_tray` and the follow-up reminder loop moved from `app.py` to
+  `tray.py`, shared by both windows (`app.py` keeps the old names).
+
+### Checked
+- pytest: 495 pass (8 new: the menu and how it follows a run, closing
+  while idle quits, closing while working hides and tells you once, each
+  menu item, a notification click, the engine routing tray and window
+  messages, the notification registration).
+- In the Rust window: the tray icon was created; a notification was sent
+  and Windows recorded it for "JobLens.Desktop". It didn't pop up on
+  screen because Do Not Disturb was on, so it went to the notification
+  centre. Closing the window while idle quit it in 0.2 s, and no engine
+  was left running.
+- The old window still starts.
+
+### Not checked yet (one real try)
+- Right-clicking the tray icon and choosing each item; closing during a
+  run (it should hide, with the "still working" notification); clicking
+  a notification with Do Not Disturb off.

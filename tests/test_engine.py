@@ -239,3 +239,112 @@ def test_cancelling_a_dialog_gives_nothing():
     shell.answered({"answer": out[-1]["ask"], "result": None})  # you pressed Cancel
     t.join(2)
     assert got["files"] is None
+
+
+# ---- 18d3: the tray, drawn by the Rust window ----
+
+def make_tray(working=False, keep=False, follow_ups=0):
+    from desktop_web.engine import ShellTray
+    from desktop_web.tray import Tray
+
+    out = []
+    shell = Shell(out.append)
+    calls = []
+    tray = Tray("icon.png", show=lambda: calls.append("show"), stop_run=lambda: calls.append("stop"),
+                quit_app=lambda: calls.append("quit"), keep_in_tray=lambda: keep,
+                follow_ups=lambda: follow_ups, open_tracker=lambda: calls.append("tracker"),
+                open_page=lambda page: calls.append(f"page:{page}"))
+    st = ShellTray(shell, tray)
+    tray.start()
+    if working:
+        tray.on_event({"type": "busy", "busy": True})
+    return st, tray, out, calls
+
+
+def test_the_tray_menu_is_drawn_by_the_window():
+    st, tray, out, _ = make_tray()
+    request = [m for m in out if m.get("do") == "tray"][-1]
+    ids = [i.get("id") for i in request["args"]["menu"] if not i.get("separator")]
+    assert ids == list(st.MENU_IDS)
+    status = next(i for i in request["args"]["menu"] if i.get("id") == "status")
+    assert status["text"] == "Idle" and status["enabled"] is False
+    assert request["args"]["tooltip"] == "JobLens · Idle"
+
+
+def test_the_menu_follows_the_run():
+    st, tray, out, _ = make_tray(working=True)
+    menu = [m for m in out if m.get("do") == "tray"][-1]["args"]["menu"]
+    by_id = {i["id"]: i for i in menu if "id" in i}
+    assert by_id["stop"]["visible"] is True
+    assert by_id["quit"]["text"] == "Quit JobLens (stops the run)"
+    assert by_id["status"]["text"].startswith("Working")
+
+
+def test_closing_while_idle_quits():
+    st, tray, out, _ = make_tray()
+    st.close_requested()
+    assert {"do": "quit", "args": {}} in out
+
+
+def test_closing_while_working_hides_and_tells_you_once():
+    st, tray, out, _ = make_tray(working=True)
+    st.close_requested()
+    assert {"do": "hide", "args": {}} in out and {"do": "quit", "args": {}} not in out
+    notes = [m for m in out if m.get("do") == "notify"]
+    assert len(notes) == 1 and notes[0]["args"]["title"] == "JobLens is still working"
+    assert tray.hidden is True
+
+
+def test_tray_items_do_what_they_say():
+    st, tray, _, calls = make_tray(follow_ups=2)
+    for item in ("open", "follow_ups", "stop", "quit"):
+        st.clicked(item)
+    assert calls == ["show", "tracker", "stop", "quit"]
+
+
+def test_a_notification_click_opens_its_screen():
+    st, tray, _, calls = make_tray()
+    st.notify("Time to follow up", "2 applications have had no news.")
+    tray.notification_clicked()
+    assert calls[-1] == "page:tracker"
+
+
+def test_the_engine_routes_tray_and_window_events():
+    st, tray, out, calls = make_tray()
+    engine = Engine(FakeApi(), out.append, st.shell, tray=st)
+    engine.receive(line({"shell": "tray", "item": "open"}))
+    assert wait_until(lambda: "show" in calls)
+    engine.receive(line({"shell": "visibility", "visible": False}))
+    assert tray.hidden is True
+    engine.receive(line({"shell": "close_requested"}))
+    assert wait_until(lambda: {"do": "quit", "args": {}} in out)
+
+
+def test_the_notification_sender_is_registered_for_this_user(tmp_path):
+    import winreg
+
+    from desktop_web.engine import NOTIFICATION_SENDER, register_notification_sender
+
+    icon = tmp_path / "joblens.png"
+    icon.write_bytes(b"png")
+    base = r"Software\JobLensTest18d3"
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, base) as root:
+        try:
+            register_notification_sender(icon, key_root=root)
+            with winreg.OpenKey(root, rf"Software\Classes\AppUserModelId\{NOTIFICATION_SENDER}") as key:
+                assert winreg.QueryValueEx(key, "DisplayName")[0] == "JobLens"
+                assert winreg.QueryValueEx(key, "IconUri")[0] == str(icon)
+        finally:
+            pass
+    # remove the test key again
+    def drop(parent, name):
+        with winreg.OpenKey(parent, name, 0, winreg.KEY_ALL_ACCESS) as k:
+            while True:
+                try:
+                    child = winreg.EnumKey(k, 0)
+                except OSError:
+                    break
+                drop(k, child)
+        winreg.DeleteKey(parent, name)
+
+    drop(winreg.HKEY_CURRENT_USER, base)

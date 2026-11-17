@@ -27,6 +27,9 @@ from desktop_web.bridge import Api, window_sender
 from desktop_web.startup import clean_temp as _clean_temp  # noqa: F401
 from desktop_web.startup import free_the_gpu as _free_the_gpu
 from desktop_web.startup import keep_old_descriptions as _keep_old_descriptions  # noqa: F401
+# 18d3: moved to tray.py (shared with the Rust window); old names kept.
+from desktop_web.tray import follow_up_reminders as _follow_up_reminders
+from desktop_web.tray import keeps_tray
 
 DEV_URL = "http://localhost:5173"
 WEB_DIR = paths.resource_path("desktop_web/web")
@@ -318,57 +321,11 @@ def _start_quick_box(page_url: str, main_window, api, tray):
     return listener
 
 
-def _follow_up_reminders(tray) -> None:
-    """14e: count the jobs due a follow-up now and every half hour; once a
-    day, if the window is hidden, a notification. The day is remembered in
-    the data folder, so restarting JobLens doesn't repeat it."""
-    from desktop_web.tray import apply_notice, follow_up_notice
-    from job_agent import applyreminder
-
-    marker = paths.APP_HOME / "follow_up_notice.txt"
-
-    def loop():
-        time.sleep(20)  # let startup (and the page) go first
-        while True:
-            try:
-                count = tray.count_follow_ups()
-                last = marker.read_text(encoding="utf-8").strip() if marker.exists() else None
-                today = time.strftime("%Y-%m-%d")
-                note = follow_up_notice(count, last, today) if tray.hidden else None
-                if note:
-                    tray.notify(*note)
-                    marker.write_text(today, encoding="utf-8")
-            except Exception as e:
-                print(f"! follow-up reminder: {e}")
-            try:
-                # 16i: "Did you apply?", a day after a cover note was approved.
-                # Only while hidden: an open window shows it on the page, and
-                # the page starts the 24 hours to answer itself (list_jobs).
-                if tray.hidden:
-                    note = apply_notice(applyreminder.new_jobs())  # each job is announced once
-                    if note:
-                        tray.notify(*note)
-                        applyreminder.due_jobs(mark=True)  # shown: the 24 hours to answer start
-            except Exception as e:
-                print(f"! apply reminder: {e}")
-            time.sleep(30 * 60)
-
-    threading.Thread(target=loop, name="joblens-follow-ups", daemon=True).start()
-
-
 def _bring_back(window, tray) -> None:
     if tray:
         tray.hidden = False
     window.show()
     window.restore()  # in case it was minimized
-
-
-def keeps_tray(api, autostart_on) -> bool:
-    """1.0.3: closing the window keeps JobLens in the tray (instead of quitting)
-    when Start with Windows is on, or while the quick-analyze shortcut is
-    registered: the shortcut only works while JobLens runs."""
-    hotkey = getattr(api, "_hotkey", None)
-    return bool(autostart_on()) or bool(hotkey and hotkey.key)
 
 
 def _start_tray(window, api, holder):

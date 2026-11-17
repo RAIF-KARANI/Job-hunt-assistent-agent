@@ -286,3 +286,57 @@ class Tray:
                 self._icon.update_menu()
             except Exception:
                 pass
+
+
+# ---------------------------------------------------------------------------
+# Shared by both windows (18d3): when closing keeps JobLens in the tray, and
+# the reminder loop. They were in app.py.
+# ---------------------------------------------------------------------------
+
+
+def keeps_tray(api, autostart_on) -> bool:
+    """1.0.3: closing the window keeps JobLens in the tray (instead of quitting)
+    when Start with Windows is on, or while the quick-analyze shortcut is
+    registered: the shortcut only works while JobLens runs."""
+    hotkey = getattr(api, "_hotkey", None)
+    return bool(autostart_on()) or bool(hotkey and hotkey.key)
+
+
+def follow_up_reminders(tray) -> None:
+    """14e: count the jobs due a follow-up now and every half hour; once a
+    day, if the window is hidden, a notification. The day is remembered in
+    the data folder, so restarting JobLens doesn't repeat it."""
+    import threading
+    import time
+
+    from job_agent import applyreminder, paths
+
+    marker = paths.APP_HOME / "follow_up_notice.txt"
+
+    def loop():
+        time.sleep(20)  # let startup (and the page) go first
+        while True:
+            try:
+                count = tray.count_follow_ups()
+                last = marker.read_text(encoding="utf-8").strip() if marker.exists() else None
+                today = time.strftime("%Y-%m-%d")
+                note = follow_up_notice(count, last, today) if tray.hidden else None
+                if note:
+                    tray.notify(*note)
+                    marker.write_text(today, encoding="utf-8")
+            except Exception as e:
+                print(f"! follow-up reminder: {e}")
+            try:
+                # 16i: "Did you apply?", a day after a cover note was approved.
+                # Only while hidden: an open window shows it on the page, and
+                # the page starts the 24 hours to answer itself (list_jobs).
+                if tray.hidden:
+                    note = apply_notice(applyreminder.new_jobs())  # each job is announced once
+                    if note:
+                        tray.notify(*note)
+                        applyreminder.due_jobs(mark=True)  # shown: the 24 hours to answer start
+            except Exception as e:
+                print(f"! apply reminder: {e}")
+            time.sleep(30 * 60)
+
+    threading.Thread(target=loop, name="joblens-follow-ups", daemon=True).start()

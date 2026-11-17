@@ -111,14 +111,79 @@ class Dialogs:
         return self.shell.ask("save_file", name=name, filters=[file_filter(kind)])
 
 
+class ShellTray:
+    """18d3: the tray for the Rust window. The decisions are tray.py's (the
+    same Tray as the pywebview window, unchanged): what the menu says, which
+    notification to show, whether closing hides or quits. Only the drawing
+    goes to the window: the menu, the tooltip, notifications."""
+
+    MENU_IDS = ("open", "status", "follow_ups", "stop", "quit")
+
+    def __init__(self, shell: Shell, tray):
+        self.shell = shell
+        self.tray = tray
+        # Tray's own drawing calls now go to the window (it never imports pystray here).
+        tray.start = self.start
+        tray.stop = lambda: None
+        tray.notify = self.notify
+        tray._refresh = self.refresh
+
+    def menu(self) -> list[dict]:
+        from desktop_web.tray import follow_up_text, status_text
+
+        t = self.tray
+        return [
+            {"id": "open", "text": "Open JobLens"},
+            {"id": "status", "text": status_text(t.state), "enabled": False},
+            {"id": "follow_ups", "text": follow_up_text(t.follow_ups), "visible": t.follow_ups > 0},
+            {"separator": True},
+            {"id": "stop", "text": "Stop the run", "visible": t.state.busy},
+            {"id": "quit", "text": "Quit JobLens (stops the run)" if t.state.working else "Quit JobLens"},
+        ]
+
+    def tooltip(self) -> str:
+        from desktop_web.tray import status_text
+
+        return f"JobLens · {status_text(self.tray.state)}"[:127]  # Windows' tooltip limit
+
+    def start(self) -> None:
+        self.tray._icon = self  # Tray checks "is there an icon" before hiding to it
+        self.refresh()
+
+    def refresh(self) -> None:
+        self.shell.do("tray", tooltip=self.tooltip(), menu=self.menu())
+
+    def notify(self, title: str, message: str) -> None:
+        self.tray._last_note = title  # what a click on it opens
+        self.shell.do("notify", title=title, body=message)
+
+    def clicked(self, item: str) -> None:
+        """A tray menu item, or "open" for a click on the icon itself."""
+        t = self.tray
+        if item == "open":
+            t.open()
+        elif item == "follow_ups":
+            t._open_tracker_now()
+        elif item == "stop":
+            t._stop_run()
+        elif item == "quit":
+            t.quit()
+
+    def close_requested(self) -> None:
+        """The window's X: Tray decides; hiding needs no answer, quitting ends the app."""
+        if self.tray.window_closing(hide=lambda: self.shell.do("hide")):
+            self.shell.do("quit")
+
+
 class Engine:
     """Routes each line from the window. Calls run on workers, so a slow one
     (llm_status waits on the network) never holds up the others; answers to
     `ask` are handled at once, never queued behind the calls waiting for them."""
 
     def __init__(self, api, write: Write, shell: Shell, on_page_loaded: Callable[[], None] = lambda: None,
-                 smoke: Path | None = None, smoke_shot: Path | None = None):
+                 smoke: Path | None = None, smoke_shot: Path | None = None, tray: "ShellTray | None" = None):
         self.api = api
+        self.tray = tray
         self.write = write
         self.shell = shell
         self._on_page_loaded = on_page_loaded
@@ -162,6 +227,10 @@ class Engine:
         """The page asked for app_info, so it is alive: report, then close."""
         report = {"ok": True, "window": "tauri", "version": info.get("version"),
                   "theme": (info.get("settings") or {}).get("UI_THEME", "system")}
+        if os.environ.get("JOBLENS_SMOKE_NOTIFY"):  # 18d3: a notification, to see it arrive
+            self.shell.do("notify", title="JobLens test", body="If you can read this, notifications work.")
+            report["notified"] = True
+            time.sleep(2)  # leave it on screen for the picture
         dialog = os.environ.get("JOBLENS_SMOKE_DIALOG")  # 18d2: "open" or "save"
         if dialog in ("open", "save"):
             dialogs = Dialogs(self.shell)
@@ -186,9 +255,60 @@ class Engine:
         kind = message.get("shell")
         if kind == "visibility":
             self.shell.visible = bool(message.get("visible", True))
+            if self.tray:
+                self.tray.tray.hidden = not self.shell.visible
+        elif kind == "tray" and self.tray:  # 18d3: a tray menu item, or the icon
+            self._pool.submit(self.tray.clicked, str(message.get("item", "")))
+        elif kind == "notification_clicked" and self.tray:
+            self._pool.submit(self.tray.tray.notification_clicked)
+        elif kind == "close_requested":
+            if self.tray:
+                self._pool.submit(self.tray.close_requested)
+            else:
+                self.shell.do("quit")
         elif kind == "page_loaded" and not self._loaded.is_set():  # a reload loads it again
             self._loaded.set()
             self._on_page_loaded()
+
+
+NOTIFICATION_SENDER = "JobLens.Desktop"  # the app id Windows shows notifications under
+
+
+def register_notification_sender(icon: Path, key_root=None) -> None:
+    """18d3: Windows shows a notification only for an app it knows. A desktop
+    app makes itself known with this small per-user entry (name and icon); the
+    uninstaller removes it (18d6). Harmless to write again on every start."""
+    import winreg
+
+    root = key_root if key_root is not None else winreg.HKEY_CURRENT_USER
+    with winreg.CreateKey(root, rf"Software\Classes\AppUserModelId\{NOTIFICATION_SENDER}") as key:
+        winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, "JobLens")
+        if icon.exists():
+            winreg.SetValueEx(key, "IconUri", 0, winreg.REG_SZ, str(icon))
+
+
+def _start_tray(shell: Shell, api) -> "ShellTray | None":
+    """13a: the tray, as in the pywebview window; drawn by the Rust window."""
+    from desktop_web import autostart
+    from desktop_web.tray import Tray, follow_up_reminders, keeps_tray
+    from job_agent import followup, paths
+
+    def open_page(page: str) -> None:
+        shell.do("navigate", page=page)  # also shows the window
+
+    tray = Tray(paths.resource_path("assets/joblens.png"), show=lambda: shell.do("show"),
+                stop_run=api.stop_run, quit_app=lambda: shell.do("quit"),
+                keep_in_tray=lambda: keeps_tray(api, autostart.enabled),
+                follow_ups=lambda: len(followup.due_jobs()), open_tracker=lambda: open_page("tracker"),
+                open_page=open_page)
+    shell_tray = ShellTray(shell, tray)
+    try:
+        register_notification_sender(paths.resource_path("assets/joblens.png"))
+    except Exception as e:  # without it notifications don't show; the tray still works
+        print(f"! notifications: {e}")
+    tray.start()
+    follow_up_reminders(tray)
+    return shell_tray
 
 
 def _pipe_writer() -> Write:
@@ -214,16 +334,26 @@ def main(argv=None) -> int:
 
     startup.prepare()  # cut-off runs, old scores: before the page reads them
     shell = Shell(write)
-    api = Api(send=lambda event: write({"event": event}))
+    tray_box: dict = {}
+
+    def send(event: dict) -> None:
+        write({"event": event})
+        if "tray" in tray_box:  # 13a: the tray follows the same events as the page
+            tray_box["tray"].on_event(event)
+
+    api = Api(send=send)
     api._quit = lambda: shell.do("quit")  # the update's installer takes over (13d)
     api._dialogs = Dialogs(shell)  # 18d2: Add PDFs, Save as
     api._is_hidden = lambda: not shell.visible  # 16i: a hidden window shows nobody "Did you apply?"
     startup.after_update(api)
     startup.background_chores()
+    tray = _start_tray(shell, api)
+    if tray:
+        tray_box["tray"] = tray.tray
     smoke = os.environ.get("JOBLENS_SMOKE")
     shot = os.environ.get("JOBLENS_SMOKE_SHOT")
     engine = Engine(api, write, shell, on_page_loaded=lambda: startup.check_for_updates_soon(api),
-                    smoke=Path(smoke) if smoke else None, smoke_shot=Path(shot) if shot else None)
+                    smoke=Path(smoke) if smoke else None, smoke_shot=Path(shot) if shot else None, tray=tray)
     write({"event": {"type": "engine_ready"}})
 
     stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8")

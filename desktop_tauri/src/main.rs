@@ -23,7 +23,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
-use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WebviewWindow};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WebviewWindow, WindowEvent};
 use tauri_plugin_dialog::{DialogExt, FileDialogBuilder, FilePath};
 use tokio::sync::oneshot;
 
@@ -68,11 +70,84 @@ fn main_window(app: &AppHandle) -> Option<WebviewWindow> {
     app.get_webview_window("main")
 }
 
-/// Tell the engine what happened to the window.
-fn tell_engine(app: &AppHandle, message: Value) {
-    if let Some(engine) = app.try_state::<Engine>() {
-        let _ = engine.send(&message);
+/// Tell the engine what happened to the window. False if it isn't there to hear it.
+fn tell_engine(app: &AppHandle, message: Value) -> bool {
+    match app.try_state::<Engine>() {
+        Some(engine) => engine.send(&message).is_ok(),
+        None => false,
     }
+}
+
+/// The app id Windows shows notifications under; the engine registers it
+/// for this user (engine.register_notification_sender).
+const NOTIFICATION_SENDER: &str = "JobLens.Desktop";
+
+/// 18d3: the tray's menu, as the engine describes it: [{id, text, enabled?, visible?} | {separator}].
+fn tray_menu(app: &AppHandle, items: &Value) -> tauri::Result<Menu<tauri::Wry>> {
+    let menu = Menu::new(app)?;
+    for item in items.as_array().into_iter().flatten() {
+        if item.get("visible").and_then(Value::as_bool) == Some(false) {
+            continue;
+        }
+        if item.get("separator").and_then(Value::as_bool) == Some(true) {
+            menu.append(&PredefinedMenuItem::separator(app)?)?;
+            continue;
+        }
+        let id = item.get("id").and_then(Value::as_str).unwrap_or("");
+        let text = item.get("text").and_then(Value::as_str).unwrap_or(id);
+        let enabled = item.get("enabled").and_then(Value::as_bool).unwrap_or(true);
+        menu.append(&MenuItem::with_id(app, id, text, enabled, None::<&str>)?)?;
+    }
+    Ok(menu)
+}
+
+/// 18d3: draw the tray, or update it. Clicks go to the engine, which decides.
+fn draw_tray(app: &AppHandle, args: &Value) -> Result<(), String> {
+    let menu = tray_menu(app, args.get("menu").unwrap_or(&Value::Null)).map_err(|e| e.to_string())?;
+    let tooltip = args.get("tooltip").and_then(Value::as_str).unwrap_or("JobLens").to_string();
+    if let Some(tray) = app.tray_by_id("main") {
+        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+        tray.set_tooltip(Some(tooltip)).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+    let mut builder = TrayIconBuilder::with_id("main")
+        .tooltip(tooltip)
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| {
+            tell_engine(app, json!({ "shell": "tray", "item": event.id().as_ref() }));
+        })
+        .on_tray_icon_event(|tray, event| {
+            // A left click on the icon opens JobLens, like "Open JobLens".
+            if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
+                tell_engine(tray.app_handle(), json!({ "shell": "tray", "item": "open" }));
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        builder = builder.icon(icon.clone());
+    }
+    builder.build(app).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// 18d3: a Windows notification (with its sound). A click on it tells the
+/// engine, which opens the screen it was about.
+fn notify(app: &AppHandle, args: &Value) -> Result<(), String> {
+    use tauri_winrt_notification::{Sound, Toast};
+
+    let title = args.get("title").and_then(Value::as_str).unwrap_or("JobLens");
+    let body = args.get("body").and_then(Value::as_str).unwrap_or("");
+    let clicked = app.clone();
+    Toast::new(NOTIFICATION_SENDER)
+        .title(title)
+        .text1(body)
+        .sound(Some(Sound::Default))
+        .on_activated(move |_action| {
+            tell_engine(&clicked, json!({ "shell": "notification_clicked" }));
+            Ok(())
+        })
+        .show()
+        .map_err(|e| e.to_string())
 }
 
 fn show(app: &AppHandle) {
@@ -119,6 +194,8 @@ fn handle_request(app: &AppHandle, action: &str, args: &Value) -> Result<Value, 
             Ok(Value::Null)
         }
         "is_visible" => Ok(json!(main_window(app).and_then(|w| w.is_visible().ok()).unwrap_or(false))),
+        "tray" => draw_tray(app, args).map(|_| Value::Null),
+        "notify" => notify(app, args).map(|_| Value::Null),
         other => Err(format!("The window can't '{other}' yet.")),
     }
 }
@@ -269,6 +346,16 @@ fn main() {
         .invoke_handler(tauri::generate_handler![call])
         .on_page_load(|webview, _payload| {
             tell_engine(webview.app_handle(), json!({ "shell": "page_loaded" }));
+        })
+        .on_window_event(|window, event| {
+            // 18d3: the X asks the engine first: it may hide to the tray instead
+            // (a run going, or JobLens kept in the tray). If the engine isn't
+            // there to answer, the window just closes.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && tell_engine(window.app_handle(), json!({ "shell": "close_requested" })) {
+                    api.prevent_close();
+                }
+            }
         })
         .setup(|app| {
             let engine = start_engine(app.handle())?;

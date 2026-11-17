@@ -10,8 +10,9 @@ license = "MIT"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }  # 18d3: the tray
 tauri-plugin-dialog = "2"  # 18d2: the native Open and Save dialogs
+tauri-winrt-notification = "0.8"  # 18d3: Windows notifications, and their clicks
 serde_json = "1"
 tokio = { version = "1", features = ["sync"] }
 
