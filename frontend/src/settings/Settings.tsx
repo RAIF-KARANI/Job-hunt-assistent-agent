@@ -2,6 +2,7 @@
 // options. The model card saves with a button (typing a model name
 // shouldn't save every letter); everything else saves as you change it.
 
+import { Fold } from "../app/Fold";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D } from "../bridge/types";
@@ -204,6 +205,25 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const who = PROVIDERS.find((p) => p.id === provider) ?? PROVIDERS[0];
   const keySaved = who.keySet ? Boolean((settings as unknown as Record<string, unknown>)[who.keySet]) : false;
 
+  // 17h: what each folded section is set to, in one line.
+  const label = <T extends { id: string; label: string }>(list: readonly T[], id: string) => list.find((x) => x.id === id)?.label ?? id;
+  const tracing = String(settings.TRACING ?? "off");
+  const digests = {
+    look: `${label(THEMES, theme)} · 3D ${String(settings.UI_3D ?? "animated")}`,
+    options: [
+      (settings.JUDGE_EVIDENCE ?? "true") === "true" ? "Evidence double-checked" : "No second check",
+      `${label(FIT_DETAIL, String(settings.FIT_DETAIL ?? "short"))} fit answers`,
+      tracing === "off" ? "tracing off" : `tracing: ${tracing === "langfuse" ? "Langfuse" : "LangSmith"}`,
+    ].join(" · "),
+    reminders:
+      (String(settings.FOLLOW_UP_DAYS ?? "7") === "off"
+        ? "Follow-up reminders off"
+        : `Follow up ${label(FOLLOW_UP_DAYS, String(settings.FOLLOW_UP_DAYS ?? "7")).toLowerCase()}`) +
+      (autostart?.enabled ? " · starts with Windows" : ""),
+    quick: settings.QUICK_KEY === "" ? "Shortcut off" : `Shortcut ${String(settings.QUICK_KEY ?? "Ctrl+Alt+J")}`,
+    updates: (settings.UPDATE_CHECK ?? "true") !== "false" ? "Checked once a day" : "Automatic checks off",
+  };
+
   return (
     <div className="page settings">
       <header className="page-head">
@@ -344,15 +364,14 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
         </label>
       </section>
 
-      <section className="card settings-card" aria-labelledby="look-title">
-        <div className="section-head">
-          <h2 id="look-title">Appearance</h2>
+      <h2 className="settings-more">More settings</h2>
+      <Fold level={2} title="Appearance" digest={digests.look}>
+        <div className="settings-card fold-card">
           {saved === "look" && (
-            <span className="saved" role="status">
+            <span className="saved fold-saved" role="status">
               Saved
             </span>
           )}
-        </div>
         <fieldset className="plain-fieldset">
           <legend>Theme</legend>
           <div className="segmented" role="radiogroup" aria-label="Theme">
@@ -373,17 +392,16 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
           />
           {!check && <p className="hint">Checking which level suits this PC…</p>}
         </fieldset>
-      </section>
+        </div>
+      </Fold>
 
-      <section className="card settings-card" aria-labelledby="options-title">
-        <div className="section-head">
-          <h2 id="options-title">Options</h2>
+      <Fold level={2} title="Options" digest={digests.options}>
+        <div className="settings-card fold-card">
           {saved === "options" && (
-            <span className="saved" role="status">
+            <span className="saved fold-saved" role="status">
               Saved
             </span>
           )}
-        </div>
         <label className="check">
           <input
             type="checkbox"
@@ -425,17 +443,16 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
           <span className="hint">Applies after restarting JobLens. The run log behind Evals is always on.</span>
         </label>
         {settings.TRACING === "langfuse" && <LangfuseFields settings={settings} onSettings={onSettings} />}
-      </section>
+        </div>
+      </Fold>
 
-      <section className="card settings-card" aria-labelledby="reminders-title">
-        <div className="section-head">
-          <h2 id="reminders-title">Reminders</h2>
+      <Fold level={2} title="Reminders" digest={digests.reminders}>
+        <div className="settings-card fold-card">
           {saved === "reminders" && (
-            <span className="saved" role="status">
+            <span className="saved fold-saved" role="status">
               Saved
             </span>
           )}
-        </div>
         <label className="field narrow">
           <span>Remind me to follow up</span>
           <select
@@ -470,39 +487,38 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
             </span>
           </span>
         </label>
-      </section>
+        </div>
+      </Fold>
 
-      <section className="card settings-card" aria-labelledby="quick-title">
-        <div className="section-head">
-          <h2 id="quick-title">Quick analyze</h2>
+      <Fold level={2} title="Quick analyze" digest={digests.quick}>
+        <div className="settings-card fold-card">
           {saved === "quick" && (
-            <span className="saved" role="status">
+            <span className="saved fold-saved" role="status">
               Saved
             </span>
           )}
-        </div>
         <p className="hint">
           Press the shortcut anywhere in Windows, even with JobLens in the tray: a small box opens with the link you copied. Analyze runs in the
           background, and a notification (with a sound) tells you when the cover note is ready. While the shortcut is on, closing the window
           keeps JobLens in the tray so the shortcut keeps working; quit from the tray icon.
         </p>
         <ShortcutField saved={String(settings.QUICK_KEY ?? "Ctrl+Alt+J")} onSave={saveShortcut} />
-      </section>
+        </div>
+      </Fold>
 
-      <section className="card settings-card" aria-labelledby="updates-title">
-        <div className="section-head">
-          <h2 id="updates-title">Updates</h2>
+      <Fold level={2} title="Updates" digest={digests.updates}>
+        <div className="settings-card fold-card">
           {saved === "updates" && (
-            <span className="saved" role="status">
+            <span className="saved fold-saved" role="status">
               Saved
             </span>
           )}
-        </div>
         <UpdatesCard
           enabled={(settings.UPDATE_CHECK ?? "true") !== "false"}
           onToggle={(on) => void saveNow({ UPDATE_CHECK: on ? "true" : "false" }, "updates")}
         />
-      </section>
+        </div>
+      </Fold>
     </div>
   );
 }

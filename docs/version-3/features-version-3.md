@@ -125,7 +125,13 @@ private" (both would live in Settings).
   says what it looks at (the fit analysis, the search results, the cover
   note).
 
-## 8. Not in the mockup yet
+## 8. Built without a mockup
 
-Settings, the setup wizard, the quick-analyze box, the resume screen, and the failed / out-of-quota states of a run.
-They get the same look in steps 17h to 17j.
+| # | Feature | What it does | Status |
+|---|---|---|---|
+| F35 | **Settings in two parts** | AI model and Your resumes stay open (what setup needs). Appearance, Options, Reminders, Quick analyze and Updates are accordions under "More settings", each with a one-line summary of what it is set to | ✅ built (17h) |
+| F36 | **Setup wizard on glass** | The wizard is one frosted card on the same backdrop as the app | ✅ built (17h) |
+| F37 | **Quick-analyze box** | The small box from the global shortcut, in the glass look | ✅ built (17b, checked 17h) |
+
+Still not seen in the new look: the "Stopped" and "Something went wrong /
+API limit" panels on Analyze (see 17f).

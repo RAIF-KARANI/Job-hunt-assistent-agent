@@ -396,13 +396,14 @@
 
 /* ---- wizard ---- */
 
+/* 17h: the wizard sits on the same backdrop as the app, as one frosted card */
 .wizard-backdrop {
   min-height: 100vh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: 6vh var(--space-4) var(--space-8);
-  background: radial-gradient(ellipse at 50% 0%, var(--galaxy-sky) 0%, var(--bg) 60%);
+  background: var(--window);
 }
 
 .wizard {
@@ -412,9 +413,10 @@
   gap: var(--space-5);
   padding: var(--space-8);
   border-radius: var(--radius-xl);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: var(--glass-blur-strong);
+  box-shadow: var(--glass-edge), var(--shadow-raised);
 }
 
 .wizard h1 {
@@ -614,4 +616,23 @@
 
 .langfuse-fields .hint {
   margin: 0;
+}
+
+/* ---- 17h: the folded sections ---- */
+
+.settings-more {
+  margin-top: var(--space-4);
+  font-size: var(--text-xl);
+}
+
+.fold-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.fold-saved {
+  align-self: flex-end;
+  margin-bottom: calc(var(--space-2) * -1);
 }

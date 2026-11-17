@@ -17,7 +17,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17e The Tracker | ✅ | Needs you, the board, the detail sheet in folds, dialogs |
 | 17f Analyze | ✅ | one column: the link, the run card with five steps, your decision, the log folded |
 | 17g Evals | ✅ | a run step by step, chart colours from the accents (validated), the rest in folds |
-| 17h–17j | ⏳ | 17h (Settings, wizard, quick box) is next |
+| 17h Settings, wizard, quick box | ✅ | Settings folds the less-used sections; the wizard sits on the glass |
+| 17i–17j | ⏳ | 17i (light theme check) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -571,3 +572,35 @@ search results. Numbers and rewrites: the cover note.
 - **More in the folds than the mockup**: ratings, pass rate by model,
   agent time per run, time against tokens, recent runs and the tracing
   chips are real parts of this screen that the mockup left out.
+
+## 17h Settings, the setup wizard, the quick-analyze box ✅ (17 Nov 2026)
+
+These three had no mockup. They already had the new look from 17b's shared
+styles; this step looked at each in both themes and fixed what was off.
+
+### What was done
+- **Settings in two parts.** AI model and Your resumes stay open: they are
+  what setup needs and what you change most. Under a "More settings"
+  heading, Appearance, Options, Reminders, Quick analyze and Updates are
+  accordions, each with a line saying what it is set to ("Like Windows ·
+  3D animated", "Follow up after a week", "Shortcut Ctrl+Alt+J"...). The
+  "Saved" mark shows inside the open section.
+- **The setup wizard** had its own flat background, which hid the glass
+  backdrop. It now sits on the same backdrop as the app, as one frosted
+  card.
+- **The quick-analyze box** already looked right in both themes: no
+  change.
+
+### Checked
+- Build passes; pytest: 471 pass; the real window starts.
+- In a browser with made-up data, dark and light: Settings (the five
+  summaries, opening Appearance, choosing a theme there updates its
+  summary), the wizard's first two steps, the quick box; nothing scrolls
+  sideways at 720 px.
+
+### On the way
+- The PC ran out of memory during this step (0.5 GB free) and Windows
+  stopped the dev server. You closed apps and we went on. A leftover dev
+  server from an earlier step was still running in the background; it is
+  stopped now. For the next steps: one dev server and one test browser at
+  a time, closed as soon as the checks are done.
