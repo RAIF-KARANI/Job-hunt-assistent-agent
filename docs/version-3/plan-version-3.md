@@ -15,7 +15,7 @@ at the end** (E1).
 
 | # | Phase | What | Status |
 |---|---|---|---|
-| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🚧 17a to 17h done; 17i next |
+| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🚧 17a to 17i done; 17j next |
 | 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ⏳ |
 | 19 | New features | your list (to come) | 🟡 waiting for your list |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
@@ -57,7 +57,7 @@ Source kept in [mockup/](mockup/).
 | 17f ✅ | **Analyze**: steps, live log, review, the failed / out-of-quota panels, Continue banner | a full run looks right from start to approval |
 | 17g ✅ | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
 | 17h ✅ | **Settings, setup wizard, quick-analyze box** | first-run setup looks right |
-| 17i | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
+| 17i ✅ | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
 | 17j | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
 ## Phase 18 — Rust (Tauri) spike ⏳

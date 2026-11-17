@@ -40,12 +40,12 @@ Legend: 🎨 designed · ❓ needs a check before it can be built · ✅ built
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F33 | **Light mode** | The same screens in clear, light glass: white see-through layers over a bright wallpaper, dark text, darker accent text so it stays readable | 🎨 ❓ |
+| F33 | **Light mode** | The same screens in clear, light glass: white see-through layers over a bright backdrop, dark text, darker accent text so it stays readable | ✅ built (17b to 17h), measured in 17i |
 | F34 | **Light / dark toggle** | A sun / moon button in the top bar of every screen. The choice is saved in your settings. "Match Windows" is still a choice in Settings | ✅ built (17c) |
 
 **To check (❓), light mode:**
-- F33: not looked at on screen by Claude. Text over the brightest parts
-  of the wallpaper is the thing to check first.
+- ~~F33: text over the brightest parts of the backdrop~~ Measured in 17i:
+  every screen passes in both themes.
 - F34: whether "follow Windows" stays as a third choice (E4, open).
 
 ## 2. Sidebar

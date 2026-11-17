@@ -18,7 +18,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17f Analyze | ✅ | one column: the link, the run card with five steps, your decision, the log folded |
 | 17g Evals | ✅ | a run step by step, chart colours from the accents (validated), the rest in folds |
 | 17h Settings, wizard, quick box | ✅ | Settings folds the less-used sections; the wizard sits on the glass |
-| 17i–17j | ⏳ | 17i (light theme check) is next |
+| 17i Light theme check | ✅ | all text measured in both themes; one blue lightened |
+| 17j | ⏳ | accessibility and window sizes, next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -604,3 +605,31 @@ styles; this step looked at each in both themes and fixed what was off.
   server from an earlier step was still running in the background; it is
   stopped now. For the next steps: one dev server and one test browser at
   a time, closed as soon as the checks are done.
+
+## 17i Light theme check ✅ (17 Nov 2026)
+
+Both themes had been built screen by screen since 17b, so this step
+measured them instead of only looking at them.
+
+### What was done
+- **A contrast script** (`scripts/check_contrast.js`): for every piece of
+  visible text, it blends the layers behind it, from the backdrop up
+  through the window and the cards, and works out the contrast. It does
+  this against the brightest and darkest spots of the backdrop (its four
+  coloured corners and the plain middle), so a pass holds wherever the
+  text sits. The bar is WCAG AA: 4.5:1, or 3:1 for large text.
+- Run on 9 views per theme: Dashboard, Analyze, Tracker (board, list, a
+  job's details with every section open), Evals (every step open),
+  Settings (every section open), the component sheet, quick actions.
+
+### Result
+- **Light: every piece of text passes.**
+- **Dark: one near-miss.** The light-blue text on small blue badges
+  ("Interviewing", "5 jobs") was 4.5:1 exactly. The dark theme's accent
+  text went from `#93C5FD` to `#A8D0FD` (5.2:1); measured again: no
+  failures in either theme.
+
+### Not measured (checked by eye instead)
+- Text on gradients (the gradient cards, the main button, the job galaxy)
+  and on disabled controls. The gradient cards and buttons were looked at
+  in both themes in 17c and 17d.
