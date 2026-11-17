@@ -688,7 +688,7 @@ speed part was wrong** (below).
 
 ### What was done
 - **Rust installed** (1.100.0, the minimal toolchain, in
-  `%USERPROFILE%\.cargoin`; not added to PATH, so nothing else on the
+  `%USERPROFILE%\.cargo\bin`; not added to PATH, so nothing else on the
   PC changes). The C++ build tools were already there.
 - **`spikes/18_tauri/`**: a Rust program (Tauri 2) that opens a window
   with the real built UI, starts the Python side and passes messages:

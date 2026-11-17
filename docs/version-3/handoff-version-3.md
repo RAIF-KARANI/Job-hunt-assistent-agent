@@ -152,7 +152,7 @@ with every feature still working. That is how Phase 17 is laid out.
 
 ### Phase 18: Rust spike
 - **The spike** is in `spikes/18_tauri/` (README there). Rust is installed
-  in `%USERPROFILE%\.cargoin`, not on PATH. Build with
+  in `%USERPROFILE%\.cargo\bin`, not on PATH. Build with
   `CARGO_BUILD_JOBS=2` to keep memory down.
 - **Numbers to beat (v1.2.0):** installer 68 MB, app folder 161 MB,
   window ready in about 3 s.
