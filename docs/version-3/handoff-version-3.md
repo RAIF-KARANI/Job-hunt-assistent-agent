@@ -21,7 +21,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **18c: your decision** on Rust, with the numbers in the progress log (18b) |
+| Next step | **18d1: the Rust window inside the app** (plan: Phase 18 in the plan; how it's built: E6) |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
@@ -29,7 +29,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | # | Phase | Status |
 |---|---|---|
 | 17 | **New look**: your glass reference, adapted to JobLens, every screen | ✅ done 17 Nov |
-| 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | 🟡 measured; your decision |
+| 18 | **Rust (Tauri) window**: adopted 17 Nov (E2); 18d moves every window feature to Rust | 🚧 18d next |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
 

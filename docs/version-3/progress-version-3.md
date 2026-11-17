@@ -23,7 +23,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | **Phase 17** | ✅ | the glass look on every screen, both themes |
 | 18a The Tauri window | ✅ | your real UI and data in a Rust window, Python beside it |
 | 18b Measured | ✅ | 36% faster to your data, 19–24% less memory, only 5% smaller |
-| 18c Decide | 🟡 | waiting for you |
+| 18c Decide | ✅ | adopt Tauri (your choice) |
+| 18d The Rust window, feature by feature | ⏳ | 18d1 next; plan in the plan file, design in E6 |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -744,3 +745,10 @@ sooner, **and** nothing worse (tray, shortcut, updates, memory)."
 - How long 18d would take, and whether any of today's features are harder
   in Tauri (Add PDFs dialog, the tray, the global shortcut, Start with
   Windows, one copy at a time, the updater).
+
+## 18c Decided ✅ (17 Nov 2026)
+
+You chose to adopt Tauri: version 3's window moves to Rust, the agent stays
+Python. The bar for 18d is "nothing worse": every feature of today's
+window works the same before the release, and the real update test
+passes. How it is built: decision E6. The steps: the plan, Phase 18.

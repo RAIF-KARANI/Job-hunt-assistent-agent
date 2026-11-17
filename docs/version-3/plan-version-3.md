@@ -16,7 +16,7 @@ at the end** (E1).
 | # | Phase | What | Status |
 |---|---|---|---|
 | 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | ✅ 17a to 17j done (17 Nov) |
-| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | 🟡 18a, 18b done; 18c waits for your decision |
+| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | 🚧 18a to 18c done (adopt); 18d next |
 | 19 | New features | your list (to come) | 🟡 waiting for your list |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
 
@@ -60,7 +60,7 @@ Source kept in [mockup/](mockup/).
 | 17i ✅ | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
 | 17j ✅ | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
-## Phase 18 — Rust (Tauri) spike 🟡
+## Phase 18 — Rust (Tauri) window 🚧
 **Your goals:** a smaller, faster app, and learning Rust. **Your rule:** move
 the shell to Rust only if it is clearly better; otherwise the spike stays a
 learning project (E2).
@@ -72,8 +72,21 @@ shortcut, updater, the bridge). Python still ships beside it.
 |---|---|
 | 18a ✅ | A Tauri window showing the built UI, one bridge call into the Python agent (a sidecar) |
 | 18b ✅ | Measure against 1.2.0: installer size (68 MB), app folder (161 MB), time to a ready window (~3 s), memory, a bridge call's time |
-| 18c | Decide with the numbers (thresholds: E2, open) |
-| 18d | Only if adopted: tray, shortcut, updater (with its real update test), installer, in Rust |
+| 18c ✅ | Decided: adopt (E2, 17 Nov). 36 % faster, 20 % less memory, 5 % smaller |
+| 18d | Everything today's window does, in the Rust window (E6). Sub-steps below |
+
+### 18d — the Rust window, feature by feature (E6)
+
+| Step | What | Done when |
+|---|---|---|
+| 18d1 | **Into the app**: the spike becomes `desktop_tauri/` (Rust) and `desktop_web/engine.py` (Python); the pipe carries Python's requests to the window too (show, hide, notify, a dialog) | the Rust window runs JobLens from source like `python -m desktop_web` does |
+| 18d2 | **File dialogs**: Add PDFs, Save as (CSV, cover notes, prep sheets) | every export and the resume upload work |
+| 18d3 | **Tray**: icon, menu (open, status, follow-ups, stop the run, quit), notifications and their clicks; the close button hides to the tray when it should | the tray behaves like 1.2.0's |
+| 18d4 | **Quick-analyze box**: the global shortcut (kept in Python) opens the small box window | Ctrl+Alt+J works with the window hidden |
+| 18d5 | **One copy at a time, Start with Windows (in the tray), closing at Windows shutdown** | a second start brings the first back; sign-in starts it hidden |
+| 18d6 | **Packaging**: PyInstaller builds the agent, Tauri the window, Inno Setup the installer (same app id); `--smoke` and `--self-test` again | `scripts/build_installer.py --test-install` passes |
+| 18d7 | **Updates**: from an installed 1.2.0 to this build, with the real update test | `scripts/check_real_update.py` passes |
+| 18d8 | **Measure again, installed**: start time, memory, size against 1.2.0 | the numbers are in the progress log |
 
 ## Phase 19 — New features 🟡
 Your list, when you have it. A feature that adds a screen is built in the

@@ -18,7 +18,11 @@ learning project.
   shortcut, updates, memory).
 - **Measured (18b, 17 Nov):** 36 % faster to your data, 19–24 % less memory,
   5 % smaller. Passes the proposed bar on speed, not on size; tray,
-  shortcut and updates are not built yet. **Your decision (18c).**
+  shortcut and updates are not built yet.
+- **Decided (18c, 17 Nov, your choice): adopt Tauri.** Version 3's window
+  moves to Rust (step 18d); the agent stays Python. "Nothing worse" is now
+  the bar for 18d: every feature of today's window works the same before
+  the release, and the real update test passes.
 
 ## E3 — The new look: your glass reference, adapted ✅ (16 Nov 2026; mockup approved the same day)
 Your reference image and prompt set the direction: dark glassmorphism,
@@ -51,6 +55,22 @@ old-style light theme goes.
 
 ## E5 — The release number is 2.0.0 🟡 proposed
 A new look in every screen is a big change for the people using it.
+
+## E6 — How the Rust window is built ✅ (17 Nov 2026, proposed with 18d)
+- **Rust shows, Python decides.** The decisions behind the tray (its text,
+  when to remind you, what the close button does) stay in Python, where
+  they are already tested; Rust only draws the tray, the windows and the
+  dialogs, and tells Python what you clicked. One pipe carries both ways.
+- **Kept in Python because they work the same with any window:** the global
+  shortcut (Windows sends it to the Python thread that registered it), the
+  updater (download, check, run the installer), Start with Windows (a
+  registry entry, now pointing to the new program).
+- **Moved to Rust:** the window and the quick-analyze box, the tray icon and
+  its menu, notifications, file dialogs (Add PDFs, Save as), one copy at a
+  time, closing when Windows shuts down.
+- **The installer stays Inno Setup with the same app id**, so JobLens 1.2.0
+  can update itself to 2.0.0 like every update before. It installs two
+  programs: `JobLens.exe` (Rust) and the agent beside it (PyInstaller).
 
 ## Open questions ❓
 - Follow Windows as a third theme choice (E4).
