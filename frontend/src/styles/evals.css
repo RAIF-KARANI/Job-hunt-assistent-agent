@@ -79,7 +79,7 @@
 
 .line-chart .tick {
   fill: var(--text-faint);
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-xs);
 }
 
@@ -97,7 +97,7 @@
 
 .line-chart .dot {
   fill: var(--accent);
-  stroke: var(--surface);
+  stroke: var(--chart-ring);
   stroke-width: 2; /* a ring of the surface keeps dots apart from the line */
 }
 
@@ -332,7 +332,7 @@
 
 .eval-table .num {
   text-align: right;
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -439,4 +439,258 @@
 
 .eval-table th .mono {
   white-space: nowrap;
+}
+
+/* ---- 17g: a run, step by step ---- */
+
+.evals-run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.evals-run-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-8);
+  padding-bottom: var(--space-3);
+}
+
+.evals-run-head h2 {
+  margin-right: auto;
+  font-size: var(--text-xl);
+}
+
+/* the whole run, in one line */
+.run-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+
+.run-totals div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.run-totals dt {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.run-totals dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.esteps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.estep {
+  border-top: 1px solid var(--border);
+}
+
+.erow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1.5fr) minmax(60px, 1fr) 64px minmax(0, 210px) 16px;
+  gap: var(--space-4);
+  align-items: center;
+  min-height: 60px;
+  padding: var(--space-2);
+  margin: 0 calc(var(--space-2) * -1);
+  border-radius: var(--radius-sm);
+}
+
+summary.erow {
+  list-style: none;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+summary.erow::-webkit-details-marker {
+  display: none;
+}
+
+summary.erow:hover {
+  background: var(--surface);
+}
+
+summary.erow > svg {
+  color: var(--text-faint);
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+details[open] > summary.erow > svg {
+  transform: rotate(180deg);
+}
+
+.stepno {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-grad);
+  color: var(--on-grad);
+  font-size: var(--text-xs);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.e-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.e-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.e-about {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.e-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--fit-track);
+  overflow: hidden;
+}
+
+.e-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.e-bar.top span {
+  background: var(--accent-grad);
+}
+
+.e-time {
+  text-align: right;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.e-metric {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.e-metric strong {
+  margin-right: 4px;
+  font-size: var(--text-lg);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* what a checked step opens to: indented under its title */
+.estep-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-2) 0 var(--space-6) 40px;
+}
+
+.estats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-10);
+}
+
+.estat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.estat-label {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.estat-value {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.estat-note {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.estat-note.good {
+  color: var(--ok);
+}
+
+.step-checks .net-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.estep-charts,
+.evals-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  gap: var(--space-6) var(--space-8);
+}
+
+.estep-charts > div,
+.evals-charts > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.estep-body h4,
+.evals-charts h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.estep-body .hint,
+.evals-charts .hint {
+  margin: 0;
+}
+
+.card .evals-run-foot {
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+  .erow {
+    grid-template-columns: 24px minmax(0, 1fr) 64px 16px;
+  }
+
+  .erow .e-bar,
+  .erow .e-metric {
+    display: none;
+  }
+
+  .estep-body {
+    padding-left: 0;
+  }
 }

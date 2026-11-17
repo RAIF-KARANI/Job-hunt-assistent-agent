@@ -23,17 +23,20 @@ const ORDER: Record<string, { title: string; parts: { rating: string; color: str
   },
 };
 
-export function Ratings({ ratings }: { ratings: EvalsData["ratings"] }) {
+/** `aspect`: only that question (17g: each one sits with the step it rates). */
+export function Ratings({ ratings, aspect: only }: { ratings: EvalsData["ratings"]; aspect?: keyof typeof ORDER }) {
   const count = (aspect: string, rating: string) => ratings.find((r) => r.aspect === aspect && r.rating === rating)?.count ?? 0;
   return (
     <div className="ratings">
-      {Object.entries(ORDER).map(([aspect, { title, parts }]) => {
+      {Object.entries(ORDER)
+        .filter(([aspect]) => !only || aspect === only)
+        .map(([aspect, { title, parts }]) => {
         const counts = parts.map((p) => ({ ...p, n: count(aspect, p.rating) }));
         const total = counts.reduce((sum, p) => sum + p.n, 0);
         return (
           <div key={aspect} className="rating">
             <div className="rating-head">
-              <h3>{title}</h3>
+              <h4>{only ? `Your ratings of the ${title.toLowerCase()}` : title}</h4>
               <span className="hint">{total ? `${total} rated` : "not rated yet"}</span>
             </div>
             <div className="stack" aria-hidden="true">
@@ -58,7 +61,7 @@ export function Ratings({ ratings }: { ratings: EvalsData["ratings"] }) {
           </div>
         );
       })}
-      <p className="hint">Cover-note ratings are pre-filled from what you did: approved as is, edited, or rejected.</p>
+      {only !== "fit_score" && <p className="hint">Cover-note ratings are pre-filled from what you did: approved as is, edited, or rejected.</p>}
     </div>
   );
 }

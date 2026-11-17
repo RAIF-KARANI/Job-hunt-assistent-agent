@@ -16,7 +16,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17d The Dashboard | ✅ | pipeline card, Do next, galaxy joined to the selected job, agent numbers |
 | 17e The Tracker | ✅ | Needs you, the board, the detail sheet in folds, dialogs |
 | 17f Analyze | ✅ | one column: the link, the run card with five steps, your decision, the log folded |
-| 17g–17j | ⏳ | 17g (Evals) is next |
+| 17g Evals | ✅ | a run step by step, chart colours from the accents (validated), the rest in folds |
+| 17h–17j | ⏳ | 17h (Settings, wizard, quick box) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -508,3 +509,65 @@ The first change to the app itself.
   AI_Engineer.pdf"): that is what the agent reports for step 2.
 - **The Analyze button stays** and shows the running time; Stop is next
   to it.
+
+## 17g Evals ✅ (17 Nov 2026)
+
+### What was done
+- **"A run, step by step"** replaces the seven tiles and four chart rows.
+  The agent's steps in the order it works; each row has the step's
+  average time as a bar (the slowest in the gradient) and its main
+  result. The whole run's totals are in the panel's header: median time,
+  tokens, cost, unfinished runs.
+- **The three checked steps open:**
+  - *Compare resumes* (open): evidence pass rate and its change, claims
+    checked, fake quotes caught, judge rejections, the pass rate run by
+    run and by model, your ratings of the fit score.
+  - *Research company*: searches that failed, invented links and dates
+    removed.
+  - *Draft cover note*: cover notes approved, number warnings, rewrites,
+    your ratings of the cover note.
+- **Accordions below:** Models compared (open), Run by run (tokens,
+  agent time, time against tokens; closed), Recent runs (closed; its
+  line shows how many and the latest result).
+- **Chart colours from your accents**, checked with the palette
+  validator in both themes: blue, orange, purple, gold for models; blue,
+  gold, pink for good, mixed, bad ratings.
+- Numbers in tables and on chart axes use the text font with even-width
+  digits. Model names keep the code font.
+
+### Which check belongs to which step
+This was an open point from the mockup. It is taken from the code now:
+`EVAL_CHECKS` in `job_agent/monitoring.py` describes each check by what
+it looks at. Claims and quotes: the fit analysis. Sources and dates: the
+search results. Numbers and rewrites: the cover note.
+
+### Checked
+- Build passes; pytest: 471 pass; the real window starts.
+- The validator, four palettes (series and ratings, dark and light):
+  every check passes.
+- Driven in a browser with made-up data, dark and light: the totals, the
+  five rows, which step is open, the checks in each step, a chart's hover
+  tip, the three accordions, Run by run (4 charts), Recent runs; nothing
+  scrolls sideways at 720 or 2560 px.
+
+### Learned
+- **Blue next to purple can't be told apart by colour-blind readers**
+  (the validator scored it 0 for the commonest kind). Two of your accents,
+  so the order matters: blue, orange, purple, gold.
+- The accents as given are too light for chart marks on a dark surface
+  (orange and yellow fall outside the validator's lightness band); the
+  chart steps are darker versions of the same hues.
+
+### Not checked
+- **The model filter**: the made-up data ignores it, so the numbers
+  didn't change in the browser. The request it sends is unchanged.
+- The validator was run against one colour for the card (dark `#1B2130`,
+  light `#F3F6FC`). The real card is see-through, so what is behind a
+  chart shifts a little with the backdrop.
+
+### Different from the mockup, on purpose
+- **Six rows when the app reports six steps** ("Check tracker" is one in
+  the real run log); the mockup drew five.
+- **More in the folds than the mockup**: ratings, pass rate by model,
+  agent time per run, time against tokens, recent runs and the tracing
+  chips are real parts of this screen that the mockup left out.

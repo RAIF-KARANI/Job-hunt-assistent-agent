@@ -113,15 +113,17 @@ private" (both would live in Settings).
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F28 | **A run, step by step** | The agent's five steps in order. Each row: the step's average time as a bar, and its main result | 🎨 ❓ |
-| F29 | **Step details** | Step 2 (open): evidence pass rate, made-up quotes caught, claims the judge rejected, pass rate by run. Step 3: invented links and news dates removed. Step 5: cover notes approved | 🎨 ❓ |
-| F30 | **Whole-run totals** | Median time, tokens, cost (with "add a price") in the panel's header | 🎨 |
-| F31 | **Models compared** | An accordion (open): one row per model | 🎨 |
-| F32 | **Tokens by run** | An accordion (closed) | 🎨 |
+| F28 | **A run, step by step** | The agent's steps in order. Each row: the step's average time as a bar, and its main result | ✅ built (17g) |
+| F29 | **Step details** | Compare resumes (open): evidence pass rate, claims checked, fake quotes caught, judge rejections, pass rate by run and by model, your fit-score ratings. Research: searches that failed, invented links and dates removed. Draft: cover notes approved, number warnings, rewrites, your cover-note ratings | ✅ built (17g) |
+| F30 | **Whole-run totals** | Median time, tokens, cost (with "add a price") and unfinished runs in the panel's header | ✅ built (17g) |
+| F31 | **Models compared** | An accordion (open): one row per model | ✅ built (17g) |
+| F32 | **Run by run** | An accordion (closed): tokens per run, agent time per run, and time against tokens. **Recent runs** is an accordion too | ✅ built (17g) |
 
 **To check (❓):**
-- F28, F29: which step each safety net belongs to is Claude's reading,
-  not taken from the code. Confirm before building.
+- ~~F28, F29: which step each safety net belongs to~~ Settled in 17g from
+  the code: each check's own description in `job_agent/monitoring.py`
+  says what it looks at (the fit analysis, the search results, the cover
+  note).
 
 ## 8. Not in the mockup yet
 

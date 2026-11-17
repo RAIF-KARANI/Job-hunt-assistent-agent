@@ -130,17 +130,21 @@
   --galaxy-star: #c9d4e5;
   --galaxy-label: rgba(11, 15, 23, 0.78);
 
-  /* 16d: one colour per model in "Evidence pass rate by model" (4 at most).
-     Kept from version 2 until step 17g checks new ones with the palette
-     validator. */
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
+  /* Chart colours (17g): the accents, stepped to where they can be told
+     apart. Blue, orange, purple, gold: one per model, 4 at most, in this
+     order (blue next to purple fails for colour-blind readers, so they are
+     never neighbours). Checked with the dataviz palette validator against a
+     card over the window (#1B2130): every check passes. */
+  --series-1: #4c8df6;
+  --series-2: #d9621a;
+  --series-3: #9374f7;
+  --series-4: #b08408;
 
-  --rate-good: #3987e5;
-  --rate-mixed: #199e70;
-  --rate-bad: #d95926;
+  /* ratings: good, mixed, bad. Same validator, all pass. */
+  --rate-good: #4c8df6;
+  --rate-mixed: #b08408;
+  --rate-bad: #e0559a;
+  --chart-ring: #1b2130; /* the ring that keeps a dot apart from its line */
 
   /* gradient cards: the tint sits on this, and the status bar in this track */
   --kpi-base: rgba(11, 15, 23, 0.3);
@@ -214,14 +218,17 @@
   --galaxy-star: #8b9ab3;
   --galaxy-label: rgba(255, 255, 255, 0.88);
 
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #eda100;
+  /* Light steps of the same four, against a card over the window (#F3F6FC):
+     every check passes. */
+  --series-1: #2563eb;
+  --series-2: #ea580c;
+  --series-3: #7c3aed;
+  --series-4: #a67c00;
 
-  --rate-good: #2a78d6;
-  --rate-mixed: #1baf7a; /* 2.8:1 on white: the legend always names it */
-  --rate-bad: #eb6834;
+  --rate-good: #2563eb;
+  --rate-mixed: #a67c00;
+  --rate-bad: #db2777;
+  --chart-ring: #f3f6fc;
 
   --kpi-base: rgba(255, 255, 255, 0.3);
   --kpi-track: rgba(255, 255, 255, 0.6);

@@ -21,14 +21,14 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **17g: Evals** (a run step by step, charts in the new palette checked with the validator, tables) |
+| Next step | **17h: Settings, the setup wizard and the quick-analyze box** |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
 
 | # | Phase | Status |
 |---|---|---|
-| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a to 17f done |
+| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a to 17g done |
 | 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
@@ -132,10 +132,12 @@ with every feature still working. That is how Phase 17 is laid out.
   `OrbitMap.tsx`, `declutter.ts`, `layout.ts`), `tracker/`, `analyze/`,
   `evals/` (`RunCharts.tsx`, `PassRateChart.tsx`), `settings/`, `setup/`,
   `quick/`, `resume/`.
-- **Chart colours** today are `--series-1..4` in `tokens.css`, checked
-  with the palette validator (dark `#3987e5 #d95926 #199e70 #c98500`,
-  light `#2a78d6 #eb6834 #1baf7a #eda100`). New chart colours from the
-  accents must pass the validator again (step 17g).
+- **Chart colours (since 17g)** are `--series-1..4` and `--rate-*` in
+  `tokens.css`: the accents stepped until the palette validator passes
+  (dark `#4c8df6 #d9621a #9374f7 #b08408`, light `#2563eb #ea580c #7c3aed
+  #a67c00`). Keep the order: blue next to purple fails for colour-blind
+  readers. Any new chart colour must pass the validator too (the
+  `dataviz` skill's `scripts/validate_palette.js`).
 - **The galaxy stays** (your choice): restyle the 3D view, the flat map,
   and the "3D off" fallback together.
 - **Look at it in the real window**, not only the browser:

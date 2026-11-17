@@ -5,22 +5,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage, getApi, onEvent } from "../bridge/bridge";
 import type { EvalsData, TracingStatus } from "../bridge/types";
-import { seconds, STEP_LABELS } from "../dashboard/Charts";
+import { Fold } from "../app/Fold";
+import { seconds } from "../dashboard/Charts";
 import { parseUtc } from "../tracker/status";
-import { PassRateChart } from "./PassRateChart";
-import { correlation, ModelTrend, niceMinutes, RunLine, RunScatter } from "./RunCharts";
-import { Ratings } from "./Ratings";
+import { kilo, money, pct, plural, share } from "./format";
+import { correlation, niceMinutes, RunLine, RunScatter } from "./RunCharts";
+import { RunSteps } from "./RunSteps";
 
-const pct = (v: number | null) => (v === null ? "–" : `${Math.round(v * 100)}%`);
-const kilo = (n: number | null) => (n === null ? "–" : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n)));
-const share = (part: number, whole: number) => (whole ? part / whole : null);
 /** 16d: axis labels: "50k" not "50.0k", "5 min" not "5m 00s". */
 const axisKilo = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10}k` : String(Math.round(n)));
 const axisMinutes = (s: number) => (s === 0 ? "0" : `${Math.round(s / 6) / 10} min`);
-/** 16d: a cost in dollars: enough digits to tell a tenth of a cent from a cent. */
-const money = (v: number | null | undefined) =>
-  v === null || v === undefined ? "–" : v >= 100 ? `$${Math.round(v)}` : v >= 0.1 ? `$${v.toFixed(2)}` : v >= 0.01 ? `$${v.toFixed(3)}` : `$${v.toFixed(4)}`;
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const where = (provider: string) => (provider === "ollama" ? "local · this PC" : "API · your key"); // 16c: any cloud provider
 
 const RESULT_TONE: Record<string, string> = {
@@ -126,13 +120,8 @@ export function Evals() {
       .catch(() => setTracing(null));
   }, []);
 
-  const k = data?.kpis;
-  const slowest = Math.max(0, ...(data?.steps ?? []).map((s) => s.avg_seconds));
   const note = data ? correlationNote(data.correlation) : null;
-  const delta = k?.pass_rate_delta ?? null;
   const showTrace = data?.recent.some(hasTrace) ?? false; // 16a: an all-empty column is noise
-  // 16d: cost is shown once there is a cloud model in the run log (a local model costs nothing)
-  const hasCloud = data?.models.some((m) => m.provider !== "ollama") ?? false;
   const showCost = data?.recent.some((r) => r.cost !== null) ?? false;
   const points = data?.run_points ?? [];
   const r = correlation(points.map((p) => p.tokens_in + p.tokens_out), points.map((p) => p.seconds));
@@ -142,11 +131,11 @@ export function Evals() {
       <header className="tracker-head">
         <div className="page-head">
           <h1>Agent evals</h1>
-          <p>How well the agent did, measured on this PC. Nothing is sent anywhere.</p>
+          <p>How the agent did at each step of a run, in the order it works. Measured on this PC; nothing is sent anywhere.</p>
         </div>
         <div className="tracker-tools">
           <label className="field">
-            <span>Model</span>
+            <span>Showing</span>
             <select className="input" value={model} onChange={(e) => setModel(e.target.value)}>
               <option value="">All models</option>
               {data?.models.map((m) => (
@@ -176,206 +165,14 @@ export function Evals() {
         </section>
       ) : (
         <>
-          <section className="tiles" aria-label="Key numbers">
-            <div className="tile">
-              <span className="tile-label">Evidence pass rate</span>
-              <span className="tile-value">{pct(k?.pass_rate ?? null)}</span>
-              <span className={delta !== null && delta >= 0.005 ? "tile-note good" : "tile-note"}>
-                {delta !== null && k?.pass_rate_window
-                  ? `${Math.abs(delta) < 0.005 ? "same as" : `${delta > 0 ? "up" : "down"} ${Math.round(Math.abs(delta) * 100)} points vs`} the ${k.pass_rate_window} runs before`
-                  : "skill claims that held up"}
-              </span>
-            </div>
-            <div className="tile">
-              <span className="tile-label">Cover notes approved</span>
-              <span className="tile-value">{k ? pct(share(k.approved, k.decided)) : "–"}</span>
-              <span className="tile-note">{k ? `${k.approved} of ${plural(k.decided, "decision")}` : " "}</span>
-            </div>
-            <div className="tile">
-              <span className="tile-label">Agent time per run</span>
-              <span className="tile-value">{k?.median_seconds != null ? seconds(k.median_seconds) : "–"}</span>
-              <span className="tile-note">{k ? `median of ${plural(k.full_runs, "full run")}; waiting for you excluded` : " "}</span>
-            </div>
-            <div className="tile">
-              <span className="tile-label">Tokens per run</span>
-              <span className="tile-value">
-                {k?.tokens_in_per_run != null ? kilo(k.tokens_in_per_run + (k.tokens_out_per_run ?? 0)) : "–"}
-              </span>
-              <span className="tile-note">
-                {k?.tokens_in_per_run != null ? `${kilo(k.tokens_in_per_run)} in · ${kilo(k.tokens_out_per_run)} out` : " "}
-              </span>
-            </div>
-            <div className="tile">
-              <span className="tile-label">Tool failures</span>
-              <span className="tile-value">{k ? pct(share(k.tool_failures, k.tool_calls)) : "–"}</span>
-              <span className="tile-note">
-                {k
-                  ? `${k.tool_failures} of ${k.tool_calls} ${k.tool_calls === 1 ? "search" : "searches"} failed` +
-                    (k.tool_empty ? ` · ${k.tool_empty} found nothing` : "")
-                  : " "}
-              </span>
-            </div>
-            {hasCloud && (
-              <div className="tile">
-                <span className="tile-label">Cost</span>
-                <span className="tile-value">{money(k?.cost_total)}</span>
-                <span className="tile-note">
-                  {k?.cost_total != null
-                    ? `${plural(k.cost_runs, "run")} with a priced model` + (k.cost_per_run != null ? ` · ${money(k.cost_per_run)} per full run` : "")
-                    : "enter the model's price in Settings to see it"}
-                </span>
-              </div>
-            )}
-            <div className="tile">
-              <span className="tile-label">Unfinished runs</span>
-              <span className="tile-value">{k ? k.unfinished : "–"}</span>
-              <span className="tile-note">
-                {k && k.unfinished ? `${seconds(k.unfinished_seconds)} of agent time; closed, stopped or failed` : "every run finished"}
-              </span>
-            </div>
-          </section>
+          {data && <RunSteps data={data} note={note} />}
 
-          <div className="chart-row">
-            <section className="card chart-card wide" aria-labelledby="trend-title">
-              <h2 id="trend-title">Evidence pass rate per run</h2>
-              <p className="hint">Share of skill claims that survived the quote check and the judge. Hover a point for its run.</p>
-              {data?.trend.length ? <PassRateChart trend={data.trend} /> : <p className="chart-empty">No analyzed runs yet.</p>}
-            </section>
-            <section className="card chart-card" aria-labelledby="ratings-title">
-              <h2 id="ratings-title">Your ratings</h2>
-              {data && <Ratings ratings={data.ratings} />}
-            </section>
-          </div>
-
-          {/* 16d: tokens and time run by run, and how they go together */}
-          <div className="chart-row">
-            <section className="card chart-card" aria-labelledby="tokens-title">
-              <h2 id="tokens-title">Tokens per run</h2>
-              <p className="hint">Input plus output tokens of each full run, oldest left. Hover a run for the split.</p>
-              {points.length ? (
-                <RunLine
-                  points={points}
-                  value={(p) => p.tokens_in + p.tokens_out}
-                  format={(v) => kilo(v)}
-                  axis={axisKilo}
-                  unit="tokens"
-                  detail={(p) => `${kilo(p.tokens_in)} in · ${kilo(p.tokens_out)} out` + (p.cost !== null ? ` · ${money(p.cost)}` : "")}
-                  caption="Tokens per full run"
-                />
-              ) : (
-                <p className="chart-empty">No full runs yet.</p>
-              )}
-            </section>
-            <section className="card chart-card" aria-labelledby="runtime-title">
-              <h2 id="runtime-title">Agent time per run</h2>
-              <p className="hint">Working time of each full run, oldest left. Waiting for you isn't counted.</p>
-              {points.length ? (
-                <RunLine points={points} value={(p) => p.seconds} format={(v) => seconds(v)} axis={axisMinutes} top={niceMinutes} unit="of agent time" caption="Agent time per full run" />
-              ) : (
-                <p className="chart-empty">No full runs yet.</p>
-              )}
-            </section>
-          </div>
-
-          <div className="chart-row">
-            <section className="card chart-card" aria-labelledby="scatter-title">
-              <h2 id="scatter-title">Time against tokens</h2>
-              <p className="hint">
-                One dot per full run: up = slower, right = more tokens.
-                {r !== null && ` Across these ${points.length} runs the two move together with r = ${r.toFixed(2)} (1 = perfectly, 0 = not at all).`}
-              </p>
-              {points.length ? (
-                <RunScatter points={points} formatTokens={(v) => kilo(v)} formatTime={(v) => seconds(v)} axisTokens={axisKilo} axisTime={axisMinutes} />
-              ) : (
-                <p className="chart-empty">No full runs yet.</p>
-              )}
-            </section>
-            <section className="card chart-card" aria-labelledby="model-trend-title">
-              <h2 id="model-trend-title">Evidence pass rate by model</h2>
-              <p className="hint">
-                {data && data.model_trend.length === 1
-                  ? `Run by run, oldest left, for ${data.model_trend[0].model}: the only model with analyzed runs so far. Another model gets its own line.`
-                  : "Run by run, oldest left, one line per model. Always every model, whatever is chosen above."}
-                {data && data.models_not_charted > 0 && ` ${plural(data.models_not_charted, "more model")} with fewer runs: see the table below.`}
-              </p>
-              {data?.model_trend.length ? <ModelTrend series={data.model_trend} /> : <p className="chart-empty">No analyzed runs yet.</p>}
-            </section>
-          </div>
-
-          <div className="chart-row">
-            <section className="card chart-card" aria-labelledby="checks-title">
-              <h2 id="checks-title">Safety nets</h2>
-              <p className="hint">Automatic checks on every run. Per run = average over the runs that ran the check.</p>
-              <div className="table-wrap flat">
-                <table className="eval-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Check</th>
-                      <th scope="col" className="num">
-                        Total
-                      </th>
-                      <th scope="col" className="num">
-                        Per run
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data?.checks.map((c) => (
-                      <tr key={c.check}>
-                        <th scope="row">
-                          {c.label}
-                          <span className="cell-sub">{c.meaning}</span>
-                        </th>
-                        <td className="num">{c.runs ? Math.round(c.total) : "–"}</td>
-                        <td className="num">{c.per_run !== null ? c.per_run.toFixed(1) : "not run yet"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="card chart-card" aria-labelledby="time-title">
-              <h2 id="time-title">Where the time goes</h2>
-              <p className="hint">Average agent time and output tokens per step (the draft: per draft).</p>
-              <div className="table-wrap flat">
-                <table className="eval-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Step</th>
-                      <th scope="col">
-                        <span className="sr-only">Share of the slowest step</span>
-                      </th>
-                      <th scope="col" className="num">
-                        Time
-                      </th>
-                      <th scope="col" className="num">
-                        Out tokens
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data?.steps.map((s) => (
-                      <tr key={s.node}>
-                        <th scope="row">{STEP_LABELS[s.node] ?? s.node}</th>
-                        <td className="cell-bar">
-                          <span className="bar-track" aria-hidden="true">
-                            <span className="bar-fill" style={{ width: slowest ? `max(${((s.avg_seconds / slowest) * 100).toFixed(1)}%, 4px)` : 0 }} />
-                          </span>
-                        </td>
-                        <td className="num">{seconds(s.avg_seconds)}</td>
-                        <td className="num">{kilo(s.out_tokens)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {note && <p className="notice insight">{note}</p>}
-            </section>
-          </div>
-
-          <section className="card chart-card" aria-labelledby="models-title">
-            <h2 id="models-title">Models compared</h2>
+          <Fold
+            level={2}
+            defaultOpen
+            title="Models compared"
+            digest={data ? data.models.map((m) => `${m.model} ${plural(m.runs, "run")}`).join(" · ") : ""}
+          >
             <p className="hint">
               Always every model. Cost uses the price you enter for a model in Settings; without one it shows –, and a local model costs nothing.
             </p>
@@ -422,10 +219,50 @@ export function Evals() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </Fold>
 
-          <section className="card chart-card" aria-labelledby="recent-title">
-            <h2 id="recent-title">Recent runs</h2>
+
+          {/* 16d: tokens and time run by run, and how they go together */}
+          <Fold level={2} title="Run by run" digest={points.length ? `Tokens and agent time of ${plural(points.length, "full run")}` : "No full runs yet"}>
+            {points.length ? (
+              <div className="evals-charts">
+                <div>
+                  <h3>Tokens per run</h3>
+                  <p className="hint">Input plus output tokens of each full run, oldest left. Hover a run for the split.</p>
+                  <RunLine
+                    points={points}
+                    value={(p) => p.tokens_in + p.tokens_out}
+                    format={(v) => kilo(v)}
+                    axis={axisKilo}
+                    unit="tokens"
+                    detail={(p) => `${kilo(p.tokens_in)} in · ${kilo(p.tokens_out)} out` + (p.cost !== null ? ` · ${money(p.cost)}` : "")}
+                    caption="Tokens per full run"
+                  />
+                </div>
+                <div>
+                  <h3>Agent time per run</h3>
+                  <p className="hint">Working time of each full run, oldest left. Waiting for you isn't counted.</p>
+                  <RunLine points={points} value={(p) => p.seconds} format={(v) => seconds(v)} axis={axisMinutes} top={niceMinutes} unit="of agent time" caption="Agent time per full run" />
+                </div>
+                <div>
+                  <h3>Time against tokens</h3>
+                  <p className="hint">
+                    One dot per full run: up = slower, right = more tokens.
+                    {r !== null && ` Across these ${points.length} runs the two move together with r = ${r.toFixed(2)} (1 = perfectly, 0 = not at all).`}
+                  </p>
+                  <RunScatter points={points} formatTokens={(v) => kilo(v)} formatTime={(v) => seconds(v)} axisTokens={axisKilo} axisTime={axisMinutes} />
+                </div>
+              </div>
+            ) : (
+              <p className="chart-empty">No full runs yet.</p>
+            )}
+          </Fold>
+
+          <Fold
+            level={2}
+            title="Recent runs"
+            digest={data?.recent.length ? `${data.recent_total} in all · the latest: ${data.recent[0].result}` : "None yet"}
+          >
             <p className="hint">
               {showTrace
                 ? "Trace links appear for runs recorded while Langfuse or LangSmith tracing was on."
@@ -516,7 +353,7 @@ export function Evals() {
                 )}
               </div>
             )}
-          </section>
+          </Fold>
         </>
       )}
     </div>

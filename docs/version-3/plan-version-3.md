@@ -15,7 +15,7 @@ at the end** (E1).
 
 | # | Phase | What | Status |
 |---|---|---|---|
-| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🚧 17a to 17f done; 17g next |
+| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🚧 17a to 17g done; 17h next |
 | 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ⏳ |
 | 19 | New features | your list (to come) | 🟡 waiting for your list |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
@@ -55,7 +55,7 @@ Source kept in [mockup/](mockup/).
 | 17d ✅ | **Dashboard**: gradient KPI cards, the **job galaxy restyled** in the new palette (kept, your choice), Ready to apply, charts | the 3D galaxy, the flat map and "3D off" all match |
 | 17e ✅ | **Tracker**: board, list, job details, follow-up email, interview prep, resume prompt | every dialog restyled; drag and drop still works |
 | 17f ✅ | **Analyze**: steps, live log, review, the failed / out-of-quota panels, Continue banner | a full run looks right from start to approval |
-| 17g | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
+| 17g ✅ | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
 | 17h | **Settings, setup wizard, quick-analyze box** | first-run setup looks right |
 | 17i | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
 | 17j | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
