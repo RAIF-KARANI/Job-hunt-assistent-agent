@@ -99,7 +99,7 @@
   gap: 10px;
   padding: 14px;
   border-radius: 18px;
-  background: var(--sidebar);
+  background: var(--surface-sunken);
   border: 1px solid var(--border);
   transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
@@ -124,9 +124,26 @@
 }
 
 .column-count {
-  font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+/* 17e: "Show 9 more" under a long column */
+.column-more {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.column-more:hover {
+  background: var(--surface);
+  color: var(--text);
 }
 
 .column-empty {
@@ -788,4 +805,104 @@
 .delete-confirm h3,
 .delete-confirm p {
   margin: 0;
+}
+
+/* ---- 17e: Needs you ---- */
+
+.acc-body:has(> .needs) {
+  padding: 0;
+}
+
+.needs {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.need {
+  flex: 1 1 380px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: var(--space-4) var(--space-6);
+}
+
+.need + .need {
+  border-left: 1px solid var(--border);
+}
+
+@media (max-width: 1100px) {
+  .need + .need {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* ---- 17e: the job sheet ---- */
+
+.sheet-company {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+/* what comes next for this job: the same frame as a reminder, in the accent */
+.next-step {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.next-step h3 {
+  margin: 0 0 2px;
+  font-size: var(--text-lg);
+}
+
+.next-step p {
+  margin: 0;
+}
+
+.follow-up h3 {
+  font-size: var(--text-lg);
+}
+
+.sheet-folds {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-folds > .acc.flat:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.sheet-folds .section-head {
+  justify-content: flex-end;
+}
+
+.fit-with {
+  display: block;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+/* the fold's own title says "Your notes"; inside it the section needs no
+   line or heading of its own (the "Saved" mark next to it stays) */
+.sheet-folds .notes-section {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.sheet-folds .notes-section h3 {
+  display: none;
+}
+
+.tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }

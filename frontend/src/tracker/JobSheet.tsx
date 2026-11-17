@@ -2,16 +2,17 @@
 // approved cover note, and the status. A native <dialog> gives focus
 // trapping and Esc-to-close for free.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { prefill } from "../analyze/runStore";
 import { copy } from "../app/clipboard";
 import { ResumePrompt } from "../resume/ResumePrompt";
+import { Fold } from "../app/Fold";
 import { NotesSection } from "./NotesSection";
 import { Exported } from "../app/Exported";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { ApplyAnswer, JobDetail, JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
-import { ago, fitLevel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
+import { ago, fitLevel, interviewLabel, parseUtc, quietDays, STATUSES, statusLabel } from "./status";
 import { FollowUpEmail } from "./FollowUpEmail";
 import { InterviewPrep } from "./InterviewPrep";
 import { PostingText } from "./PostingText";
@@ -116,6 +117,58 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
     }
   };
 
+  // 17e: what comes next for a job at this stage (shown when no reminder is open).
+  const next: { title: string; text: string; actions: ReactNode } | null = !job
+    ? null
+    : current === "researched"
+      ? {
+          title: "Next: a cover note",
+          text: "There is no approved cover note yet. JobLens drafts one from the achievements that fit this job, and you approve it.",
+          actions: (
+            <button type="button" className="btn btn-primary btn-sm" onClick={draft}>
+              Draft a cover note
+            </button>
+          ),
+        }
+      : current === "cover_note_ready"
+        ? {
+            title: "Next: apply",
+            text: "Your cover note is approved. Copy it from below, apply on the posting, then tell JobLens.",
+            actions: (
+              <>
+                {isWebLink(job.url) && (
+                  <a className="btn btn-primary btn-sm" href={job.url}>
+                    Open posting
+                  </a>
+                )}
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => onMove(job.id, "applied")}>
+                  I applied
+                </button>
+              </>
+            ),
+          }
+        : current === "applied"
+          ? {
+              title: "Waiting to hear back",
+              text: "JobLens reminds you here if there is no news for a while.",
+              actions: (
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEmailOpen(true)}>
+                  Write a follow-up email
+                </button>
+              ),
+            }
+          : current === "interviewing"
+            ? {
+                title: "Next: prepare for the interview",
+                text: "A prep sheet for this job, from the posting and your resume.",
+                actions: (
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => setPrepOpen(true)}>
+                    Interview prep
+                  </button>
+                ),
+              }
+            : null;
+
   return (
     <dialog
       ref={dialog}
@@ -127,7 +180,7 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
       <div className="sheet-body">
         <header className="sheet-head">
           <div className="sheet-names">
-            <span className="eyebrow">{job?.company ?? "Loading..."}</span>
+            <span className="sheet-company">{job?.company ?? "Loading..."}</span>
             {/* Focus starts on the title (read first by screen readers), not on the close button. */}
             <h2 id="sheet-title" tabIndex={-1} autoFocus>
               {job?.title ?? ""}
@@ -155,46 +208,6 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
 
         {job && (
           <>
-            <div className="sheet-actions">
-              <label className="field status-field">
-                <span>Status</span>
-                <select className="input" value={current} onChange={(e) => onMove(job.id, e.target.value as JobStatus)}>
-                  {STATUSES.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {isWebLink(job.url) && (
-                <a className="btn btn-secondary" href={job.url}>
-                  Open posting
-                </a>
-              )}
-              <button type="button" className="btn btn-secondary" onClick={draft}>
-                {note ? "Draft another cover note" : "Draft a cover note"}
-              </button>
-              <button type="button" className="btn btn-ghost" onClick={() => setPromptOpen(true)}>
-                Resume prompt
-              </button>
-              {(current === "applied" || current === "interviewing") && (
-                <button type="button" className="btn btn-ghost" onClick={() => setEmailOpen(true)}>
-                  Follow-up email
-                </button>
-              )}
-              <button type="button" className={current === "interviewing" ? "btn btn-primary" : "btn btn-ghost"} onClick={() => setPrepOpen(true)}>
-                Interview prep
-              </button>
-            </div>
-            {promptOpen && <ResumePrompt jobId={job.id} onClose={() => setPromptOpen(false)} />}
-            {prepOpen && <InterviewPrep jobId={job.id} onClose={() => setPrepOpen(false)} />}
-            {emailOpen && <FollowUpEmail jobId={job.id} onSent={() => onFollowUp(job.id, "done")} onClose={() => setEmailOpen(false)} />}
-            {draftProblem && (
-              <p className="hint" role="status">
-                {draftProblem}
-              </p>
-            )}
-
             {row?.apply_ask && (
               <section className="follow-up" aria-labelledby="apply-title">
                 <div>
@@ -223,7 +236,7 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
                     title="Never ask again about this job"
                     onClick={() => void applyAnswer("ignore")}
                   >
-                    Ignore
+                    Stop asking
                   </button>
                 </div>
               </section>
@@ -261,13 +274,49 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
               </section>
             )}
 
-            <NotesSection key={job.id} jobId={job.id} initial={job} onSaved={onChanged} />
+            {/* 17e: when nothing is asking for an answer, say what comes next for a job at this stage. */}
+            {!row?.apply_ask && !row?.follow_up && next && (
+              <section className="next-step" aria-labelledby="next-step-title">
+                <div>
+                  <h3 id="next-step-title">{next.title}</h3>
+                  <p className="hint">{next.text}</p>
+                </div>
+                <div className="follow-up-actions">{next.actions}</div>
+              </section>
+            )}
 
-            <section className="sheet-section" aria-labelledby="fit-title">
+            <div className="sheet-actions">
+              <label className="field status-field">
+                <span>Status</span>
+                <select className="input" value={current} onChange={(e) => onMove(job.id, e.target.value as JobStatus)}>
+                  {STATUSES.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {isWebLink(job.url) && (
+                <a className="btn btn-secondary" href={job.url}>
+                  Open posting
+                </a>
+              )}
+            </div>
+            {promptOpen && <ResumePrompt jobId={job.id} onClose={() => setPromptOpen(false)} />}
+            {prepOpen && <InterviewPrep jobId={job.id} onClose={() => setPrepOpen(false)} />}
+            {emailOpen && <FollowUpEmail jobId={job.id} onSent={() => onFollowUp(job.id, "done")} onClose={() => setEmailOpen(false)} />}
+            {draftProblem && (
+              <p className="hint" role="status">
+                {draftProblem}
+              </p>
+            )}
+
+            <div className="sheet-folds">
+            <Fold flat defaultOpen title="Fit" digest={`${job.best_match.fit_score} with ${job.best_match.resume_name}`}>
               <div className="fit-head">
                 <FitChip score={job.best_match.fit_score} large />
                 <div>
-                  <h3 id="fit-title">Fit with {job.best_match.resume_name}</h3>
+                  <strong className="fit-with">Fit with {job.best_match.resume_name}</strong>
                   <span className="mono-sm">{job.best_match.score_breakdown}</span>
                 </div>
               </div>
@@ -325,11 +374,15 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
                   )}
                 </div>
               </div>
-            </section>
+            </Fold>
 
-            <section className="sheet-section" aria-labelledby="note-title">
+            <Fold
+              flat
+              defaultOpen={current === "cover_note_ready"}
+              title="Cover note"
+              digest={note ? `Approved ${ago(note.approved_at)}` : "None approved yet"}
+            >
               <div className="section-head">
-                <h3 id="note-title">Cover note</h3>
                 {note && (
                   <button
                     type="button"
@@ -366,11 +419,42 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
               ) : (
                 <p className="hint">No approved cover note yet.</p>
               )}
-            </section>
+            </Fold>
+
+            <Fold
+              flat
+              defaultOpen={!!(job.notes || job.contact || job.interview_at)}
+              title="Your notes"
+              digest={job.interview_at ? `Interview ${interviewLabel(job.interview_at)}` : job.contact || (job.notes ? "Saved" : "Interview date, contact, notes")}
+            >
+              <NotesSection key={job.id} jobId={job.id} initial={job} onSaved={onChanged} />
+            </Fold>
+
+            <Fold flat title="More tools" digest="Drafts, resume prompt, interview prep">
+              <div className="tool-row">
+                <button type="button" className="btn btn-secondary btn-sm" onClick={draft}>
+                  {note ? "Draft another cover note" : "Draft a cover note"}
+                </button>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPromptOpen(true)}>
+                  Resume prompt
+                </button>
+                {(current === "applied" || current === "interviewing") && (
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEmailOpen(true)}>
+                    Follow-up email
+                  </button>
+                )}
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setPrepOpen(true)}>
+                  Interview prep
+                </button>
+              </div>
+            </Fold>
 
             {job.company_brief && (
-              <section className="sheet-section" aria-labelledby="company-title">
-                <h3 id="company-title">About {job.company}</h3>
+              <Fold
+                flat
+                title={`About ${job.company}`}
+                digest={job.company_brief.size_and_stage && job.company_brief.size_and_stage !== "Unknown" ? job.company_brief.size_and_stage : "What they do, recent news"}
+              >
                 <p className="sheet-text">{job.company_brief.what_they_do}</p>
                 {job.company_brief.size_and_stage && job.company_brief.size_and_stage !== "Unknown" && (
                   <p className="hint">{job.company_brief.size_and_stage}</p>
@@ -397,8 +481,10 @@ export function JobSheet({ jobId, status, row, onMove, onFollowUp, onApply, onCh
                     </ul>
                   </>
                 )}
-              </section>
+              </Fold>
             )}
+
+            </div>
 
             {/* its own key: the same key as NotesSection above made React draw the notes twice */}
             <PostingText key={`posting-${job.id}`} jobId={job.id} text={job.posting_text} readable={job.posting_readable} canFetch={isWebLink(job.url)} />

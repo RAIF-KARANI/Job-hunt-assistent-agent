@@ -338,3 +338,99 @@ table,
 .tile-value {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- accordions (feature F5) ---- */
+
+.acc {
+  min-width: 0;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--shadow);
+  overflow: hidden;
+}
+
+.acc > summary {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) 14px;
+  min-height: 56px;
+  padding: var(--space-3) var(--space-6);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.acc > summary::-webkit-details-marker {
+  display: none;
+}
+
+.acc > summary:hover {
+  background: var(--surface);
+}
+
+.acc > summary:focus-visible {
+  outline-offset: -2px;
+}
+
+.acc > summary h2,
+.acc > summary h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.acc-digest {
+  flex: 1 1 160px;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.acc > summary > svg {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-faint);
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.acc[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.acc[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.acc-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+}
+
+/* inside a panel or a sheet: a row with a line above it, no frame */
+.acc.flat {
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.acc.flat > summary {
+  min-height: var(--touch);
+  padding: var(--space-3) var(--space-2);
+  margin: 0 calc(var(--space-2) * -1);
+  border-radius: var(--radius-sm);
+}
+
+.acc.flat[open] > summary {
+  border-bottom: 0;
+}
+
+.acc.flat > .acc-body {
+  padding: var(--space-1) 0 var(--space-5);
+}

@@ -19,12 +19,13 @@ interface ReminderProps {
   tone: "warn" | "ask";
   title: string;
   note: string;
-  /** One job: open its details. Several: go to the Tracker. */
+  /** One job: open its details. Several: the Tracker lists them. */
   job?: JobRow;
+  show: "apply" | "follow";
   onOpen(id: number): void;
 }
 
-function Reminder({ icon, tone, title, note, job, onOpen }: ReminderProps) {
+function Reminder({ icon, tone, title, note, job, show, onOpen }: ReminderProps) {
   const body = (
     <>
       <span className={`next-icon ${tone}`}>
@@ -42,7 +43,7 @@ function Reminder({ icon, tone, title, note, job, onOpen }: ReminderProps) {
       {body}
     </button>
   ) : (
-    <a className="next-row" href="#/tracker">
+    <a className="next-row" href={`#/tracker?show=${show}`}>
       {body}
     </a>
   );
@@ -83,6 +84,7 @@ export function DoNext({ jobs, onOpen }: { jobs: JobRow[]; onOpen(id: number): v
               title={due.length === 1 ? `Follow up with ${due[0].company}` : `Follow up on ${due.length} applications`}
               note={due.length === 1 ? `No news for ${quietDays(due[0])} days. A short email can help.` : "No news for a while. A short email can help."}
               job={due.length === 1 ? due[0] : undefined}
+              show="follow"
               onOpen={onOpen}
             />
           )}
@@ -93,6 +95,7 @@ export function DoNext({ jobs, onOpen }: { jobs: JobRow[]; onOpen(id: number): v
               title={asks.length === 1 ? `Did you apply to ${asks[0].company}?` : "Did you apply?"}
               note={asks.length === 1 ? "The cover note has been ready for over a day." : `${asks.length} cover notes have been ready for over a day.`}
               job={asks.length === 1 ? asks[0] : undefined}
+              show="apply"
               onOpen={onOpen}
             />
           )}

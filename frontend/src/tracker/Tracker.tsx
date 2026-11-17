@@ -3,6 +3,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Exported } from "../app/Exported";
+import { Fold } from "../app/Fold";
+import { Icon } from "../app/Icon";
 import { hashParam } from "../app/routes";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobStatus } from "../bridge/types";
@@ -63,6 +65,16 @@ export function Tracker() {
   // details doesn't open them again.
   useEffect(() => {
     const openFromHash = () => {
+      // 17e: #/tracker?show=apply (or =follow) lists the jobs that reminder is about.
+      const show = hashParam("show");
+      if (show === "apply" || show === "follow") {
+        setStatuses([]);
+        setApplyOnly(show === "apply");
+        setFollowOnly(show === "follow");
+        setView("list");
+        window.history.replaceState(null, "", "#/tracker");
+        return;
+      }
       const id = Number(hashParam("job"));
       if (!Number.isInteger(id) || id <= 0) return;
       setOpenId(id);
@@ -146,7 +158,7 @@ export function Tracker() {
       <header className="tracker-head">
         <div className="page-head">
           <h1>Tracker</h1>
-          <p>{view === "board" ? "Drag a card to change its status. Click it for the details." : "Change a status right in the list."}</p>
+          <p>{view === "board" ? "Left to right in the order a job moves. Drag a card to change its status." : "Change a status right in the list."}</p>
         </div>
         <div className="tracker-tools">
           <div className="field">
@@ -187,27 +199,50 @@ export function Tracker() {
         </p>
       )}
 
-      {dueCount > 0 && !(view === "list" && followOnly) && (
-        <p className="notice follow-notice" role="status">
-          <span>
-            {dueCount === 1 ? "1 application has" : `${dueCount} applications have`} had no news for a while. A short follow-up email can help.
-          </span>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={showFollowUps}>
-            Show {dueCount === 1 ? "it" : "them"}
-          </button>
-        </p>
-      )}
-
-      {askCount > 0 && !(view === "list" && applyOnly) && (
-        <p className="notice follow-notice" role="status">
-          <span>
-            {askCount === 1 ? "1 cover note has" : `${askCount} cover notes have`} been ready for a day. Did you apply? Unanswered for a day, JobLens
-            stops asking.
-          </span>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={showApplyAsks}>
-            Show {askCount === 1 ? "it" : "them"}
-          </button>
-        </p>
+      {/* 17e: what is waiting for you, in the order you'd do it: confirm, then follow up. */}
+      {(askCount > 0 || dueCount > 0) && (
+        <Fold
+          level={2}
+          defaultOpen
+          title="Needs you"
+          digest={[askCount > 0 && `${askCount} to confirm`, dueCount > 0 && `${dueCount} to follow up`].filter(Boolean).join(" · ")}
+        >
+          <div className="needs" role="status">
+            {askCount > 0 && (
+              <div className="need">
+                <span className="next-icon ask">
+                  <Icon name="question" size={17} />
+                </span>
+                <span className="next-text">
+                  <span className="next-title">Confirm you applied</span>
+                  <span className="next-note">
+                    {askCount === 1 ? "1 cover note has" : `${askCount} cover notes have`} been ready for over a day. Unanswered for a day, JobLens stops
+                    asking.
+                  </span>
+                </span>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={showApplyAsks} disabled={view === "list" && applyOnly}>
+                  Show {askCount === 1 ? "it" : "them"}
+                </button>
+              </div>
+            )}
+            {dueCount > 0 && (
+              <div className="need">
+                <span className="next-icon warn">
+                  <Icon name="message" size={17} />
+                </span>
+                <span className="next-text">
+                  <span className="next-title">Follow up</span>
+                  <span className="next-note">
+                    {dueCount === 1 ? "1 application has" : `${dueCount} applications have`} had no news for a while. A short email can help.
+                  </span>
+                </span>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={showFollowUps} disabled={view === "list" && followOnly}>
+                  Show {dueCount === 1 ? "it" : "them"}
+                </button>
+              </div>
+            )}
+          </div>
+        </Fold>
       )}
 
       {jobs === null ? (

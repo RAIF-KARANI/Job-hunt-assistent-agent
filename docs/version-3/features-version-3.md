@@ -25,7 +25,7 @@ Legend: 🎨 designed · ❓ needs a check before it can be built · ✅ built
 | F2 | **Frosted layers** | Panels, cards, the Tracker detail sheet and the quick actions box are each a lighter frosted layer over the window | 🎨 ❓ |
 | F3 | **Your colours, one job each** | Fit score is one blue scale (bright = strong, dim = weak). Each status keeps one colour on every screen: Researched grey, Cover note ready blue, Applied purple, Interviewing orange, Offer yellow, Rejected pink | 🎨 |
 | F4 | **Gradient cards** | Translucent gradient cards for the headline numbers: white text in dark, dark text in light. (The mockup's brighter "vivid" version was not built) | ✅ built (17d) |
-| F5 | **Accordions** | Less important content folds away. A closed accordion still shows a one-line summary, so the main number is visible without a click | 🎨 |
+| F5 | **Accordions** | Less important content folds away. A closed accordion still shows a one-line summary, so the main number is visible without a click | ✅ built (17e), used on more screens in 17f, 17g |
 | F6 | **Keyboard and motion** | Focus rings, text selection and scrollbars match the look. With "reduce motion" on in Windows, nothing moves | 🎨 |
 
 **To check (❓):**
@@ -77,8 +77,9 @@ private" (both would live in Settings).
 - F12: in the mockup the shortcut works after you click inside the
   screen in Play mode. In the app it would work from anywhere in the
   window.
-- F12: the Tracker's old search also looked in contacts and notes. Quick
-  actions has to search the same fields, or the Tracker loses that.
+- ~~F12: the Tracker's search fields~~ Settled in 17e: the Tracker keeps
+  its own search box (it filters the board in place), and quick actions
+  searches the same fields.
 
 ## 4. Dashboard
 
@@ -94,10 +95,10 @@ private" (both would live in Settings).
 
 | # | Feature | What it does | Status |
 |---|---|---|---|
-| F20 | **Needs you** | An accordion (open): confirm you applied, then follow up | 🎨 |
-| F21 | **Board** | Six columns in the order a job moves. Fit on every card. "Show 9 more" when a column holds more than it shows. "Drop a job here" in an empty column | 🎨 |
-| F22 | **Detail sheet** | Leads with the next step for that job (Open posting, Yes I applied, Not yet). Then accordions: Fit (open), Status and tools, Job description | 🎨 |
-| F23 | **Board / List, Export CSV** | Kept, in the header | 🎨 |
+| F20 | **Needs you** | An accordion (open): confirm you applied, then follow up. "Show them" lists just those jobs | ✅ built (17e) |
+| F21 | **Board** | Six columns in the order a job moves. Fit on every card. "Show 9 more" when a column holds more than it shows. "Drop a job here" in an empty column | ✅ built (17e) |
+| F22 | **Detail sheet** | Leads with the next step for that job. Status and Open posting stay in view. Then accordions: Fit (open), Cover note, Your notes, More tools, About the company; then the job description | ✅ built (17e) |
+| F23 | **Board / List, Export CSV, the search box** | Kept, in the header | ✅ built (17e) |
 
 ## 6. Analyze
 

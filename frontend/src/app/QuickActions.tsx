@@ -67,10 +67,10 @@ export function QuickActions({ open, onClose, theme, onToggleTheme }: Props) {
       { key: "a-new", group: "Actions", kind: "action", title: "Analyze a new job", meta: "Paste a link", words: "new analysis", run: go("#/analyze") },
     ];
     if (asks > 0) {
-      actions.push({ key: "a-ask", group: "Actions", kind: "action", title: "Confirm applications", meta: `${asks} waiting`, words: "did you apply", run: go("#/tracker") });
+      actions.push({ key: "a-ask", group: "Actions", kind: "action", title: "Confirm applications", meta: `${asks} waiting`, words: "did you apply", run: go("#/tracker?show=apply") });
     }
     if (due > 0) {
-      actions.push({ key: "a-due", group: "Actions", kind: "action", title: "Follow up", meta: `${due} with no news`, words: "email reminder", run: go("#/tracker") });
+      actions.push({ key: "a-due", group: "Actions", kind: "action", title: "Follow up", meta: `${due} with no news`, words: "email reminder", run: go("#/tracker?show=follow") });
     }
     actions.push(
       {

@@ -14,7 +14,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17b Tokens and base components | ✅ | both glass themes in the real app; component sheet at `#/components` |
 | 17c The shell | ✅ | grouped sidebar, top bar, quick actions (Ctrl K), light/dark switch |
 | 17d The Dashboard | ✅ | pipeline card, Do next, galaxy joined to the selected job, agent numbers |
-| 17e–17j | ⏳ | 17e (the Tracker) is next |
+| 17e The Tracker | ✅ | Needs you, the board, the detail sheet in folds, dialogs |
+| 17f–17j | ⏳ | 17f (Analyze) is next |
 | 18 Rust spike | ⏳ | |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
@@ -408,3 +409,54 @@ The first change to the app itself.
 ### Not done
 - Chart colours on Evals (17g). The blur's graphics cost is still not
   measured.
+
+## 17e The Tracker ✅ (17 Nov 2026)
+
+### What was done
+- **Needs you**: one accordion (open) instead of two banners, in the
+  order you'd act: confirm you applied, then follow up. "Show them"
+  lists just those jobs.
+- **Board**: a long column shows six cards, then "Show N more" / "Show
+  fewer". An empty column says "Drop a job here". The small fit bar on
+  each card is gone (the fit number is on the card).
+- **Detail sheet**, in this order:
+  1. the next step for that job: the "Did you apply?" or follow-up
+     reminder if one is open; otherwise what comes next at its stage
+     (Researched: draft a cover note. Cover note ready: open the posting,
+     "I applied". Applied: write a follow-up email. Interviewing:
+     interview prep);
+  2. Status and Open posting, always in view;
+  3. accordions: **Fit** (open), **Cover note** (open while the job is
+     at "Cover note ready"), **Your notes** (open when you have any),
+     **More tools**, **About the company**;
+  4. the job description, the dates, Delete.
+- A new shared accordion, `Fold`, for 17f and 17g too.
+- Links to a reminder now open the Tracker on it: quick actions'
+  "Confirm applications" and "Follow up", and the Dashboard's Do next
+  rows that cover several jobs.
+- "Ignore" on "Did you apply?" now reads "Stop asking". The small line
+  above a dialog's title is plain words, not capitals.
+
+### Checked
+- Build passes; pytest: 471 pass; the real window starts.
+- Driven in a browser with made-up data: the fold closes and opens;
+  "Show them" gives 2 of 6 jobs; `#/tracker?show=follow` gives 1 of 6;
+  the sheet's order and each fold's summary line; the next step for a
+  Researched and an Interviewing job; dragging a card from Researched to
+  Applied (count 1 to 2, with Undo); "Show more" (with the limit set to
+  1 for the test, then put back to 6); the list view, interview prep,
+  the follow-up email and the resume prompt in dark and light; nothing
+  scrolls sideways at 720 or 2560 px.
+
+### Found and fixed on the way
+- "Your notes" appeared twice (the fold's title and the section's own).
+- More tools promised a follow-up email on jobs that don't offer one.
+
+### Different from the mockup, on purpose
+- **Status stays in view**, not inside a closed "Status and tools". The
+  board's drag has no keyboard version; people who use the keyboard
+  change a status in this sheet, so it must not be a click away.
+- **The sheet has more folds than the mockup** (Cover note, Your notes,
+  About the company): the real sheet holds more than the mockup showed.
+- **The Tracker keeps its search box.** It filters the board in place,
+  which quick actions doesn't do.

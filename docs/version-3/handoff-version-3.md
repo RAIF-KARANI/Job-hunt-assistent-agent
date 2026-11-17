@@ -21,14 +21,14 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **17e: the Tracker** (Needs you, board, the detail sheet and its dialogs) |
+| Next step | **17f: Analyze** (the five-step spine, the live log as an accordion, review and the failed / out-of-quota panels) |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
 
 | # | Phase | Status |
 |---|---|---|
-| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a to 17d done |
+| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a to 17e done |
 | 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
@@ -117,6 +117,8 @@ with every feature still working. That is how Phase 17 is laid out.
 - **Shell (since 17c):** `app/Sidebar.tsx` (two groups from `NAV_GROUPS` in
   `routes.ts`), `app/TopBar.tsx`, `app/QuickActions.tsx` (Ctrl K),
   `app/useReminders.ts` (the number on Tracker).
+- **Accordions (since 17e):** `app/Fold.tsx` (`<Fold title digest defaultOpen flat>`),
+  styled by `.acc` in `controls.css`. Use it for anything that folds.
 - **Component sheet:** `#/components` (not in the menu) shows every shared
   piece; use it to check a token change in both themes.
 - **How the glass is built:** `body` paints `--backdrop`; `.shell` is the

@@ -4,7 +4,7 @@
 import { useState, type DragEvent } from "react";
 import type { JobRow, JobStatus } from "../bridge/types";
 import { FitChip } from "./FitChip";
-import { cardNote, fitLevel, interviewAhead, interviewLabel, parseUtc, STATUSES } from "./status";
+import { cardNote, interviewAhead, interviewLabel, parseUtc, STATUSES } from "./status";
 
 interface Props {
   jobs: JobRow[];
@@ -15,10 +15,13 @@ interface Props {
 }
 
 const DRAG_TYPE = "application/x-joblens-job";
+/** 17e: a long column shows this many cards, then "Show N more" (feature F21). */
+const COLUMN_MAX = 6;
 
 export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [over, setOver] = useState<JobStatus | null>(null);
+  const [expanded, setExpanded] = useState<Partial<Record<JobStatus, boolean>>>({});
 
   const drop = (e: DragEvent, status: JobStatus) => {
     e.preventDefault();
@@ -36,6 +39,9 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
           const cards = jobs
             .filter((j) => j.status === status.id)
             .sort((a, b) => parseUtc(b.updated_at).getTime() - parseUtc(a.updated_at).getTime());
+          const open = !!expanded[status.id];
+          const shown = open ? cards : cards.slice(0, COLUMN_MAX);
+          const more = cards.length - shown.length;
           return (
             <section
               key={status.id}
@@ -62,7 +68,7 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
                 </h2>
                 <span className="column-count">{cards.length}</span>
               </header>
-              {cards.map((job) => (
+              {shown.map((job) => (
                 <button
                   key={job.id}
                   type="button"
@@ -87,9 +93,6 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
                     </span>
                     <FitChip score={job.fit_score} />
                   </span>
-                  <span className="fit-bar" aria-hidden="true">
-                    <span className={`fit-bar-fill fit-${fitLevel(job.fit_score)}`} style={{ width: `${job.fit_score}%` }} />
-                  </span>
                   {job.interview_at && (
                     <span className={interviewAhead(job.interview_at) ? "interview-chip" : "interview-chip past"}>
                       Interview {interviewLabel(job.interview_at)}
@@ -103,7 +106,12 @@ export function Board({ jobs, onOpen, onMove, onShowStatus }: Props) {
                   </span>
                 </button>
               ))}
-              {cards.length === 0 && <p className="column-empty">{dragging !== null ? "Drop here" : "No jobs"}</p>}
+              {(more > 0 || open) && cards.length > COLUMN_MAX && (
+                <button type="button" className="column-more" onClick={() => setExpanded((e) => ({ ...e, [status.id]: !open }))}>
+                  {open ? "Show fewer" : `Show ${more} more`}
+                </button>
+              )}
+              {cards.length === 0 && <p className="column-empty">Drop a job here</p>}
             </section>
           );
         })}
