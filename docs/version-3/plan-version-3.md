@@ -15,7 +15,7 @@ at the end** (E1).
 
 | # | Phase | What | Status |
 |---|---|---|---|
-| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | 🚧 17a to 17i done; 17j next |
+| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | ✅ 17a to 17j done (17 Nov) |
 | 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ⏳ |
 | 19 | New features | your list (to come) | 🟡 waiting for your list |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
@@ -24,7 +24,7 @@ Release: **v2.0.0**, once, after all phases (E1, E5).
 
 ---
 
-## Phase 17 — New look: the glass direction 🚧
+## Phase 17 — New look: the glass direction ✅
 
 **Source:** your reference image (`referance/Glassmorphism Dashboard Design
 Kit.png`) and prompt (`referance/ui promt`): dark glassmorphism, frosted
@@ -58,7 +58,7 @@ Source kept in [mockup/](mockup/).
 | 17g ✅ | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
 | 17h ✅ | **Settings, setup wizard, quick-analyze box** | first-run setup looks right |
 | 17i ✅ | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
-| 17j | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
+| 17j ✅ | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
 ## Phase 18 — Rust (Tauri) spike ⏳
 **Your goals:** a smaller, faster app, and learning Rust. **Your rule:** move

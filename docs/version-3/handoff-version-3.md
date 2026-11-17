@@ -21,14 +21,14 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **17j: accessibility and window sizes** (keyboard, reduced motion, 720 px to 2560 px) |
+| Next step | **Phase 18: the Rust (Tauri) spike**, or Phase 19 when your feature list is ready. Phase 17 is done |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short
 
 | # | Phase | Status |
 |---|---|---|
-| 17 | **New look**: your glass reference, adapted to JobLens, every screen | 🚧 17a to 17i done |
+| 17 | **New look**: your glass reference, adapted to JobLens, every screen | ✅ done 17 Nov |
 | 18 | **Rust (Tauri) spike**: measure against 1.2.0; switch the shell only if clearly better | ⏳ |
 | 19 | **Your features**: your list | 🟡 waiting for the list |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
@@ -119,6 +119,8 @@ with every feature still working. That is how Phase 17 is laid out.
   `app/useReminders.ts` (the number on Tracker).
 - **Accordions (since 17e):** `app/Fold.tsx` (`<Fold title digest defaultOpen flat>`),
   styled by `.acc` in `controls.css`. Use it for anything that folds.
+- **Focus check (since 17j):** `scripts/check_focus.js` tabs through each
+  screen and lists controls with no visible focus change.
 - **Contrast check (since 17i):** `scripts/check_contrast.js` measures every
   piece of text in both themes against the glass; see its first lines.
 - **Component sheet:** `#/components` (not in the menu) shows every shared

@@ -19,8 +19,9 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 17g Evals | ✅ | a run step by step, chart colours from the accents (validated), the rest in folds |
 | 17h Settings, wizard, quick box | ✅ | Settings folds the less-used sections; the wizard sits on the glass |
 | 17i Light theme check | ✅ | all text measured in both themes; one blue lightened |
-| 17j | ⏳ | accessibility and window sizes, next |
-| 18 Rust spike | ⏳ | |
+| 17j Accessibility and sizes | ✅ | keyboard focus, reduced motion, 720 to 2560 px: all pass |
+| **Phase 17** | ✅ | the glass look on every screen, both themes |
+| 18 Rust spike | ⏳ | next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -633,3 +634,40 @@ measured them instead of only looking at them.
 - Text on gradients (the gradient cards, the main button, the job galaxy)
   and on disabled controls. The gradient cards and buttons were looked at
   in both themes in 17c and 17d.
+
+## 17j Accessibility and window sizes ✅ (17 Nov 2026)
+
+### Checked
+- **Keyboard**, in both themes, on Dashboard, Analyze, Tracker, Evals and
+  Settings: Tab through every control (11 to 27 stops a screen) and check
+  that each one *visibly changes* when it gets the focus, by comparing it
+  focused and unfocused. A first version only asked "does it have a
+  shadow?", which glass buttons always have, so it would have passed
+  anything; the stricter one is `scripts/check_focus.js`. Result: every
+  stop changes, in both themes.
+- **Reduced motion** (Windows' "show animations" off): on the Dashboard,
+  during a run on Analyze, and with the mouse over New analysis, nothing
+  keeps moving.
+- **Window sizes** 720, 1024, 1440, 1920 and 2560 px, all five screens:
+  nothing scrolls sideways and no text runs out of its card. Looked at the
+  Dashboard at 720 and 2560.
+- **Contrast**: done in 17i, both themes.
+
+### Nothing needed fixing in this step.
+
+## Phase 17 done ✅ (17 Nov 2026)
+
+Every screen has the glass look in dark and light: the shell, Dashboard,
+Analyze, Tracker, Evals, Settings, the setup wizard, the quick-analyze box
+and the dialogs. Commits `03bb5c1` (17b) to this one, all on `version-3`.
+
+### Left open (none of them blocks Phase 18)
+- **The blur's graphics cost** was never measured. Nothing felt slow in the
+  real window, but a slower PC may notice. If it does, `--glass-blur` in
+  `tokens.css` is the one place to turn it down.
+- **The "Stopped" and "Something went wrong / API limit" panels** on Analyze
+  were not seen in the new look (the simulator can't make them). Worth a
+  look on a real run: start one and press Stop.
+- **Showing the real desktop through the window** (F1) needs a see-through
+  window: a question for the Phase 18 spike.
+- **E4:** whether "Like Windows" stays as a theme choice (it does for now).
