@@ -140,6 +140,7 @@ class Api:
         self._send = send
         self._runner = AgentRunner(emit=self._emit, graph=graph)
         self._window = None  # set by app.py, for native file dialogs
+        self._dialogs = None  # 18d2: the Rust window's dialogs (engine.py); None = pywebview's
         self._setup_lock = threading.Lock()  # one install / download at a time
         from desktop_web.updates import UpdateChecker
         self._updates = UpdateChecker(paths.APP_HOME, __version__)  # 13b
@@ -364,11 +365,14 @@ class Api:
 
     def _save_path(self, name: str, kind: str) -> Path | None:
         """The native Save dialog. Tests replace this."""
-        if not self._window:
-            raise RuntimeError("No window to show a file dialog in.")
-        from webview import FileDialog
+        if self._dialogs is not None:
+            chosen = self._dialogs.save_file(name, kind)
+        else:
+            if not self._window:
+                raise RuntimeError("No window to show a file dialog in.")
+            from webview import FileDialog
 
-        chosen = self._window.create_file_dialog(FileDialog.SAVE, save_filename=name, file_types=(kind,))
+            chosen = self._window.create_file_dialog(FileDialog.SAVE, save_filename=name, file_types=(kind,))
         if isinstance(chosen, (list, tuple)):
             chosen = chosen[0] if chosen else None
         if not chosen:
@@ -552,6 +556,8 @@ class Api:
         os.startfile(paths.DATA_DIR)  # Explorer; Windows only, like the app
 
     def _choose_files(self):
+        if self._dialogs is not None:
+            return self._dialogs.open_files("PDF files (*.pdf)")
         if not self._window:
             raise RuntimeError("No window to show a file dialog in.")
         from webview import FileDialog

@@ -191,3 +191,51 @@ def test_smoke_reports_once_the_page_asks_for_app_info_then_closes(tmp_path):
     data = json.loads(report.read_text())
     assert data["ok"] is True and data["version"] == "test" and data["window"] == "tauri"
     assert wait_until(lambda: {"do": "quit", "args": {}} in out)
+
+
+def test_file_filters_become_the_windows_kind():
+    from desktop_web.engine import file_filter
+
+    assert file_filter("CSV file (*.csv)") == {"name": "CSV file", "extensions": ["csv"]}
+    assert file_filter("PDF files (*.pdf)") == {"name": "PDF files", "extensions": ["pdf"]}
+    assert file_filter("Word (*.docx;*.doc)") == {"name": "Word", "extensions": ["docx", "doc"]}
+
+
+def test_the_api_saves_through_the_windows_dialog():
+    """Save as: the Rust window answers with a path; the extension is added
+    when you typed a name without it, as with pywebview."""
+    from desktop_web.bridge import Api
+    from desktop_web.engine import Dialogs
+
+    out = []
+    shell = Shell(out.append)
+    api = Api(send=lambda e: None)
+    api._dialogs = Dialogs(shell)
+    got = {}
+    t = threading.Thread(target=lambda: got.setdefault("p", api._save_path("Jobs.csv", "CSV file (*.csv)")))
+    t.start()
+    assert wait_until(lambda: any("ask" in m for m in out))
+    request = out[-1]
+    assert request["do"] == "save_file" and request["args"]["name"] == "Jobs.csv"
+    assert request["args"]["filters"] == [{"name": "CSV file", "extensions": ["csv"]}]
+    shell.answered({"answer": request["ask"], "result": "C:/Users/me/Documents/my jobs"})
+    t.join(2)
+    assert str(got["p"]).replace("\\", "/").endswith("my jobs.csv")
+
+
+def test_cancelling_a_dialog_gives_nothing():
+    from desktop_web.bridge import Api
+    from desktop_web.engine import Dialogs
+
+    out = []
+    shell = Shell(out.append)
+    api = Api(send=lambda e: None)
+    api._dialogs = Dialogs(shell)
+    got = {}
+    t = threading.Thread(target=lambda: got.setdefault("files", api._choose_files()))
+    t.start()
+    assert wait_until(lambda: any("ask" in m for m in out))
+    assert out[-1]["do"] == "pick_files" and out[-1]["args"]["multiple"] is True
+    shell.answered({"answer": out[-1]["ask"], "result": None})  # you pressed Cancel
+    t.join(2)
+    assert got["files"] is None

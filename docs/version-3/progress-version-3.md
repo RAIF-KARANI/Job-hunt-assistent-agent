@@ -25,7 +25,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18b Measured | ✅ | 36% faster to your data, 19–24% less memory, only 5% smaller |
 | 18c Decide | ✅ | adopt Tauri (your choice) |
 | 18d1 The Rust window in the app | ✅ | `desktop_tauri/` + `engine.py`; your data in the Rust window; smoke test |
-| 18d2–18d8 | ⏳ | 18d2 (file dialogs) next |
+| 18d2 File dialogs | ✅ | Add PDFs and Save as through the Rust window |
+| 18d3–18d8 | ⏳ | 18d3 (the tray) next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -789,3 +790,38 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
   first was still closing. One copy at a time (18d5) prevents it.
 - A filter that kills processes by command line must not match its own
   command (it stopped itself once; nothing else was touched).
+
+## 18d2 File dialogs ✅ (17 Nov 2026)
+
+### What was done
+- **Rust** shows Windows' own Open and Save dialogs (Tauri's dialog
+  plugin), on top of the JobLens window, with the file name and type
+  filled in. They never block the window; the answer (the path, or nothing
+  when you cancel) goes back to the engine.
+- **Python**: `bridge.py`'s two dialog helpers ask the Rust window when the
+  engine runs them (`Api._dialogs`), pywebview otherwise. So Add PDFs and
+  every Save as (tracker CSV, cover notes, interview prep sheets) work in
+  both windows without changing the screens.
+- The smoke test can open a dialog (`JOBLENS_SMOKE_DIALOG=open` or `save`),
+  to check the window's side end to end.
+
+### Checked
+- pytest: 487 pass (3 new: the file types, saving through the window's
+  dialog with the extension added, cancelling).
+- In the Rust window: **Open** appeared ("Open"), was cancelled, and the
+  engine got "nothing chosen". **Save** appeared over the JobLens window
+  with "JobLens test.csv" and "CSV file (*.csv)" filled in.
+- The old window still starts.
+
+### Not checked
+- **Saving to a path you pick in the Rust window**, all the way: my
+  automated typing went to VS Code instead of the dialog, so that run
+  ended without an answer. Choosing a file uses the same route back as
+  Cancel, which worked, and the Python side of it is tested. Worth one
+  real try: Tracker, Export CSV, in the Rust window.
+
+### Learned
+- **Never type into the desktop from a script**: the keyboard belongs to
+  whichever window has the focus, which was VS Code. Checked afterwards:
+  no file in the project changed. The keys may have landed in an open
+  editor or terminal without being saved.

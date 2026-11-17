@@ -90,6 +90,27 @@ class Shell:
             slot["done"].set()
 
 
+def file_filter(kind: str) -> dict:
+    """pywebview's "CSV file (*.csv)" -> the window's {"name": "CSV file", "extensions": ["csv"]}."""
+    name, _, rest = kind.partition("(")
+    extensions = [p.strip().lstrip("*.") for p in rest.rstrip(")").split(";") if p.strip().lstrip("*.")]
+    return {"name": name.strip() or kind, "extensions": extensions or ["*"]}
+
+
+class Dialogs:
+    """The native Open and Save dialogs, shown by the Rust window (18d2).
+    They wait for you as long as you need: no time limit."""
+
+    def __init__(self, shell: Shell):
+        self.shell = shell
+
+    def open_files(self, kind: str) -> list[str] | None:
+        return self.shell.ask("pick_files", filters=[file_filter(kind)], multiple=True)
+
+    def save_file(self, name: str, kind: str) -> str | None:
+        return self.shell.ask("save_file", name=name, filters=[file_filter(kind)])
+
+
 class Engine:
     """Routes each line from the window. Calls run on workers, so a slow one
     (llm_status waits on the network) never holds up the others; answers to
@@ -141,6 +162,14 @@ class Engine:
         """The page asked for app_info, so it is alive: report, then close."""
         report = {"ok": True, "window": "tauri", "version": info.get("version"),
                   "theme": (info.get("settings") or {}).get("UI_THEME", "system")}
+        dialog = os.environ.get("JOBLENS_SMOKE_DIALOG")  # 18d2: "open" or "save"
+        if dialog in ("open", "save"):
+            dialogs = Dialogs(self.shell)
+            try:
+                answer = dialogs.open_files("PDF files (*.pdf)") if dialog == "open" else dialogs.save_file("JobLens test.csv", "CSV file (*.csv)")
+                report["dialog"] = {"kind": dialog, "answer": answer}
+            except Exception as e:
+                report["dialog"] = {"kind": dialog, "error": str(e)}
         if self._smoke_shot:
             time.sleep(1.5)  # let the first screen and the fonts settle
             try:
@@ -187,6 +216,7 @@ def main(argv=None) -> int:
     shell = Shell(write)
     api = Api(send=lambda event: write({"event": event}))
     api._quit = lambda: shell.do("quit")  # the update's installer takes over (13d)
+    api._dialogs = Dialogs(shell)  # 18d2: Add PDFs, Save as
     api._is_hidden = lambda: not shell.visible  # 16i: a hidden window shows nobody "Did you apply?"
     startup.after_update(api)
     startup.background_chores()

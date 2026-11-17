@@ -21,7 +21,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phase 17 has started: the app's styles are changing step by step |
 | Open pull requests | none |
 | Tests | 471 pass (`.venv\Scripts\python -m pytest`) |
-| Next step | **18d2: file dialogs in the Rust window** (Add PDFs, Save as) |
+| Next step | **18d3: the tray in the Rust window** (icon, menu, notifications, hide on close) |
 | Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
 
 ## 2. Version 3 in short

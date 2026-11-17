@@ -24,6 +24,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WebviewWindow};
+use tauri_plugin_dialog::{DialogExt, FileDialogBuilder, FilePath};
 use tokio::sync::oneshot;
 
 type Pending = Arc<Mutex<HashMap<u64, oneshot::Sender<Value>>>>;
@@ -122,6 +123,54 @@ fn handle_request(app: &AppHandle, action: &str, args: &Value) -> Result<Value, 
     }
 }
 
+/// 18d2: the engine's {"name": "CSV file", "extensions": ["csv"]} filters, on a dialog.
+fn with_filters(mut dialog: FileDialogBuilder<tauri::Wry>, args: &Value) -> FileDialogBuilder<tauri::Wry> {
+    for filter in args.get("filters").and_then(Value::as_array).into_iter().flatten() {
+        let name = filter.get("name").and_then(Value::as_str).unwrap_or("Files");
+        let extensions: Vec<&str> = filter
+            .get("extensions")
+            .and_then(Value::as_array)
+            .map(|list| list.iter().filter_map(Value::as_str).collect())
+            .unwrap_or_default();
+        dialog = dialog.add_filter(name, &extensions);
+    }
+    dialog
+}
+
+fn path_text(path: FilePath) -> Option<String> {
+    path.into_path().ok().map(|p| p.to_string_lossy().into_owned())
+}
+
+/// 18d2: Open and Save. They don't block the window: the answer goes back to
+/// the engine when you choose or cancel (null). Returns false for other actions.
+fn ask_dialog(app: &AppHandle, action: &str, args: &Value, number: Value) -> bool {
+    let mut dialog = with_filters(app.dialog().file(), args);
+    if let Some(window) = main_window(app) {
+        dialog = dialog.set_parent(&window);
+    }
+    let reply_to = app.clone();
+    match action {
+        "pick_files" => {
+            dialog.pick_files(move |paths| {
+                let chosen = paths.map(|list| list.into_iter().filter_map(path_text).collect::<Vec<_>>());
+                tell_engine(&reply_to, json!({ "answer": number, "result": chosen }));
+            });
+            true
+        }
+        "save_file" => {
+            if let Some(name) = args.get("name").and_then(Value::as_str) {
+                dialog = dialog.set_file_name(name);
+            }
+            dialog.save_file(move |path| {
+                let chosen = path.and_then(path_text);
+                tell_engine(&reply_to, json!({ "answer": number, "result": chosen }));
+            });
+            true
+        }
+        _ => false,
+    }
+}
+
 /// How to start the engine: the installed one, or Python from the repo.
 fn engine_command() -> Command {
     let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(PathBuf::from));
@@ -169,6 +218,11 @@ fn start_engine(app: &AppHandle) -> std::io::Result<Engine> {
                 // Window work belongs on the main thread; the answer goes back to the engine.
                 let app = handle.clone();
                 let _ = handle.run_on_main_thread(move || {
+                    if let Some(number) = ask.clone() {
+                        if ask_dialog(&app, &action, &args, number) {
+                            return; // a dialog answers when you close it
+                        }
+                    }
                     let result = handle_request(&app, &action, &args);
                     if let Some(number) = ask {
                         let reply = match result {
@@ -211,6 +265,7 @@ fn stop_engine(app: &AppHandle) {
 
 fn main() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![call])
         .on_page_load(|webview, _payload| {
             tell_engine(webview.app_handle(), json!({ "shell": "page_loaded" }));
