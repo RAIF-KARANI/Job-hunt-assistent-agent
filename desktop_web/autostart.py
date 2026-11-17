@@ -13,6 +13,7 @@ this: in developer mode sys.executable is python.exe. The uninstaller
 removes the value (installer/joblens.iss, [Registry]).
 """
 
+import os
 import sys
 
 from job_agent import paths
@@ -26,8 +27,15 @@ def supported() -> bool:
     return paths.IS_INSTALLED and sys.platform == "win32"
 
 
+def app_exe() -> str:
+    """The program Windows should start. 18d5: in version 3 that is the Rust
+    window (JobLens.exe), which tells its engine where it is; the engine's own
+    exe would start an engine without a window."""
+    return os.environ.get("JOBLENS_APP_EXE") or sys.executable
+
+
 def command() -> str:
-    return f'"{sys.executable}" {TRAY_ARG}'
+    return f'"{app_exe()}" {TRAY_ARG}'
 
 
 def enabled(key: str = RUN_KEY) -> bool:
@@ -40,7 +48,7 @@ def enabled(key: str = RUN_KEY) -> bool:
             value, _ = winreg.QueryValueEx(handle, VALUE)
     except OSError:  # no key or no value: off
         return False
-    return sys.executable.lower() in str(value).lower()
+    return app_exe().lower() in str(value).lower()
 
 
 def set_enabled(on: bool, key: str = RUN_KEY) -> bool:

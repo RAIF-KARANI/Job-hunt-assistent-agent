@@ -314,8 +314,58 @@ fn engine_command() -> Command {
     command
 }
 
+/// 18d5: Windows is shutting down, or an installer (Inno Setup, through the
+/// Restart Manager) asks JobLens to close. The X button may only hide to the
+/// tray, so this listens on the main window itself: say yes, then stop the
+/// engine properly (stop the run, free the model) before Windows ends us.
+#[cfg(windows)]
+mod windows_closing {
+    use std::sync::OnceLock;
+
+    use tauri::{AppHandle, WebviewWindow};
+    use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows_sys::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{WM_ENDSESSION, WM_QUERYENDSESSION};
+
+    static APP: OnceLock<AppHandle> = OnceLock::new();
+
+    unsafe extern "system" fn on_message(
+        hwnd: HWND,
+        message: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+        _id: usize,
+        _data: usize,
+    ) -> LRESULT {
+        match message {
+            WM_QUERYENDSESSION => 1, // "may JobLens close?" yes, always
+            WM_ENDSESSION if wparam != 0 => {
+                if let Some(app) = APP.get() {
+                    super::stop_engine(app);
+                    app.exit(0);
+                }
+                0
+            }
+            _ => unsafe { DefSubclassProc(hwnd, message, wparam, lparam) },
+        }
+    }
+
+    pub fn listen(app: &AppHandle, window: &WebviewWindow) {
+        let _ = APP.set(app.clone());
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                SetWindowSubclass(hwnd.0 as HWND, Some(on_message), 1, 0);
+            }
+        }
+    }
+}
+
 fn start_engine(app: &AppHandle) -> std::io::Result<Engine> {
     let mut command = engine_command();
+    // 18d5: Start with Windows must name this program, not the engine.
+    if let Ok(exe) = std::env::current_exe() {
+        command.env("JOBLENS_APP_EXE", exe);
+    }
     command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::inherit());
     #[cfg(windows)]
     {
@@ -389,7 +439,12 @@ fn stop_engine(app: &AppHandle) {
 }
 
 fn main() {
+    // 18d5: started by Windows at sign-in (Start with Windows): stay in the tray.
+    let in_tray = std::env::args().any(|a| a == "--tray");
     let app = tauri::Builder::default()
+        // 18d5: one JobLens at a time (first, before anything else starts): a
+        // second start brings this one's window back, and exits.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show(app)))
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![call])
         .on_page_load(|webview, _payload| {
@@ -420,10 +475,20 @@ fn main() {
                 _ => {}
             }
         })
-        .setup(|app| {
+        .setup(move |app| {
             let engine = start_engine(app.handle())?;
             app.manage(engine);
             make_quick_box(app.handle())?;
+            if let Some(window) = main_window(app.handle()) {
+                #[cfg(windows)]
+                windows_closing::listen(app.handle(), &window);
+                if in_tray {
+                    // The page still loads, hidden; the tray and reminders work.
+                    tell_engine(app.handle(), json!({ "shell": "visibility", "visible": false }));
+                } else {
+                    show(app.handle());
+                }
+            }
             Ok(())
         })
         .build(tauri::generate_context!())

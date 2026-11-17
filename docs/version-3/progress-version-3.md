@@ -28,7 +28,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d2 File dialogs | ✅ | Add PDFs and Save as through the Rust window |
 | 18d3 The tray | ✅ | Icon, menu, notifications, hide on close; decisions still tray.py's |
 | 18d4 Quick box | ✅ | Ctrl+Alt+J opens the box in the Rust window |
-| 18d5–18d8 | ⏳ | 18d5 (one copy, autostart, shutdown) next |
+| 18d5 One copy, autostart, shutdown | ✅ | Second start shows the first; --tray; installer and Windows can close it |
+| 18d6–18d8 | ⏳ | 18d6 (packaging) next |
 | 19 Your features | 🟡 | waiting for your list |
 | 20 Interview practice | ⏳ | last |
 
@@ -900,3 +901,39 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
 ### Learned
 - A process check that matches "desktop_web.engine" in command lines also
   matches itself. Filter by process name, or leave out your own process.
+
+## 18d5 One copy, Start with Windows, closing at shutdown ✅ (17 Nov 2026)
+
+### What was done
+- **One JobLens at a time**: Tauri's single-instance plugin. A second start
+  brings the first one's window back (out of the tray too) and exits.
+  1.2.0's own check (`instance.py`) stays for the pywebview window.
+- **Start with Windows**: the Run value must name the Rust `JobLens.exe`,
+  not the engine. The window tells its engine where it is
+  (`JOBLENS_APP_EXE`); `autostart.py` uses that, and `sys.executable` for
+  the pywebview app as before. A 1.2.0 Run value (`...\JobLens.exe --tray`)
+  still counts as on after the update, as long as 18d6 keeps the name and
+  folder.
+- **`--tray`**: the main window is made hidden and shown only for a normal
+  start; with `--tray` the page still loads, hidden, and the engine knows the
+  window is hidden (tray notifications, reminders).
+- **Windows shutdown and installers**: the main window answers Windows'
+  "may JobLens close?" with yes and, when the session really ends, stops the
+  engine properly (the run, the model) before exiting. The X button can't
+  be used for this, since it may only hide to the tray; that was 1.0.3's
+  update bug.
+
+### Checked (the real Rust window, no keys pressed)
+- Started with `--tray`: the window stayed hidden, the engine ran.
+- A second start exited in 1.5 s, one copy was left, and its window came
+  back.
+- Closed through the Windows Restart Manager (what Inno Setup uses to close
+  running apps before an update), once with the window shown and once
+  hidden in the tray: closed both times, the window and engine gone in
+  0.2 s.
+- pytest: 499 pass (1 new: the Run value names the window's exe). Both
+  windows' smoke tests pass.
+
+### Not checked
+- A real Windows shutdown or sign-out (same messages as the Restart
+  Manager's, but untested); worth noticing once after 2.0.0 is installed.

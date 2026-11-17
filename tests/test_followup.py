@@ -229,3 +229,14 @@ def test_ignore_does_not_come_back_with_an_old_status():
     set_dates(job_id, at(9))
     assert [j["id"] for j in followup.due_jobs(NOW)] == [job_id]
     assert tracker.list_jobs()[0]["follow_up_ignored"] is None
+
+
+def test_start_with_windows_names_the_window_not_the_engine(monkeypatch):
+    """18d5: under the Rust window the engine is told where JobLens.exe is;
+    Windows must start that (with --tray), not the engine."""
+    from desktop_web import autostart
+
+    monkeypatch.setenv("JOBLENS_APP_EXE", r"C:\Program Files\JobLens\JobLens.exe")
+    assert autostart.command() == r'"C:\Program Files\JobLens\JobLens.exe" --tray'
+    monkeypatch.delenv("JOBLENS_APP_EXE")
+    assert autostart.app_exe() == sys.executable  # the pywebview app: itself, as before
