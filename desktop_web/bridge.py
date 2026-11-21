@@ -440,6 +440,27 @@ class Api:
             raise ValueError(f"No job with id {job_id}")
         return to_json(resume_prompt(job["job"], job["best_match"]))
 
+    def tailor_resume(self, job_id: int) -> dict:
+        """19d: the model suggests edits to your own resume lines for this job;
+        code drops any that add what the resume doesn't show. Slow (one AI call)."""
+        from job_agent import tailoring
+
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        if self._runner.busy:
+            raise RuntimeError("The agent is working on a job. Try again when it's done: both need the AI model.")
+        name = job["best_match"].resume_name
+        path = next((p for p in paths.DATA_DIR.glob("*.pdf") if p.stem == name), None)
+        if path is None:
+            raise ValueError(f"The resume “{name}” isn't in JobLens any more. Add it again in Settings.")
+        from pypdf import PdfReader
+
+        text = "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+        if not text.strip():
+            raise ValueError(f"“{path.name}” has no text JobLens can read (a scanned PDF?).")
+        return to_json(tailoring.tailor(int(job_id), text))
+
     def followed_up(self, job_id: int) -> None:
         """14e: you sent the follow-up; the next reminder is FOLLOW_UP_DAYS away."""
         followup.mark_followed_up(int(job_id))
@@ -509,8 +530,11 @@ class Api:
         runs the Recent runs table gets; 0 or None = all (16a)."""
         from job_agent import monitoring as m
 
+        from job_agent import tailoring
+
         count = max(int(recent), 1) if recent else None
-        return to_json(m.local_evals(model or None, count))
+        # 19d: resume tailoring isn't a run, so its check has its own numbers.
+        return to_json({**m.local_evals(model or None, count), "tailoring": tailoring.stats(model or None)})
 
     def tracing_status(self) -> dict:
         """Langfuse / LangSmith state, for trace links. Separate from evals()

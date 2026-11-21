@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { copy } from "../app/clipboard";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { ResumePromptData } from "../bridge/types";
+import { TailorSection } from "./TailorSection";
 
 interface Props {
   jobId: number;
@@ -101,6 +102,9 @@ export function ResumePrompt({ jobId, onClose }: Props) {
           </section>
         )}
 
+        {/* 19d: edits by your model, checked by code. Not when the resume already fits (same as the prompt). */}
+        {data && (!cov?.fits || anyway) && <TailorSection jobId={jobId} />}
+
         {cov?.fits && !anyway && (
           <section className="prompt-fits" role="status">
             <h3>Your resume already fits this job</h3>
@@ -108,7 +112,7 @@ export function ResumePrompt({ jobId, onClose }: Props) {
               It shows every required skill. Rewording it is unlikely to help much: your time is better spent applying.
             </p>
             <button type="button" className="link-button" onClick={() => setAnyway(true)}>
-              Generate the prompt anyway
+              Suggest edits anyway
             </button>
           </section>
         )}
@@ -116,7 +120,7 @@ export function ResumePrompt({ jobId, onClose }: Props) {
         {showPrompt && (
           <section className="prompt-text" aria-labelledby="prompt-text-title">
             <div className="section-head">
-              <h3 id="prompt-text-title">The prompt</h3>
+              <h3 id="prompt-text-title">Or ask another AI</h3>
               <button type="button" className="btn btn-primary btn-sm" onClick={() => copy(data.prompt).then(() => setCopied(true))} aria-live="polite">
                 {copied ? "Copied" : "Copy prompt"}
               </button>

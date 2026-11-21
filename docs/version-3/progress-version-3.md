@@ -36,6 +36,8 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 19a Backup and restore | ✅ | one .zip, no API keys; restore checks the file and backs up first; weekly + before an update |
 | 19b Interview calendar | ✅ | reminders the evening before and an hour before (fired in the real window); .ics; Do next and Needs you |
 | 19c Insights | ✅ | new screen: interview rate by resume, site and fit band; wait for an answer; status history from now on |
+| 19d Resume tailoring | ✅ | model suggests edits to your lines, code drops what adds or loses facts; 3 rounds on 3 real jobs |
+| **Phase 19** | ✅ | all four features (E7) |
 | 20 Interview practice | ⏳ | last |
 
 ---
@@ -1228,3 +1230,60 @@ A new screen, **Insights**, in the sidebar after Tracker. Plain counting
 - The bars reuse the Dashboard's single-hue bars (one series: no legend
   needed, the numbers are written beside every bar, hover gives a
   sentence), so no new chart colour had to pass the palette validator.
+
+## 19d Resume tailoring ✅ (21 Nov 2026)
+
+In the job's **Resume prompt** dialog ("Improve your resume for this
+job"), a new first section, **Suggested edits**: your model rewrites lines
+of your own resume for this job (before → after, the requirement, why),
+and **plain code checks every edit before you see it**
+(`job_agent/tailoring.py`). The prompt for another AI stays below it, as
+"Or ask another AI". Copy one edit or all.
+
+**The check drops an edit that** (with the reason shown under "Why … were
+dropped"):
+- changes a "before" line that isn't really in your resume (the fit
+  check's quote test, stricter);
+- adds a number the line doesn't have, or turns "about 40" into an exact
+  40;
+- **leaves out** one of your numbers or named tools (see round 1 below);
+- adds a skill from the job that your resume doesn't show, or a new
+  name-like word (a tool, product, employer, certificate). The job's own
+  words are allowed only for requirements the fit check and judge already
+  verified ("RAG" for a verified "RAG pipelines"); hyphen and plural forms
+  of your words count as yours ("MVC-based", "UIs");
+- changes nothing.
+
+**What it can't catch, and the screen says so:** a claim in ordinary
+words. Seen once in measuring: the label "REST API experience:" was put on
+a WebSockets chat-app line. REST and API are in the resume elsewhere, so
+the code has no objection. You read every edit before you copy it.
+
+**Measured on 3 real jobs** (your own resumes, qwen3:8b on this PC, about
+35 to 47 s each), three rounds:
+
+| Round | Prompt | Shown | Dropped | What I saw reading every edit |
+|---|---|---|---|---|
+| 1 | first version | 11 | 7 | nothing invented, but edits **cut facts** ("reduced latency by 25%", a list of 5 databases), one turned "about 40 s" into "within 40 s"; 2 good edits dropped by mistake ("MVC-based", "UIs") |
+| 2 | + "keep every fact" | 2 | 16 | overcorrected: the model copied 16 lines unchanged; the 2 shown only swapped a word |
+| 3 | + "bring in the job's own words", with an example; "an unchanged line is useless" | 11 | 7 | useful: requirement-led lines with every fact kept. Dropped for real reasons: an invented "obtained by summer 2026", "about 40" made exact, one edit mixing in another project, two that altered the "before" line. One misleading label got through (above) |
+
+After round 1 the check got the "leaves out" and "about" rules and the
+hyphen/plural fix; the prompt was rewritten twice.
+
+**In Evals:** a "Resume tailoring" fold (per model, when there is any):
+times asked, edits shown out of suggested, and the drop reasons grouped
+(added a number, added a skill or name, left out something of yours, made
+an estimate exact, changed your line, no change). The 9 measuring runs are
+in the test tracker's log: 54 suggested, 24 shown.
+
+**Checks:** `tests/test_tailoring.py`, 16 tests (each rule, both ways,
+the log, the bridge refusing during a run and without the resume file).
+565 tests pass. Screenshots (dev server, made-up data): the section with
+two edits and a dropped one, dark and light.
+
+**Learned:** the strictness of a prompt and the usefulness of the result
+pull against each other with a small model. The code check is what makes
+the strict part safe, so the prompt can ask for real rewriting.
+
+**Phase 19 is done.**

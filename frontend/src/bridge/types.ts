@@ -249,6 +249,35 @@ export interface UpdateStatus {
   install_problem?: { version: string; reason: string } | null; // 1.1.1: the last update failed
 }
 
+/** 19d: EvalsData.tailoring: suggested resume edits and how many the check dropped. */
+export interface TailoringStats {
+  runs: number;
+  suggested: number;
+  kept: number;
+  dropped: number;
+  drop_rate: number | null;
+  seconds: number | null;
+  reasons: Record<string, number>; // "a number", "not in the resume", "a new skill or name"
+}
+
+/** 19d: one suggested edit to a resume line. */
+export interface TailorEdit {
+  before: string;
+  after: string;
+  requirement: string;
+  why: string;
+}
+
+/** 19d: Api.tailor_resume(): the edits that passed the check, and the dropped ones with why. */
+export interface TailoringResult {
+  resume: string;
+  model: string;
+  edits: TailorEdit[];
+  dropped: (TailorEdit & { reasons: string[] })[];
+  seconds: number;
+  at: string;
+}
+
 /** 19c: one group on Insights (a resume, a site, a fit band). rate null = too few to say. */
 export interface InsightGroup {
   name: string;
@@ -478,6 +507,7 @@ export interface EvalsData {
   /** 16d: evidence pass rate over time, per model (the 4 with the most runs; always every model). */
   model_trend: { model: string; runs: number; points: { run_id: string; started_at: string; rate: number }[] }[];
   models_not_charted: number;
+  tailoring?: TailoringStats; // 19d
 }
 
 export interface TracingStatus {
@@ -563,6 +593,8 @@ export interface PyApi {
   dashboard(days: number | null): Promise<DashboardData>;
   /** `recent`: how many runs the Recent runs table gets; 0 = all (16a). */
   evals(model: string | null, recent?: number): Promise<EvalsData>;
+  /** 19d: suggested edits to your resume for this job (one AI call, checked by code). */
+  tailor_resume(jobId: number): Promise<TailoringResult>;
   /** 19c: the Insights screen. */
   insights(): Promise<InsightsData>;
   tracing_status(): Promise<TracingStatus>;

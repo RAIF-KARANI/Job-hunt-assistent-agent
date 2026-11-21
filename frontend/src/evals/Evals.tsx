@@ -222,6 +222,39 @@ export function Evals() {
           </Fold>
 
 
+          {/* 19d: resume tailoring is not a run; its check gets its own line. */}
+          {data?.tailoring && data.tailoring.runs > 0 && (
+            <Fold
+              level={2}
+              title="Resume tailoring"
+              digest={`${plural(data.tailoring.suggested, "suggested edit")}, ${data.tailoring.dropped} dropped by the check`}
+            >
+              <p className="hint">
+                Edits the model suggested for your resume lines, and how many the code check dropped before you saw them (they added a number,
+                skill or name the resume doesn't show).{model ? ` Only ${model}.` : ""}
+              </p>
+              <ul className="nets">
+                <li className="net">
+                  <span className="net-label">Times asked</span>
+                  <span className="net-rate">{data.tailoring.seconds !== null ? `${seconds(data.tailoring.seconds)} each, typically` : ""}</span>
+                  <span className="net-value">{data.tailoring.runs}</span>
+                </li>
+                <li className="net">
+                  <span className="net-label">Edits shown to you</span>
+                  <span className="net-rate">of {data.tailoring.suggested} suggested</span>
+                  <span className="net-value">{data.tailoring.kept}</span>
+                </li>
+                {Object.entries(data.tailoring.reasons).map(([why, n]) => (
+                  <li className="net" key={why}>
+                    <span className="net-label">Dropped: {why}</span>
+                    <span className="net-rate">{data.tailoring!.suggested ? pct(n / data.tailoring!.suggested) : ""}</span>
+                    <span className="net-value">{n}</span>
+                  </li>
+                ))}
+              </ul>
+            </Fold>
+          )}
+
           {/* 16d: tokens and time run by run, and how they go together */}
           <Fold level={2} title="Run by run" digest={points.length ? `Tokens and agent time of ${plural(points.length, "full run")}` : "No full runs yet"}>
             {points.length ? (

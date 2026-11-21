@@ -177,3 +177,73 @@
     animation: none;
   }
 }
+
+/* 19d: suggested edits, before -> after */
+.tailor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tailor > .hint,
+.tailor-summary {
+  margin: 0;
+}
+
+.tailor-edits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tailor-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.tailor-req {
+  align-self: flex-start;
+  font-size: var(--text-xs, 12px);
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.tailor-edit p {
+  margin: 0;
+}
+
+/* Before is what you have now: quieter, and marked as replaced. */
+.tailor-before {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+
+.tailor-after {
+  color: var(--text);
+}
+
+.tailor-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tailor-dropped summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.tailor-dropped .plain-list {
+  margin-top: var(--space-2);
+}

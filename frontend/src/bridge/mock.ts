@@ -173,6 +173,24 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     export_tracker: async () => ({ path: "C:\Users\you\Documents\JobLens jobs 2026-10-31.csv", count: jobs.length }),
     export_cover_note: async (id, fmt) => ({ path: `C:\Users\you\Documents\Cover note - ${id}.${fmt}` }),
     show_in_folder: async () => undefined,
+    tailor_resume: async () => {
+      await new Promise((r) => setTimeout(r, 1200));
+      return {
+        resume: "AI_Engineer", model: "qwen3:8b", seconds: 48.3, at: "2026-11-21T18:00:00+00:00",
+        edits: [
+          { before: "Built an agent with LangGraph that reads job postings and compares resumes",
+            after: "Built a LangGraph agent that parses job postings and scores resume fit, with human review before saving",
+            requirement: "Experience building LLM agents", why: "Names the agent framework and the review step the job asks for." },
+          { before: "Wrote evals for the agent's output (pass rate per model)",
+            after: "Designed evaluation suites measuring the agent's evidence pass rate per model",
+            requirement: "LLM evaluation", why: "Uses the job's word for the evals you already ran." },
+        ],
+        dropped: [
+          { before: "Cut report generation time by 40% using async jobs", after: "Cut report generation time by 60% on AWS Lambda",
+            requirement: "Cloud experience", why: "", reasons: ["adds a number your line doesn't have (60)", "adds “AWS”, which your resume doesn't show"] },
+        ],
+      };
+    },
     insights: async () => ({
       jobs: jobs.length + 31, applications: 14, interviews: 3, offers: 1, rate: 0.214, min_group: 5, unknown: 4,
       by_resume: [

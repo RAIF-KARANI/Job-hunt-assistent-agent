@@ -21,7 +21,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phases 17 (new look) and 18 (Rust window) are done |
 | Open pull requests | none |
 | Tests | 499 pass (`.venv\Scripts\python -m pytest`); also `scripts/build_installer.py --test-install` and `scripts/check_real_update.py --old 1.2.1 --new 2.0.0` |
-| Next step | **Phase 19** (E7): 19a backup → 19b interview calendar → 19c insights → 19d resume tailoring; then Phase 20, then the release |
+| Next step | **Phase 20** (interview practice), then the release. Phase 19 (E7) is done |
 | Waiting on you | the release number (E5) and "Match Windows" (E4); neither blocks Phase 19 |
 
 ## 2. Version 3 in short
@@ -30,7 +30,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 |---|---|---|
 | 17 | **New look**: your glass reference, adapted to JobLens, every screen | ✅ done 17 Nov |
 | 18 | **Rust (Tauri) window**: adopted 17 Nov (E2); every window feature moved to Rust (18d) | ✅ done 17 Nov |
-| 19 | **Your features** (E7): backup, interview calendar, insights, resume tailoring | 🚧 19a next |
+| 19 | **Your features** (E7): backup, interview calendar, insights, resume tailoring | ✅ done 21 Nov |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
 
 **One release at the end** (E1), proposed as **v2.0.0** (E5). The agent stays
@@ -164,6 +164,27 @@ with every feature still working. That is how Phase 17 is laid out.
   ships beside it (a sidecar).
 - If adopted, the real update test (`scripts/check_real_update.py`) must
   be redone for the new shell before the release.
+
+### Phase 19: your features (E7)
+- **Backup:** `job_agent/backup.py`; Settings → Your data
+  (`settings/BackupCard.tsx`). Automatic ones in `APP_HOME\backups`
+  (weekly from `startup.weekly_backup`, and in `install_update`). No API
+  keys, no paused runs.
+- **Interview calendar:** `job_agent/interviews.py`; reminders from the tray
+  loop (`tray.interview_reminders`, every 5 min, shown even with the window
+  open). A notification can open one job: `tracker?job=12` (the Rust
+  `navigate` accepts `? = &` since 19b).
+- **Insights:** `job_agent/insights.py` over the `status_changes` table
+  (written only by `tracker.update_status`; an undo within 10 min takes the
+  change out). Screen `insights/Insights.tsx`. Under 5 applications in a
+  group: counts, no rate.
+- **Resume tailoring:** `job_agent/tailoring.py` (one model call, then the
+  code check); UI `resume/TailorSection.tsx` in the Resume prompt dialog;
+  numbers in Evals from the `tailoring_log` table. Read the progress log's
+  19d table before changing the prompt: stricter wording made qwen3:8b
+  copy lines unchanged.
+- **Measuring with the real model:** set `TRACING=off` for a script (the
+  repo `.env` has Langfuse on); run one job after another.
 
 ### Phase 20: interview practice
 - 1.2.0's prep sheet (`job_agent/interview_prep.py`) is code only, no
