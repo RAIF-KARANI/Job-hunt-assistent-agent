@@ -1,0 +1,14 @@
+<!--
+  JobLens (22 Nov 2026): the sampling profiler that fed system.trace_log,
+  off. See no-system-logs.xml. A users.d file, because these are query
+  settings (a profile), not server settings.
+-->
+<clickhouse>
+    <profiles>
+        <default>
+            <query_profiler_real_time_period_ns>0</query_profiler_real_time_period_ns>
+            <query_profiler_cpu_time_period_ns>0</query_profiler_cpu_time_period_ns>
+            <memory_profiler_step>0</memory_profiler_step>
+        </default>
+    </profiles>
+</clickhouse>

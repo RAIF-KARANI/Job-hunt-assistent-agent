@@ -1,0 +1,28 @@
+<!--
+  JobLens (22 Nov 2026): ClickHouse's own diagnostic logs off.
+
+  Langfuse never reads these tables. ClickHouse filled them by itself all
+  day: system.trace_log (its own profiler) had grown to 42.7 GB, text_log to
+  2 GB, and writing + merging them kept ClickHouse at 150-250 % CPU even with
+  no trace coming in. Your traces (default.*) are not affected.
+  query_log stays: small, and handy if a Langfuse page is ever slow.
+-->
+<clickhouse>
+    <trace_log remove="1"/>
+    <text_log remove="1"/>
+    <metric_log remove="1"/>
+    <asynchronous_metric_log remove="1"/>
+    <part_log remove="1"/>
+    <processors_profile_log remove="1"/>
+    <opentelemetry_span_log remove="1"/>
+    <query_thread_log remove="1"/>
+    <query_views_log remove="1"/>
+    <session_log remove="1"/>
+    <latency_log remove="1"/>
+    <error_log remove="1"/>
+    <query_metric_log remove="1"/>
+    <asynchronous_insert_log remove="1"/>
+    <backup_log remove="1"/>
+    <blob_storage_log remove="1"/>
+    <s3queue_log remove="1"/>
+</clickhouse>
