@@ -15,6 +15,7 @@ import "./styles/analyze.css";
 import "./styles/tracker.css";
 import "./styles/dashboard.css";
 import "./styles/evals.css";
+import "./styles/insights.css";
 import "./styles/settings.css";
 import "./styles/quick.css";
 import "./styles/resume.css";

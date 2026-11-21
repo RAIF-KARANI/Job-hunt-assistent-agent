@@ -249,6 +249,34 @@ export interface UpdateStatus {
   install_problem?: { version: string; reason: string } | null; // 1.1.1: the last update failed
 }
 
+/** 19c: one group on Insights (a resume, a site, a fit band). rate null = too few to say. */
+export interface InsightGroup {
+  name: string;
+  applications: number;
+  interviews: number;
+  offers: number;
+  rate: number | null;
+}
+
+/** 19c: Api.insights(). Plain counts from the tracker and its status history. */
+export interface InsightsData {
+  jobs: number;
+  applications: number;
+  interviews: number;
+  offers: number;
+  rate: number | null;
+  min_group: number;
+  unknown: number; // rejected jobs with no history: can't be placed
+  by_resume: InsightGroup[];
+  by_site: InsightGroup[];
+  by_fit: InsightGroup[];
+  answer_days: { median: number | null; count: number; fastest: number | null; slowest: number | null };
+  waiting: { count: number; longest_days: number | null };
+  stages: Record<JobStatus, number>;
+  rejected: Record<string, number>; // "after applying", "after an interview", "before applying", "unknown"
+  recorded_since: string | null; // UTC
+}
+
 /** 19a: what a backup holds (create_backup / choose_backup / restore_backup). */
 export interface BackupInfo {
   file: string; // choose_backup: the file's name
@@ -535,6 +563,8 @@ export interface PyApi {
   dashboard(days: number | null): Promise<DashboardData>;
   /** `recent`: how many runs the Recent runs table gets; 0 = all (16a). */
   evals(model: string | null, recent?: number): Promise<EvalsData>;
+  /** 19c: the Insights screen. */
+  insights(): Promise<InsightsData>;
   tracing_status(): Promise<TracingStatus>;
   list_resumes(): Promise<Resume[]>;
   add_resumes(): Promise<string[]>;

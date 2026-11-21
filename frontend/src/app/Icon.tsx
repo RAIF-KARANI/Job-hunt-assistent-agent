@@ -99,6 +99,13 @@ const paths = {
       <path d="M6.75 10.5l1.5 1.5 3-3" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  // 19c: Insights (bars of different length)
+  insights: (
+    <>
+      <path d="M3 15.5h12" strokeLinecap="round" />
+      <path d="M5 12.5v-3M9 12.5V4.5M13 12.5V7.5" strokeLinecap="round" strokeWidth="2.2" />
+    </>
+  ),
   // 19b: interviews, "Add to calendar"
   calendar: (
     <>

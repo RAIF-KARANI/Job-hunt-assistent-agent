@@ -58,6 +58,17 @@ CREATE TABLE IF NOT EXISTS cover_notes (
     text         TEXT NOT NULL,
     approved_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 19c: every status change, for Insights (how long companies take, where
+-- jobs stop). Jobs from before 19c have no rows: Insights says so.
+CREATE TABLE IF NOT EXISTS status_changes (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id       INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    from_status  TEXT,
+    to_status    TEXT NOT NULL,
+    changed_at   TEXT DEFAULT CURRENT_TIMESTAMP   -- UTC, like the other timestamps
+);
+CREATE INDEX IF NOT EXISTS status_changes_job ON status_changes(job_id);
 """
 
 # Columns added after the first release: (name, type). init_db() adds the
@@ -78,6 +89,15 @@ MIGRATIONS = (
 
 # 14h: what you may write about a job, and how long it may be.
 NOTE_FIELDS = {"notes": 5000, "interview_at": 16, "contact": 300}
+UNDO_MINUTES = 10  # 19c: a status put back this soon was a slip, not history
+
+
+def status_changes() -> list[dict]:
+    """19c: every recorded status change, oldest first."""
+    init_db()
+    with _db() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT job_id, from_status, to_status, changed_at FROM status_changes ORDER BY changed_at, id")]
 
 
 @contextmanager
@@ -307,15 +327,29 @@ def update_status(job_id: int, status: str) -> None:
         raise ValueError(f"Unknown status '{status}'. Use one of: {', '.join(STATUSES)}")
     init_db()  # the columns below may be newer than this database
     with _db() as conn:
+        before = conn.execute("SELECT status FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        if before is None:
+            raise ValueError(f"No job with id {job_id}")
         # 16a: "Ignore" on the follow-up reminder lasts until the status changes.
         # Cleared here, or a job moved Applied -> Interviewing -> Applied would
         # still count as ignored (found in the full test, 16 Nov).
-        cur = conn.execute(
+        conn.execute(
             "UPDATE jobs SET status = ?, updated_at = CURRENT_TIMESTAMP, follow_up_ignored = NULL WHERE id = ?",
             (status, job_id),
         )
-    if cur.rowcount == 0:
-        raise ValueError(f"No job with id {job_id}")
+        if before["status"] != status:  # 19c: the history Insights reads (same transaction)
+            # Undo (the board's, or a slip put right) within UNDO_MINUTES takes
+            # the change back out instead of adding its mirror image: otherwise
+            # a job dragged to Applied by mistake would count as an application.
+            last = conn.execute(
+                "SELECT id FROM status_changes WHERE job_id = ? AND from_status = ? AND to_status = ? "
+                "AND changed_at >= datetime('now', ?) AND id = (SELECT MAX(id) FROM status_changes WHERE job_id = ?)",
+                (job_id, status, before["status"], f"-{UNDO_MINUTES} minutes", job_id)).fetchone()
+            if last:
+                conn.execute("DELETE FROM status_changes WHERE id = ?", (last["id"],))
+            else:
+                conn.execute("INSERT INTO status_changes (job_id, from_status, to_status) VALUES (?, ?, ?)",
+                             (job_id, before["status"], status))
 
 
 def save_notes(job_id: int, values: dict) -> None:

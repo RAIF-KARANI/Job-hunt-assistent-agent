@@ -35,6 +35,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 19 Your features | 🚧 | chosen (E7): 19a backup, 19b interview calendar, 19c insights, 19d resume tailoring |
 | 19a Backup and restore | ✅ | one .zip, no API keys; restore checks the file and backs up first; weekly + before an update |
 | 19b Interview calendar | ✅ | reminders the evening before and an hour before (fired in the real window); .ics; Do next and Needs you |
+| 19c Insights | ✅ | new screen: interview rate by resume, site and fit band; wait for an answer; status history from now on |
 | 20 Interview practice | ⏳ | last |
 
 ---
@@ -1182,3 +1183,48 @@ The interview date you type on a job (since 14h) now does something:
 **Left for you:** open one `.ics` in your own calendar (Outlook or
 Google) to see the time come out as typed. I can't check that without
 your calendar.
+
+## 19c Insights ✅ (21 Nov 2026)
+
+A new screen, **Insights**, in the sidebar after Tracker. Plain counting
+(`job_agent/insights.py`), no AI, offline.
+
+- **The history:** a new table, `status_changes`, records every status
+  change (one place: `tracker.update_status`, which the cover note, "Did
+  you apply?" and the board all use). **An undo within 10 minutes takes
+  the change back out** instead of recording its mirror image, so a job
+  dragged to Applied by mistake never counts as an application. Deleting a
+  job deletes its history.
+- **Tiles:** applications, the share that reached an interview, offers,
+  the typical wait for an answer (median, with fastest and slowest).
+- **Three groupings**, each "interviews out of applications": by the best
+  resume, by the posting's site (LinkedIn, Indeed, Bayt… and company career
+  pages by the system they run on: Greenhouse, Lever, Workday…), and by fit
+  band (75 and up, 60 to 74, under 60, matching Ready to apply's 75).
+- **Where your jobs are now:** every status, and where the rejected ones
+  stopped.
+
+**Honest by design** (from E7):
+- A group with **fewer than 5 applications shows its counts but no rate**
+  ("2 of 4 · too few to say") and no bar: 1 of 2 is not "50 %".
+- A **Rejected job with no history** (all of today's) might be a no from
+  them or one you dropped before applying. It is counted as **unknown**
+  and left out of the rates, and the screen says how many.
+- The wait for an answer needs both changes recorded, so it starts with
+  jobs applied to from now on; until then the tile says how it will fill.
+
+**Checks:**
+- `tests/test_insights.py`: 15 tests (recorded once, undo, later reversal
+  kept, cascade delete, the 5-application rule, unknown vs placed
+  rejections, wait times and still waiting, sites and bands, the bridge).
+  549 tests pass.
+- **The test tracker against a hand count in SQL:** 33 jobs, 18
+  applications, 0 interviews, 6 rejected unknown. Insights says the same.
+- Screenshots (dev server, made-up data with interviews and an offer):
+  dark and light at 1440 px, dark at 720 px with no sideways scroll. Two
+  fixes came from looking: "4 They are…" repeated the number, and
+  "Greenhouse (company page)" was cut off, so sites are now plain names and
+  the card's hint explains company pages.
+- The bars reuse the Dashboard's single-hue bars (one series: no legend
+  needed, the numbers are written beside every bar, hover gives a
+  sentence), so no new chart colour had to pass the palette validator.

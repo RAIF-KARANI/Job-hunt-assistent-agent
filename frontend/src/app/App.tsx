@@ -5,6 +5,7 @@ import { Components } from "./Components";
 import { bridgeKind, getApi } from "../bridge/bridge";
 import { Dashboard } from "../dashboard/Dashboard";
 import { Evals } from "../evals/Evals";
+import { Insights } from "../insights/Insights";
 import { Settings } from "../settings/Settings";
 import { SetupWizard } from "../setup/SetupWizard";
 import type { AppInfo, Settings as SettingsData, Theme } from "../bridge/types";
@@ -115,6 +116,8 @@ export function App() {
           <Analyze />
         ) : shown === "tracker" ? (
           <Tracker />
+        ) : shown === "insights" ? (
+          <Insights />
         ) : shown === "evals" ? (
           <Evals />
         ) : (

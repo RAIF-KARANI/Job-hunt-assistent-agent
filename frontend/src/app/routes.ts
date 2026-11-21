@@ -7,6 +7,7 @@ export const PAGES = [
   { id: "dashboard", label: "Dashboard", icon: "dashboard", group: "search" },
   { id: "analyze", label: "Analyze", icon: "analyze", group: "search" },
   { id: "tracker", label: "Tracker", icon: "tracker", group: "search" },
+  { id: "insights", label: "Insights", icon: "insights", group: "search" }, // 19c
   { id: "evals", label: "Evals", icon: "evals", group: "agent" },
   { id: "settings", label: "Settings", icon: "settings", group: "agent" },
 ] as const satisfies readonly { id: string; label: string; icon: IconName; group: string }[];

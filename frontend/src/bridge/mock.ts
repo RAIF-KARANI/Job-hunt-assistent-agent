@@ -173,6 +173,28 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     export_tracker: async () => ({ path: "C:\Users\you\Documents\JobLens jobs 2026-10-31.csv", count: jobs.length }),
     export_cover_note: async (id, fmt) => ({ path: `C:\Users\you\Documents\Cover note - ${id}.${fmt}` }),
     show_in_folder: async () => undefined,
+    insights: async () => ({
+      jobs: jobs.length + 31, applications: 14, interviews: 3, offers: 1, rate: 0.214, min_group: 5, unknown: 4,
+      by_resume: [
+        { name: "AI_Engineer.pdf", applications: 9, interviews: 3, offers: 1, rate: 0.333 },
+        { name: "Software_Engineer.pdf", applications: 5, interviews: 0, offers: 0, rate: 0 },
+      ],
+      by_site: [
+        { name: "LinkedIn", applications: 8, interviews: 1, offers: 0, rate: 0.125 },
+        { name: "Greenhouse", applications: 4, interviews: 2, offers: 1, rate: null },
+        { name: "Bayt", applications: 2, interviews: 0, offers: 0, rate: null },
+      ],
+      by_fit: [
+        { name: "75 and up", applications: 6, interviews: 2, offers: 1, rate: 0.333 },
+        { name: "60 to 74", applications: 5, interviews: 1, offers: 0, rate: 0.2 },
+        { name: "under 60", applications: 3, interviews: 0, offers: 0, rate: null },
+      ],
+      answer_days: { median: 6.5, count: 4, fastest: 2.1, slowest: 13 },
+      waiting: { count: 6, longest_days: 19.2 },
+      stages: { researched: 14, cover_note_ready: 6, applied: 8, interviewing: 2, offer: 1, rejected: 6 },
+      rejected: { "after applying": 2, "after an interview": 0, "before applying": 0, unknown: 4 },
+      recorded_since: "2026-11-21 09:00:00",
+    }),
     export_interview_ics: async (id) => ({ path: `C:\\Users\\you\\Documents\\Interview - ${id}.ics` }),
     open_exported: async () => undefined,
     save_notes: async (id, values) => {

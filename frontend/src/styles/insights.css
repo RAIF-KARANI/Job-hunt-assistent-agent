@@ -1,0 +1,38 @@
+/* 19c: Insights. The bars, tiles and chart cards are the Dashboard's
+   (.bars, .tile, .chart-card); this file only lays them out. */
+
+.insights .tiles {
+  margin-bottom: var(--space-4);
+}
+
+.insight-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.insight-notes .hint,
+.insight-rejected,
+.insight-foot {
+  margin: 0;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: var(--space-4);
+}
+
+/* A group's label can be long ("Greenhouse (company page)"); its counts too. */
+.insight-bars {
+  grid-template-columns: minmax(0, 13em) minmax(48px, 1fr) auto;
+}
+
+.insight-rejected {
+  margin-top: var(--space-3);
+}
+
+.insight-foot {
+  margin-top: var(--space-5);
+}

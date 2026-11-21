@@ -495,6 +495,12 @@ class Api:
             "pass_rate": pass_rate,
         }
 
+    def insights(self) -> dict:
+        """19c: what your tracker says about your search. Plain counting, no AI."""
+        from job_agent import insights
+
+        return to_json(insights.from_tracker())
+
     # ---- evals --------------------------------------------------------------
 
     def evals(self, model: str | None = None, recent: int | None = 15) -> dict:
