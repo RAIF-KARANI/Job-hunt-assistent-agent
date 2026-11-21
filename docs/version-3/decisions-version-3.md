@@ -50,11 +50,13 @@ old-style light theme goes.
   no longer a separate job at the end).
 - The toggle is a sun / moon button in the top bar. The mockup remembers
   the choice on this PC.
-- **Open:** today the app can also follow Windows. Keep that as a third
-  choice in Settings (proposed), or only the toggle?
+- ✅ **"Like Windows" stays** as a third choice in Settings (21 Nov 2026,
+  your choice), beside Dark and Light; the top-bar switch flips between
+  dark and light.
 
-## E5 — The release number is 2.0.0 🟡 proposed
-A new look in every screen is a big change for the people using it.
+## E5 — The release number is 2.0.0 ✅ (21 Nov 2026, your choice)
+A new look in every screen, a new window (Rust) and four new features are
+a big change for the people using it.
 
 ## E6 — How the Rust window is built ✅ (17 Nov 2026, proposed with 18d)
 - **Rust shows, Python decides.** The decisions behind the tray (its text,
@@ -100,6 +102,19 @@ Proposed with it (say if you want any of them different):
 - **Tailoring uses the model you set in Settings**, so with a cloud model
   your resume text goes to it, as it already does for the analysis.
 
+## E8 — Interview practice waits; release 2.0.0 now ✅ (21 Nov 2026, your choice)
+"Let's hold on interview practice, let's release the Rust app with the new
+UI." Phase 20 stays in the plan for a later version; version 3 is released
+with Phases 17 to 19.
+
+## E9 — 2.0.0 ships the installer only, no portable zip ✅ (21 Nov 2026, proposed with the release)
+Up to 1.2.0 each release also had a portable `.zip`. Version 3's build
+(18d6) makes the installer only, and the Rust window + engine was never
+tested as a loose folder (the WebView2 runtime, the engine beside it,
+Start with Windows and updates all assume the install). Shipping an
+untested way to run it would break D3 ("never ship a build that can't
+start"). The release notes say so; a portable build can come back once it
+is tested.
+
 ## Open questions ❓
-- Follow Windows as a third theme choice (E4).
-- The release number (E5).
+- None for 2.0.0.

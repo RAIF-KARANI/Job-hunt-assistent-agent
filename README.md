@@ -130,8 +130,9 @@ running, has no keys, or rejected them.
 
 ### Desktop app: JobLens for Windows
 
-A native window (Microsoft Edge WebView2) showing a web UI built with React,
-with five screens:
+A native window (since 2.0.0 written in Rust with Tauri, with the Python
+agent beside it) showing a web UI built with React, in a frosted-glass look
+with dark, light and "Like Windows" themes. Six screens:
 - **Dashboard:** key numbers, a **3D "job galaxy"** (closer to the center =
   better fit), time per step, safety nets, where your applications are.
 - **Analyze:** paste a link, pick which resumes to compare (or use your
@@ -144,6 +145,14 @@ with five screens:
   research, and **your notes**: interview date, contact, notes. **Export
   CSV** for Excel. **Delete** a job you no longer want (after a confirmation).
   Newest changes come first.
+- **Insights:** what your tracker says about your search: the share of
+  applications that reached an interview, by resume, by job site and by
+  fit score, and how long companies take to answer. Plain counts; a group
+  with fewer than 5 applications shows no percentage.
+- **Interview calendar:** the interview date on a job gets a reminder the
+  evening before and an hour before, and **Add to calendar** saves an
+  `.ics` file for Outlook, Google or Apple. The week's interviews lead the
+  Dashboard's "Do next".
 - **Job description:** the posting's full text is saved with each job, so
   it's still there after the company takes it down.
 - **Interview prep:** everything saved about a job on one page (what they
@@ -161,7 +170,12 @@ with five screens:
 - **Resume prompt:** how many of the job's required skills your resume
   visibly shows (keyword coverage), and a prompt to paste into another AI
   with your resume. It's built without an AI call, and it tells the AI never
-  to invent experience.
+  to invent experience. **Suggested edits:** your AI model rewrites lines of
+  your own resume for the job; code drops any edit that adds a number,
+  skill or name your resume doesn't show, or leaves one of yours out.
+- **Backup:** Settings → Your data saves the tracker, resumes, cover notes
+  and settings (never API keys) to one file and restores from one; an
+  automatic backup is made weekly and before every update.
 - **Evals:** how well the agent did: evidence pass rate (also per model),
   your ratings, safety-net checks, tokens and time per run and per step,
   models compared, recent runs (with Langfuse / LangSmith trace links when

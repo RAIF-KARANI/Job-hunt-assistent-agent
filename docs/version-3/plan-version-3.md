@@ -18,9 +18,9 @@ at the end** (E1).
 | 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | ✅ 17a to 17j done (17 Nov) |
 | 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ✅ adopted; 18a to 18d8 done (17 Nov) |
 | 19 | New features | backup, interview calendar, insights, resume tailoring (E7) | ✅ 19a to 19d done (21 Nov) |
-| 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
+| 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏸ on hold: after 2.0.0 (E8) |
 
-Release: **v2.0.0**, once, after all phases (E1, E5).
+Release: **v2.0.0** (E5), with Phases 17 to 19 (E8: interview practice waits).
 
 ---
 
@@ -101,7 +101,7 @@ model last.
 | 19c ✅ | **Insights** (new screen, no model, offline): from now on every status change is recorded (a `status_changes` table). Shows the response rate (reached Interviewing or Offer) by resume, by where the job came from (the link's site), by fit-score band; how long companies take to answer; where jobs stop. Shows "too few jobs to say" under 5 jobs in a group | the numbers match a hand count on the test tracker; nothing is shown that the data can't support |
 | 19d ✅ | **Resume tailoring** (in the job sheet, beside the resume prompt): the model suggests changes to your **own** resume bullets (before → after, which requirement each one shows). Each "after" is checked against the resume like the cover note: no new skill, tool, employer, number or date; a suggestion that fails is dropped and counted. Copy one or all | measured on a few real jobs: no invented claim gets through; the check's numbers go into Evals |
 
-## Phase 20 — Interview practice ⏳ (last, your choice)
+## Phase 20 — Interview practice ⏸ (on hold, E8)
 Left out of 1.2.0's prep sheet on purpose (D43): practice questions for a
 job and suggested answers, written by the model and checked against your
 resume like the cover note is (no claim the resume doesn't show). Built in
