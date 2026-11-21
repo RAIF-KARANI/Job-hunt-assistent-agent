@@ -13,7 +13,7 @@
 - **Suggested resume edits** (Tracker → a job → Resume prompt): your AI model rewrites lines of your own resume for the job. Before you see them, JobLens drops any edit that adds a number, skill or name your resume doesn't show, or leaves one of yours out. It can't catch a claim in ordinary words, so read each edit before you copy it.
 - **Backup and restore** (Settings → Your data): the tracker, resumes, cover notes and settings in one file. **API keys are never in it.** A restore shows what's in the file first and backs up what you have now. An automatic backup is made every week and before each update (the last 4 are kept).
 
-**Updating:** Settings → Updates, from 1.0.3 or later. JobLens closes and opens again as 2.0.0. Your data stays; a backup of it is made just before the update.
+**Updating:** Settings → Updates, from 1.0.3 or later. JobLens closes and opens again as 2.0.0. Your data stays. From 2.0.0 on, JobLens also backs up your data just before each update.
 
 **Changed:** 2.0.0 comes as the installer only. The portable `.zip` is gone for now: the new window hasn't been tested as a loose folder.
 
