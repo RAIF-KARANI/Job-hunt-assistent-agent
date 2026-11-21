@@ -16,8 +16,8 @@ at the end** (E1).
 | # | Phase | What | Status |
 |---|---|---|---|
 | 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | ✅ 17a to 17j done (17 Nov) |
-| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | 🚧 18a to 18c done (adopt); 18d next |
-| 19 | New features | your list (to come) | 🟡 waiting for your list |
+| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ✅ adopted; 18a to 18d8 done (17 Nov) |
+| 19 | New features | backup, interview calendar, insights, resume tailoring (E7) | 🚧 19a next |
 | 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
 
 Release: **v2.0.0**, once, after all phases (E1, E5).
@@ -88,9 +88,18 @@ shortcut, updater, the bridge). Python still ships beside it.
 | 18d7 ✅ | **Updates**: from an installed 1.2.0 to this build, with the real update test | `scripts/check_real_update.py` passes |
 | 18d8 ✅ | **Measure again, installed**: start time, memory, size against 1.2.0 | the numbers are in the progress log |
 
-## Phase 19 — New features 🟡
-Your list, when you have it. A feature that adds a screen is built in the
-new look.
+## Phase 19 — New features 🚧
+Chosen 21 Nov from a list of suggestions (E7): 1 resume tailoring,
+2 insights, 3 interview calendar, 5 backup. Built in the new look, both
+themes. The order puts the safety net first and the step that uses the
+model last.
+
+| Step | What | Done when |
+|---|---|---|
+| 19a | **Backup and restore** (Settings → Your data): one `.zip` with the tracker, paused runs, cover notes and resumes, plus settings **without API keys**. Restore checks the file, makes a backup of what is there now, then replaces it. Also an automatic backup once a week and before an update installs, keeping the last 4 | a backup restores into an empty data folder and the app shows the same jobs; a broken or foreign zip is refused and changes nothing |
+| 19b | **Interview calendar**: the interview date (there since 14h) gets a reminder the evening before and an hour before (tray + "Needs you"), opens the prep sheet from it, **Add to calendar** (`.ics` file, works with Google, Outlook, Apple), and an "Upcoming interviews" card on the Dashboard | the reminder fires in the real window; the `.ics` opens in Outlook with the right local time |
+| 19c | **Insights** (new screen, no model, offline): from now on every status change is recorded (a `status_changes` table). Shows the response rate (reached Interviewing or Offer) by resume, by where the job came from (the link's site), by fit-score band; how long companies take to answer; where jobs stop. Shows "too few jobs to say" under 5 jobs in a group | the numbers match a hand count on the test tracker; nothing is shown that the data can't support |
+| 19d | **Resume tailoring** (in the job sheet, beside the resume prompt): the model suggests changes to your **own** resume bullets (before → after, which requirement each one shows). Each "after" is checked against the resume like the cover note: no new skill, tool, employer, number or date; a suggestion that fails is dropped and counted. Copy one or all | measured on a few real jobs: no invented claim gets through; the check's numbers go into Evals |
 
 ## Phase 20 — Interview practice ⏳ (last, your choice)
 Left out of 1.2.0's prep sheet on purpose (D43): practice questions for a

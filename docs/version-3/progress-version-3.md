@@ -32,7 +32,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d6 Packaging | ✅ | Installer builds, installs, passes both tests, uninstalls clean |
 | 18d7 Real update test | ✅ | 1.2.0 → version 3 and 3 → 3: all four update checks pass |
 | 18d8 Measured, installed | ✅ | 42 % sooner to data, 7 % less memory, same size |
-| 19 Your features | 🟡 | waiting for your list |
+| 19 Your features | 🚧 | chosen (E7): 19a backup, 19b interview calendar, 19c insights, 19d resume tailoring |
 | 20 Interview practice | ⏳ | last |
 
 ---

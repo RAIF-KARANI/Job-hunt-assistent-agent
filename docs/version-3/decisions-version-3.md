@@ -72,8 +72,34 @@ A new look in every screen is a big change for the people using it.
   can update itself to 2.0.0 like every update before. It installs two
   programs: `JobLens.exe` (Rust) and the agent beside it (PyInstaller).
 
+## E7 — Phase 19 is four features ✅ (21 Nov 2026, your choice)
+You had no list, so a list of suggestions was made from what JobLens
+doesn't do yet. You chose 1, 2, 3 and 5:
+
+| # | Feature | What already exists | What Phase 19 adds |
+|---|---|---|---|
+| 1 | Resume tailoring | the resume prompt (14g, D33): the skills gap and a prompt to paste into another AI | the model writes before → after edits of your own bullets, each checked against your resume (19d) |
+| 2 | Insights | the Dashboard's pipeline counts | response rate by resume, by site, by fit band; time to answer; where jobs stop (19c) |
+| 3 | Interview calendar | the interview date and contact on a job (14h), shown on the board and in the prep sheet | reminders before it, `.ics` export, Upcoming on the Dashboard (19b) |
+| 5 | Backup | CSV export of the tracker (14i) | a full backup and restore, and automatic backups (19a) |
+
+Not chosen: contacts per job (the contact field from 14h stays as it is),
+batch analyze, duplicate warning, salary and location filters, rejection
+notes. Advised against: pulling jobs from LinkedIn or Indeed (their terms
+forbid it, and it breaks often).
+
+Proposed with it (say if you want any of them different):
+- **The backup leaves out API keys.** A backup is a file you may copy to a
+  USB stick or a cloud drive; keys stay only in `.env`. After a restore on
+  a new PC you type the key once.
+- **No Excel (.xlsx) export:** the CSV already opens in Excel, and .xlsx
+  would add a dependency or a lot of code for the same table.
+- **Insights only count what was recorded.** Jobs from before 19c have
+  their current status but no history, so "time to answer" starts from
+  19c's jobs; the screen says so instead of guessing.
+- **Tailoring uses the model you set in Settings**, so with a cloud model
+  your resume text goes to it, as it already does for the analysis.
+
 ## Open questions ❓
 - Follow Windows as a third theme choice (E4).
-- "Clearly better" for Rust (E2).
 - The release number (E5).
-- Your feature list (Phase 19).

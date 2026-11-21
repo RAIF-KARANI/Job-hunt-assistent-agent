@@ -1,6 +1,6 @@
 # Handoff — JobLens version 3
 
-Last updated **16 Nov 2026**. Read this first when picking the work up
+Last updated **21 Nov 2026**. Read this first when picking the work up
 again (a new chat, a new machine, or after a break). It says where
 everything is, what is decided, what is waiting, and the rules the work
 follows.
@@ -21,8 +21,8 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phases 17 (new look) and 18 (Rust window) are done |
 | Open pull requests | none |
 | Tests | 499 pass (`.venv\Scripts\python -m pytest`); also `scripts/build_installer.py --test-install` and `scripts/check_real_update.py --old 1.2.1 --new 2.0.0` |
-| Next step | **Phase 19: your feature list** (waiting for it), then Phase 20, then the release |
-| Waiting on you | questions 3 to 5 in section 3 (none of them blocks Phase 17) |
+| Next step | **Phase 19** (E7): 19a backup → 19b interview calendar → 19c insights → 19d resume tailoring; then Phase 20, then the release |
+| Waiting on you | the release number (E5) and "Match Windows" (E4); neither blocks Phase 19 |
 
 ## 2. Version 3 in short
 
@@ -30,7 +30,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 |---|---|---|
 | 17 | **New look**: your glass reference, adapted to JobLens, every screen | ✅ done 17 Nov |
 | 18 | **Rust (Tauri) window**: adopted 17 Nov (E2); every window feature moved to Rust (18d) | ✅ done 17 Nov |
-| 19 | **Your features**: your list | 🟡 waiting for the list |
+| 19 | **Your features** (E7): backup, interview calendar, insights, resume tailoring | 🚧 19a next |
 | 20 | **Interview practice**: model-written questions and answers, checked against the resume | ⏳ last (your choice) |
 
 **One release at the end** (E1), proposed as **v2.0.0** (E5). The agent stays
@@ -42,11 +42,9 @@ could move to Rust.
 1. ~~The mockup (E3)~~ ✅ approved 16 Nov.
 2. ~~Light theme (E4)~~ ✅ both themes in glass. Still open inside it:
    keep "Match Windows" as a third choice (it is kept for now).
-3. **"Clearly better" for Rust (E2):** proposed: installer ≥ 25 % smaller
-   **or** window ready ≥ 30 % sooner, and nothing worse (tray, shortcut,
-   updates, memory).
+3. ~~"Clearly better" for Rust (E2)~~ ✅ adopted 17 Nov.
 4. **Release number (E5):** 2.0.0?
-5. **Your feature list (Phase 19).**
+5. ~~Your feature list (Phase 19)~~ ✅ chosen 21 Nov (E7).
 
 When one is answered: record it in `decisions-version-3.md` (✅ + date),
 update the plan's status column, commit and push.
