@@ -153,6 +153,7 @@ class Api:
         # 16i: is the window hidden in the tray? Set by app.py (None = there is no tray: always visible)
         self._is_hidden = None
         self._exported: set[str] = set()  # 14i: files this session wrote (show_in_folder only opens these)
+        self._picked_backup: Path | None = None  # 19a: the backup you chose to restore
 
     def _emit(self, event: Event) -> None:
         self._send(to_json(event))
@@ -555,15 +556,71 @@ class Api:
         paths.ensure_dirs()
         os.startfile(paths.DATA_DIR)  # Explorer; Windows only, like the app
 
-    def _choose_files(self):
+    def _choose_files(self, kind: str = "PDF files (*.pdf)"):
         if self._dialogs is not None:
-            return self._dialogs.open_files("PDF files (*.pdf)")
+            return self._dialogs.open_files(kind)
         if not self._window:
             raise RuntimeError("No window to show a file dialog in.")
         from webview import FileDialog
 
-        return self._window.create_file_dialog(FileDialog.OPEN, allow_multiple=True,
-                                               file_types=("PDF files (*.pdf)",))
+        return self._window.create_file_dialog(FileDialog.OPEN, allow_multiple=True, file_types=(kind,))
+
+    # ---- backup (19a, E7) -----------------------------------------------------
+
+    def backup_status(self) -> dict:
+        """Settings → Your data: the last automatic backup and where they are kept."""
+        from job_agent import backup
+
+        return backup.status()
+
+    def create_backup(self) -> dict | None:
+        """Everything (tracker, resumes, cover notes, settings without keys) to a
+        .zip you pick. None = you cancelled."""
+        from job_agent import backup
+
+        path = self._save_path(backup.file_name(), "JobLens backup (*.zip)")
+        if not path:
+            return None
+        made = backup.create(path)
+        self._exported.add(str(path))
+        return made
+
+    def choose_backup(self) -> dict | None:
+        """Step 1 of a restore: pick a backup and see what's in it. Nothing
+        changes yet. Raises with the reason if the file can't be restored."""
+        from job_agent import backup
+
+        chosen = self._choose_files("JobLens backup (*.zip)") or []
+        if isinstance(chosen, str):
+            chosen = [chosen]
+        if not chosen:
+            return None
+        path = Path(chosen[0])
+        info = backup.inspect(path)  # BackupError: the page shows why
+        self._picked_backup = path
+        return {**info, "file": path.name}
+
+    def restore_backup(self) -> dict:
+        """Step 2, after you confirmed: replace your data with the picked
+        backup. What's there now is backed up first; API keys are kept."""
+        from job_agent import backup, pricing
+
+        path = getattr(self, "_picked_backup", None)
+        if not path:
+            raise RuntimeError("Choose a backup first.")
+        if self._runner.busy or self._runner.last_pause:
+            raise RuntimeError("Finish or stop the current run first: a restore replaces the tracker.")
+        allowed = set(WRITABLE_SETTINGS) | set(settings.DEFAULTS) | {pricing.SETTING}
+        result = backup.restore(path, allowed)
+        self._picked_backup = None
+        return result
+
+    def open_backup_folder(self) -> None:
+        from job_agent import backup
+
+        folder = backup.backup_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        os.startfile(folder)
 
     def _attach(self, window) -> None:
         """The window, for native dialogs (not callable from JS: underscore)."""
@@ -741,6 +798,12 @@ class Api:
         path = getattr(self, "_update_file", None)
         if not path or not status.get("installer") or not path.exists():
             raise RuntimeError("Download the update first.")
+        try:  # 19a: a copy of your data from just before the new version touches it
+            from job_agent import backup
+
+            backup.auto_backup("before update")
+        except Exception as e:  # never stops the update: the weekly backups are there too
+            print(f"! backup before update: {e}")
         updates.launch_installer(path, status["installer"])  # checks the file once more
         if self._quit:
             threading.Timer(1.0, self._quit).start()  # let this answer reach the page first

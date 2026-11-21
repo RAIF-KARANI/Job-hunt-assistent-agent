@@ -5,7 +5,8 @@
 import { Fold } from "../app/Fold";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
-import type { Autostart, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D, UpdateStatus } from "../bridge/types";
+import type { Autostart, BackupStatus, LlmStatus, Settings as SettingsData, SystemCheck, Theme, Ui3D, UpdateStatus } from "../bridge/types";
+import { BackupCard } from "./BackupCard";
 import { CloudModelPicker } from "./CloudModelPicker";
 import { LevelPicker } from "./LevelPicker";
 import { ModelPicker } from "./ModelPicker";
@@ -88,6 +89,7 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
   const [autostart, setAutostart] = useState<Autostart | null>(null);
   // 18d7: a failed update or a new version must not hide in a closed fold.
   const [update, setUpdate] = useState<UpdateStatus | null>(null);
+  const [backup, setBackup] = useState<BackupStatus | null>(null); // 19a: for the fold's summary line
   useEffect(() => {
     getApi()
       .then((api) => api.update_status())
@@ -234,7 +236,10 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
         : `Follow up ${label(FOLLOW_UP_DAYS, String(settings.FOLLOW_UP_DAYS ?? "7")).toLowerCase()}`) +
       (autostart?.enabled ? " · starts with Windows" : ""),
     quick: settings.QUICK_KEY === "" ? "Shortcut off" : `Shortcut ${String(settings.QUICK_KEY ?? "Ctrl+Alt+J")}`,
-    updates: updateNews ?? ((settings.UPDATE_CHECK ?? "true") !== "false" ? "Checked once a day" : "Automatic checks off"),
+    data: backup?.last
+      ? `Last backup ${new Date(backup.last).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`
+      : "Backup and restore",
+    updates: updateNews ??((settings.UPDATE_CHECK ?? "true") !== "false" ? "Checked once a day" : "Automatic checks off"),
   };
 
   return (
@@ -516,6 +521,12 @@ export function Settings({ settings, theme, onTheme, onSettings }: Props) {
           keeps JobLens in the tray so the shortcut keeps working; quit from the tray icon.
         </p>
         <ShortcutField saved={String(settings.QUICK_KEY ?? "Ctrl+Alt+J")} onSave={saveShortcut} />
+        </div>
+      </Fold>
+
+      <Fold level={2} title="Your data" digest={digests.data}>
+        <div className="settings-card fold-card">
+          <BackupCard onStatus={setBackup} />
         </div>
       </Fold>
 

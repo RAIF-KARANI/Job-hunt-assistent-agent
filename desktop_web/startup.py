@@ -46,6 +46,7 @@ def after_update(api) -> None:
 def background_chores() -> None:
     """Slow, once-a-start jobs that never hold up the window."""
     threading.Thread(target=keep_old_descriptions, name="joblens-descriptions", daemon=True).start()
+    threading.Thread(target=weekly_backup, name="joblens-backup", daemon=True).start()
     if paths.IS_INSTALLED:  # a run from source never touches the installed app's leftovers
         threading.Thread(target=clean_temp, name="joblens-clean-temp", daemon=True).start()
 
@@ -62,6 +63,20 @@ def check_for_updates_soon(api, delay: float = 5) -> None:
             print(f"! update check: {e}")
 
     threading.Thread(target=later, name="joblens-updates", daemon=True).start()
+
+
+def weekly_backup(delay: float = 60) -> None:
+    """19a: once a week, a backup of your data into APP_HOME/backups (the
+    last 4 are kept). A minute after start, so it never slows the window."""
+    time.sleep(delay)
+    try:
+        from job_agent import backup
+
+        made = backup.auto_backup_if_due()
+        if made:
+            print(f"  backup: {made.name}")
+    except Exception as e:  # a failed backup must never break the app
+        print(f"! weekly backup: {e}")
 
 
 def keep_old_descriptions() -> None:

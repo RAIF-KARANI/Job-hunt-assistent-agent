@@ -1,12 +1,12 @@
-# Build Plan — JobLens version 3
+﻿# Build Plan â€” JobLens version 3
 
-Continues [version 2](../version-2/plan-version-2.md) (phases 12–16, released
+Continues [version 2](../version-2/plan-version-2.md) (phases 12â€“16, released
 up to **v1.2.0**). Decisions behind this plan are in
 [decisions-version-3.md](decisions-version-3.md). What was done:
 [progress-version-3.md](progress-version-3.md). Picking the work up again:
 [handoff-version-3.md](handoff-version-3.md).
 
-Legend: ✅ done · 🚧 in progress · ⏳ not started · 🟡 waiting for a decision
+Legend: âœ… done Â· ðŸš§ in progress Â· â³ not started Â· ðŸŸ¡ waiting for a decision
 
 **Workflow rules:** branch `version-3`; no CI, so merge only after local
 checks (version 2's D3 still applies: pytest, look at the app, the installer
@@ -15,23 +15,23 @@ at the end** (E1).
 
 | # | Phase | What | Status |
 |---|---|---|---|
-| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | ✅ 17a to 17j done (17 Nov) |
-| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | ✅ adopted; 18a to 18d8 done (17 Nov) |
-| 19 | New features | backup, interview calendar, insights, resume tailoring (E7) | 🚧 19a next |
-| 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | ⏳ (last, your choice) |
+| 17 | New look: the glass direction | your reference + prompt, adapted to JobLens; every screen, nothing lost | âœ… 17a to 17j done (17 Nov) |
+| 18 | Rust (Tauri) spike | measure a Tauri shell against 1.2.0; adopt only if clearly better | âœ… adopted; 18a to 18d8 done (17 Nov) |
+| 19 | New features | backup, interview calendar, insights, resume tailoring (E7) | ðŸš§ 19a next |
+| 20 | Interview practice | AI-written practice questions and answers per job, checked against your resume | â³ (last, your choice) |
 
 Release: **v2.0.0**, once, after all phases (E1, E5).
 
 ---
 
-## Phase 17 — New look: the glass direction ✅
+## Phase 17 â€” New look: the glass direction âœ…
 
 **Source:** your reference image (`referance/Glassmorphism Dashboard Design
 Kit.png`) and prompt (`referance/ui promt`): dark glassmorphism, frosted
 cards on a dark gradient, blue / purple / pink / orange / yellow accents,
-Inter, gradient KPI cards, 16–24 px radii.
+Inter, gradient KPI cards, 16â€“24 px radii.
 
-**Mockup:** https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 —
+**Mockup:** https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 â€”
 Dashboard, Tracker, Analyze, Evals, linked like the app (click the sidebar).
 Made from JobLens's real screens and numbers; nothing in the app changed.
 Source kept in [mockup/](mockup/).
@@ -49,18 +49,18 @@ Source kept in [mockup/](mockup/).
 ### Steps (after your OK on the mockup)
 | Step | What | Done when |
 |---|---|---|
-| 17a ✅ | **Your review of the mockup**: what to keep, change, drop | you say go (16 Nov: "I am happy with the design") |
-| 17b ✅ | **Tokens and base components**: colours, gradients, glass surfaces, radii, spacing, Inter (bundled, works offline) as CSS variables in `tokens.css`; buttons, inputs, selects, cards, badges, tabs, dialogs, tooltips | a component sheet screen shows every piece |
-| 17c ✅ | **Shell**: sidebar with gradient active state, top bar (title, search, reminders, New analysis), page transitions | every page opens in the new shell |
-| 17d ✅ | **Dashboard**: gradient KPI cards, the **job galaxy restyled** in the new palette (kept, your choice), Ready to apply, charts | the 3D galaxy, the flat map and "3D off" all match |
-| 17e ✅ | **Tracker**: board, list, job details, follow-up email, interview prep, resume prompt | every dialog restyled; drag and drop still works |
-| 17f ✅ | **Analyze**: steps, live log, review, the failed / out-of-quota panels, Continue banner | a full run looks right from start to approval |
-| 17g ✅ | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
-| 17h ✅ | **Settings, setup wizard, quick-analyze box** | first-run setup looks right |
-| 17i ✅ | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
-| 17j ✅ | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
+| 17a âœ… | **Your review of the mockup**: what to keep, change, drop | you say go (16 Nov: "I am happy with the design") |
+| 17b âœ… | **Tokens and base components**: colours, gradients, glass surfaces, radii, spacing, Inter (bundled, works offline) as CSS variables in `tokens.css`; buttons, inputs, selects, cards, badges, tabs, dialogs, tooltips | a component sheet screen shows every piece |
+| 17c âœ… | **Shell**: sidebar with gradient active state, top bar (title, search, reminders, New analysis), page transitions | every page opens in the new shell |
+| 17d âœ… | **Dashboard**: gradient KPI cards, the **job galaxy restyled** in the new palette (kept, your choice), Ready to apply, charts | the 3D galaxy, the flat map and "3D off" all match |
+| 17e âœ… | **Tracker**: board, list, job details, follow-up email, interview prep, resume prompt | every dialog restyled; drag and drop still works |
+| 17f âœ… | **Analyze**: steps, live log, review, the failed / out-of-quota panels, Continue banner | a full run looks right from start to approval |
+| 17g âœ… | **Evals**: tiles, all charts in the new palette (checked with the palette validator), tables | charts readable; colour-blind check passes |
+| 17h âœ… | **Settings, setup wizard, quick-analyze box** | first-run setup looks right |
+| 17i âœ… | **Light theme check** (E4: both themes are built in every step) | every screen looks right in light and dark |
+| 17j âœ… | **Accessibility and sizes**: contrast, keyboard, reduced motion; window sizes from 720 px to a 2560 px monitor | checked in the real window |
 
-## Phase 18 — Rust (Tauri) window ✅ (17 Nov)
+## Phase 18 â€” Rust (Tauri) window âœ… (17 Nov)
 **Your goals:** a smaller, faster app, and learning Rust. **Your rule:** move
 the shell to Rust only if it is clearly better; otherwise the spike stays a
 learning project (E2).
@@ -70,25 +70,25 @@ shortcut, updater, the bridge). Python still ships beside it.
 
 | Step | What |
 |---|---|
-| 18a ✅ | A Tauri window showing the built UI, one bridge call into the Python agent (a sidecar) |
-| 18b ✅ | Measure against 1.2.0: installer size (68 MB), app folder (161 MB), time to a ready window (~3 s), memory, a bridge call's time |
-| 18c ✅ | Decided: adopt (E2, 17 Nov). 36 % faster, 20 % less memory, 5 % smaller |
+| 18a âœ… | A Tauri window showing the built UI, one bridge call into the Python agent (a sidecar) |
+| 18b âœ… | Measure against 1.2.0: installer size (68 MB), app folder (161 MB), time to a ready window (~3 s), memory, a bridge call's time |
+| 18c âœ… | Decided: adopt (E2, 17 Nov). 36 % faster, 20 % less memory, 5 % smaller |
 | 18d | Everything today's window does, in the Rust window (E6). Sub-steps below |
 
-### 18d — the Rust window, feature by feature (E6)
+### 18d â€” the Rust window, feature by feature (E6)
 
 | Step | What | Done when |
 |---|---|---|
-| 18d1 ✅ | **Into the app**: the spike becomes `desktop_tauri/` (Rust) and `desktop_web/engine.py` (Python); the pipe carries Python's requests to the window too (show, hide, notify, a dialog) | the Rust window runs JobLens from source like `python -m desktop_web` does |
-| 18d2 ✅ | **File dialogs**: Add PDFs, Save as (CSV, cover notes, prep sheets) | every export and the resume upload work |
-| 18d3 ✅ | **Tray**: icon, menu (open, status, follow-ups, stop the run, quit), notifications and their clicks; the close button hides to the tray when it should | the tray behaves like 1.2.0's |
-| 18d4 ✅ | **Quick-analyze box**: the global shortcut (kept in Python) opens the small box window | Ctrl+Alt+J works with the window hidden |
-| 18d5 ✅ | **One copy at a time, Start with Windows (in the tray), closing at Windows shutdown** | a second start brings the first back; sign-in starts it hidden |
-| 18d6 ✅ | **Packaging**: PyInstaller builds the agent, Tauri the window, Inno Setup the installer (same app id); `--smoke` and `--self-test` again | `scripts/build_installer.py --test-install` passes |
-| 18d7 ✅ | **Updates**: from an installed 1.2.0 to this build, with the real update test | `scripts/check_real_update.py` passes |
-| 18d8 ✅ | **Measure again, installed**: start time, memory, size against 1.2.0 | the numbers are in the progress log |
+| 18d1 âœ… | **Into the app**: the spike becomes `desktop_tauri/` (Rust) and `desktop_web/engine.py` (Python); the pipe carries Python's requests to the window too (show, hide, notify, a dialog) | the Rust window runs JobLens from source like `python -m desktop_web` does |
+| 18d2 âœ… | **File dialogs**: Add PDFs, Save as (CSV, cover notes, prep sheets) | every export and the resume upload work |
+| 18d3 âœ… | **Tray**: icon, menu (open, status, follow-ups, stop the run, quit), notifications and their clicks; the close button hides to the tray when it should | the tray behaves like 1.2.0's |
+| 18d4 âœ… | **Quick-analyze box**: the global shortcut (kept in Python) opens the small box window | Ctrl+Alt+J works with the window hidden |
+| 18d5 âœ… | **One copy at a time, Start with Windows (in the tray), closing at Windows shutdown** | a second start brings the first back; sign-in starts it hidden |
+| 18d6 âœ… | **Packaging**: PyInstaller builds the agent, Tauri the window, Inno Setup the installer (same app id); `--smoke` and `--self-test` again | `scripts/build_installer.py --test-install` passes |
+| 18d7 âœ… | **Updates**: from an installed 1.2.0 to this build, with the real update test | `scripts/check_real_update.py` passes |
+| 18d8 âœ… | **Measure again, installed**: start time, memory, size against 1.2.0 | the numbers are in the progress log |
 
-## Phase 19 — New features 🚧
+## Phase 19 â€” New features ðŸš§
 Chosen 21 Nov from a list of suggestions (E7): 1 resume tailoring,
 2 insights, 3 interview calendar, 5 backup. Built in the new look, both
 themes. The order puts the safety net first and the step that uses the
@@ -96,12 +96,12 @@ model last.
 
 | Step | What | Done when |
 |---|---|---|
-| 19a | **Backup and restore** (Settings → Your data): one `.zip` with the tracker, paused runs, cover notes and resumes, plus settings **without API keys**. Restore checks the file, makes a backup of what is there now, then replaces it. Also an automatic backup once a week and before an update installs, keeping the last 4 | a backup restores into an empty data folder and the app shows the same jobs; a broken or foreign zip is refused and changes nothing |
+| 19a | **Backup and restore** (Settings â†’ Your data): one `.zip` with the tracker, paused runs, cover notes and resumes, plus settings **without API keys**. Restore checks the file, makes a backup of what is there now, then replaces it. Also an automatic backup once a week and before an update installs, keeping the last 4 | a backup restores into an empty data folder and the app shows the same jobs; a broken or foreign zip is refused and changes nothing |
 | 19b | **Interview calendar**: the interview date (there since 14h) gets a reminder the evening before and an hour before (tray + "Needs you"), opens the prep sheet from it, **Add to calendar** (`.ics` file, works with Google, Outlook, Apple), and an "Upcoming interviews" card on the Dashboard | the reminder fires in the real window; the `.ics` opens in Outlook with the right local time |
 | 19c | **Insights** (new screen, no model, offline): from now on every status change is recorded (a `status_changes` table). Shows the response rate (reached Interviewing or Offer) by resume, by where the job came from (the link's site), by fit-score band; how long companies take to answer; where jobs stop. Shows "too few jobs to say" under 5 jobs in a group | the numbers match a hand count on the test tracker; nothing is shown that the data can't support |
-| 19d | **Resume tailoring** (in the job sheet, beside the resume prompt): the model suggests changes to your **own** resume bullets (before → after, which requirement each one shows). Each "after" is checked against the resume like the cover note: no new skill, tool, employer, number or date; a suggestion that fails is dropped and counted. Copy one or all | measured on a few real jobs: no invented claim gets through; the check's numbers go into Evals |
+| 19d | **Resume tailoring** (in the job sheet, beside the resume prompt): the model suggests changes to your **own** resume bullets (before â†’ after, which requirement each one shows). Each "after" is checked against the resume like the cover note: no new skill, tool, employer, number or date; a suggestion that fails is dropped and counted. Copy one or all | measured on a few real jobs: no invented claim gets through; the check's numbers go into Evals |
 
-## Phase 20 — Interview practice ⏳ (last, your choice)
+## Phase 20 â€” Interview practice â³ (last, your choice)
 Left out of 1.2.0's prep sheet on purpose (D43): practice questions for a
 job and suggested answers, written by the model and checked against your
 resume like the cover note is (no claim the resume doesn't show). Built in

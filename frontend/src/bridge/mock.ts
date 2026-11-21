@@ -218,6 +218,21 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     },
     remove_resume: async (name) => void resumes.splice(resumes.indexOf(name), 1),
     open_data_folder: async () => undefined,
+    backup_status: async () => ({ folder: "C:\\Users\\you\\AppData\\Local\\JobLens\\backups", count: 2, keep: 4,
+      last: "2026-11-18T09:12", last_reason: "weekly" }),
+    create_backup: async () => {
+      await new Promise((r) => setTimeout(r, 600));
+      return { path: "C:\\Users\\you\\Documents\\JobLens backup 2026-11-21.zip", created: "2026-11-21T10:00", version: "2.0.0",
+        jobs: jobs.length, resumes: ["AI_Engineer.pdf", "Software_Engineer.pdf"], cover_notes: 2 };
+    },
+    choose_backup: async () => ({ file: "JobLens backup 2026-11-14.zip", created: "2026-11-14T18:40", version: "2.0.0",
+      jobs: jobs.length - 1, resumes: ["AI_Engineer.pdf", "Software_Engineer.pdf"], cover_notes: 2 }),
+    restore_backup: async () => {
+      await new Promise((r) => setTimeout(r, 800));
+      return { created: "2026-11-14T18:40", version: "2.0.0", jobs: jobs.length - 1,
+        resumes: ["AI_Engineer.pdf", "Software_Engineer.pdf"], cover_notes: 2, settings: 9, before: null };
+    },
+    open_backup_folder: async () => undefined,
     system_check: async (provider) => {
       await new Promise((r) => setTimeout(r, 900));
       return {

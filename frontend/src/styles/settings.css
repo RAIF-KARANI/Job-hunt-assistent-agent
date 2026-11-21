@@ -636,3 +636,35 @@
   align-self: flex-end;
   margin-bottom: calc(var(--space-2) * -1);
 }
+
+/* 19a: Settings -> Your data */
+.backup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.backup > p,
+.backup .check-status {
+  margin: 0;
+}
+
+/* Before a restore: what the file holds, and the one red button. */
+.backup-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--danger-soft);
+}
+
+.backup-confirm p {
+  margin: 0;
+}
+
+.backup-auto-title {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-md);
+}

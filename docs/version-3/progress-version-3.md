@@ -1,43 +1,43 @@
-# Progress Log — JobLens version 3
+﻿# Progress Log â€” JobLens version 3
 
 What was done in each version-3 step, what went wrong, and what it
-teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
-[decisions-version-3.md](decisions-version-3.md) · Where things stand:
+teaches. Plan: [plan-version-3.md](plan-version-3.md) Â· Decisions:
+[decisions-version-3.md](decisions-version-3.md) Â· Where things stand:
 [handoff-version-3.md](handoff-version-3.md)
 
 | Step | Status | Result |
 |---|---|---|
-| Planning | ✅ | 4 phases (17 new look, 18 Rust spike, 19 your features, 20 interview practice); E1–E5 recorded |
-| Mockup | ✅ | 4 linked screens in your glass style: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 (source in [mockup/](mockup/)) |
-| Mockup round 2 | ✅ | same link, elevated after your "looks AI slop" review (see below) |
-| 17a Your review of the mockup | ✅ | approved after several rounds: "I am happy with the design" |
-| 17b Tokens and base components | ✅ | both glass themes in the real app; component sheet at `#/components` |
-| 17c The shell | ✅ | grouped sidebar, top bar, quick actions (Ctrl K), light/dark switch |
-| 17d The Dashboard | ✅ | pipeline card, Do next, galaxy joined to the selected job, agent numbers |
-| 17e The Tracker | ✅ | Needs you, the board, the detail sheet in folds, dialogs |
-| 17f Analyze | ✅ | one column: the link, the run card with five steps, your decision, the log folded |
-| 17g Evals | ✅ | a run step by step, chart colours from the accents (validated), the rest in folds |
-| 17h Settings, wizard, quick box | ✅ | Settings folds the less-used sections; the wizard sits on the glass |
-| 17i Light theme check | ✅ | all text measured in both themes; one blue lightened |
-| 17j Accessibility and sizes | ✅ | keyboard focus, reduced motion, 720 to 2560 px: all pass |
-| **Phase 17** | ✅ | the glass look on every screen, both themes |
-| 18a The Tauri window | ✅ | your real UI and data in a Rust window, Python beside it |
-| 18b Measured | ✅ | 36% faster to your data, 19–24% less memory, only 5% smaller |
-| 18c Decide | ✅ | adopt Tauri (your choice) |
-| 18d1 The Rust window in the app | ✅ | `desktop_tauri/` + `engine.py`; your data in the Rust window; smoke test |
-| 18d2 File dialogs | ✅ | Add PDFs and Save as through the Rust window |
-| 18d3 The tray | ✅ | Icon, menu, notifications, hide on close; decisions still tray.py's |
-| 18d4 Quick box | ✅ | Ctrl+Alt+J opens the box in the Rust window |
-| 18d5 One copy, autostart, shutdown | ✅ | Second start shows the first; --tray; installer and Windows can close it |
-| 18d6 Packaging | ✅ | Installer builds, installs, passes both tests, uninstalls clean |
-| 18d7 Real update test | ✅ | 1.2.0 → version 3 and 3 → 3: all four update checks pass |
-| 18d8 Measured, installed | ✅ | 42 % sooner to data, 7 % less memory, same size |
-| 19 Your features | 🚧 | chosen (E7): 19a backup, 19b interview calendar, 19c insights, 19d resume tailoring |
-| 20 Interview practice | ⏳ | last |
+| Planning | âœ… | 4 phases (17 new look, 18 Rust spike, 19 your features, 20 interview practice); E1â€“E5 recorded |
+| Mockup | âœ… | 4 linked screens in your glass style: https://claude.ai/artifact/94ZzgwybxR8ZHdWtKnEUt4 (source in [mockup/](mockup/)) |
+| Mockup round 2 | âœ… | same link, elevated after your "looks AI slop" review (see below) |
+| 17a Your review of the mockup | âœ… | approved after several rounds: "I am happy with the design" |
+| 17b Tokens and base components | âœ… | both glass themes in the real app; component sheet at `#/components` |
+| 17c The shell | âœ… | grouped sidebar, top bar, quick actions (Ctrl K), light/dark switch |
+| 17d The Dashboard | âœ… | pipeline card, Do next, galaxy joined to the selected job, agent numbers |
+| 17e The Tracker | âœ… | Needs you, the board, the detail sheet in folds, dialogs |
+| 17f Analyze | âœ… | one column: the link, the run card with five steps, your decision, the log folded |
+| 17g Evals | âœ… | a run step by step, chart colours from the accents (validated), the rest in folds |
+| 17h Settings, wizard, quick box | âœ… | Settings folds the less-used sections; the wizard sits on the glass |
+| 17i Light theme check | âœ… | all text measured in both themes; one blue lightened |
+| 17j Accessibility and sizes | âœ… | keyboard focus, reduced motion, 720 to 2560 px: all pass |
+| **Phase 17** | âœ… | the glass look on every screen, both themes |
+| 18a The Tauri window | âœ… | your real UI and data in a Rust window, Python beside it |
+| 18b Measured | âœ… | 36% faster to your data, 19â€“24% less memory, only 5% smaller |
+| 18c Decide | âœ… | adopt Tauri (your choice) |
+| 18d1 The Rust window in the app | âœ… | `desktop_tauri/` + `engine.py`; your data in the Rust window; smoke test |
+| 18d2 File dialogs | âœ… | Add PDFs and Save as through the Rust window |
+| 18d3 The tray | âœ… | Icon, menu, notifications, hide on close; decisions still tray.py's |
+| 18d4 Quick box | âœ… | Ctrl+Alt+J opens the box in the Rust window |
+| 18d5 One copy, autostart, shutdown | âœ… | Second start shows the first; --tray; installer and Windows can close it |
+| 18d6 Packaging | âœ… | Installer builds, installs, passes both tests, uninstalls clean |
+| 18d7 Real update test | âœ… | 1.2.0 â†’ version 3 and 3 â†’ 3: all four update checks pass |
+| 18d8 Measured, installed | âœ… | 42 % sooner to data, 7 % less memory, same size |
+| 19 Your features | ðŸš§ | chosen (E7): 19a backup, 19b interview calendar, 19c insights, 19d resume tailoring |
+| 20 Interview practice | â³ | last |
 
 ---
 
-## Planning ✅ (16 Nov 2026)
+## Planning âœ… (16 Nov 2026)
 
 ### Starting point
 - **v1.2.0 released** the same day (Phase 16). `main` = `version-2` =
@@ -47,7 +47,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 ### Your answers
 | Question | Your answer |
 |---|---|
-| Redesign | A new look; see 2–3 directions as mockups first |
+| Redesign | A new look; see 2â€“3 directions as mockups first |
 | Style | Your reference image + prompt in `referance/` |
 | Rust | Goals: smaller, faster app; learn Rust. Adopt only if clearly better |
 | Features | Interview practice, last; the rest is your list (to come) |
@@ -56,13 +56,13 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 
 ### What was done
 - [plan-version-3.md](plan-version-3.md) and
-  [decisions-version-3.md](decisions-version-3.md) (E1–E5). README links
+  [decisions-version-3.md](decisions-version-3.md) (E1â€“E5). README links
   them. Commit `6f57df0`.
 
-## Mockup ✅ (16 Nov 2026)
+## Mockup âœ… (16 Nov 2026)
 
 ### What was done
-- A Design canvas of 4 page-sized screens (1440 × 1240), linked by the
+- A Design canvas of 4 page-sized screens (1440 Ã— 1240), linked by the
   sidebar like the app: **Dashboard, Tracker, Analyze, Evals**. Built from
   JobLens's real screens, wording and kinds of numbers. Nothing in the app
   changed.
@@ -78,7 +78,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 - White text on the bright gradient cards is about 2.5:1; dark text is
   needed. The mockup has a switch (`kpiInk`) to compare.
 
-## Mockup round 2 ✅ (16 Nov 2026)
+## Mockup round 2 âœ… (16 Nov 2026)
 
 You said the first mockup looked like AI slop. Same link, all four screens
 rebuilt inside your brief (Inter, your five accents, glass, gradient KPI cards).
@@ -102,7 +102,7 @@ rebuilt inside your brief (Inter, your five accents, glass, gradient KPI cards).
   selection and scrollbars, neutral shadows instead of coloured glows.
 - One shared style block in every screen, so the four look like one app.
 
-## Mockup round 3 ✅ (16 Nov 2026)
+## Mockup round 3 âœ… (16 Nov 2026)
 
 You asked for better hierarchy, with things grouped by how they relate.
 Same link. Checked against Impeccable's layout guide (updated to 4.9.2).
@@ -128,7 +128,7 @@ Same link. Checked against Impeccable's layout guide (updated to 4.9.2).
 - Spacing has a rhythm: 40 px between groups, 16 px inside a group;
   section headings 20 px, panel titles 16 px.
 
-## Mockup: primary button delight ✅ (16 Nov 2026)
+## Mockup: primary button delight âœ… (16 Nov 2026)
 
 On hover (or keyboard focus), **New analysis** on the Dashboard and
 Tracker changes to **Land the next one**: the old label slides up and the
@@ -136,7 +136,7 @@ new one slides in, the plus turns into a magnifying lens, and the lens
 keeps scanning in a loop with a small glint. The button's width doesn't
 change, and with reduced motion on, the text still swaps but nothing moves.
 
-## Mockup: frosted desktop glass ✅ (16 Nov 2026)
+## Mockup: frosted desktop glass âœ… (16 Nov 2026)
 
 You asked for a frosted window that lets the desktop show through, and
 frosted panels on top of it.
@@ -161,13 +161,13 @@ frosted panels on top of it.
   frosted look over the app's own gradient.
 - Many blurred layers cost graphics time; measure on this PC in 17b.
 
-## Mockup round 4 ✅ (16 Nov 2026)
+## Mockup round 4 âœ… (16 Nov 2026)
 
 You asked for a cleaner hierarchy: follow the order of operations, and
 fold less important content into accordions. Same link.
 
 - **Dashboard:** the pipeline leads, as five stages in the order a job
-  moves (Researched → Cover note ready → Applied → Interviewing → Offer),
+  moves (Researched â†’ Cover note ready â†’ Applied â†’ Interviewing â†’ Offer),
   each with its count and what is waiting there. Then **Do next** as
   three numbered steps: 1 Apply (the 5 strong fits), 2 Confirm you
   applied, 3 Follow up. **Job galaxy** is an accordion (open). **How
@@ -190,7 +190,7 @@ fold less important content into accordions. Same link.
   accordion are plain figures now; the gradient card style is kept for
   the pipeline at the top.
 
-## Mockup round 5 ✅ (16 Nov 2026)
+## Mockup round 5 âœ… (16 Nov 2026)
 
 You said the order-of-operations idea was meant for **Evals**, not the
 Dashboard, and that you didn't like the round 4 Dashboard.
@@ -213,7 +213,7 @@ Dashboard, and that you didn't like the round 4 Dashboard.
   judge rejections under step 2, invented links and news dates under
   step 3. Check against the code before building.
 
-## Mockup: cleaner sidebar ✅ (16 Nov 2026)
+## Mockup: cleaner sidebar âœ… (16 Nov 2026)
 
 You said the left menu was overwhelming.
 
@@ -225,11 +225,11 @@ You said the left menu was overwhelming.
   the bottom: status dot, model name, "Ready" (or "Step 2 of 5" during a
   run). The version number would move to Settings.
 
-## Mockup: search widget and quick actions ✅ (16 Nov 2026)
+## Mockup: search widget and quick actions âœ… (16 Nov 2026)
 
 You said the search bar at the top was overbearing.
 
-- The wide search box is now a small **Search · Ctrl K** button, on all
+- The wide search box is now a small **Search Â· Ctrl K** button, on all
   four screens.
 - Ctrl K or a click opens **quick actions**: Actions, Go to, and Jobs.
   Type to filter, Up / Down to move, Enter to open, Esc to close.
@@ -240,13 +240,13 @@ You said the search bar at the top was overbearing.
 - The logic of each screen was run once outside the browser (it filters
   and groups correctly); how it looks was not checked.
 
-## Features file ✅ (16 Nov 2026)
+## Features file âœ… (16 Nov 2026)
 
 [features-version-3.md](features-version-3.md): every feature of the new
 look (F1 to F34), by screen, with what still needs a check before
 building. It is the checklist for Phase 17.
 
-## Mockup: light mode and toggle ✅ (16 Nov 2026)
+## Mockup: light mode and toggle âœ… (16 Nov 2026)
 
 You asked for a light mode in a fully see-through style, and a light /
 dark toggle. Decision E4 is now settled: both themes, both glass.
@@ -264,13 +264,13 @@ dark toggle. Decision E4 is now settled: both themes, both glass.
   theme was looked at on screen. A copy of the screens from before this
   change is in git (commit fb559d6) if dark mode came out worse.
 
-## 17a Your review ✅ (16 Nov 2026)
+## 17a Your review âœ… (16 Nov 2026)
 
 "good lets start building i am happy with the design reference artifact."
 The mockup is the reference; [features-version-3.md](features-version-3.md)
 is the checklist.
 
-## 17b Tokens and base components ✅ (16 Nov 2026)
+## 17b Tokens and base components âœ… (16 Nov 2026)
 
 The first change to the app itself.
 
@@ -323,7 +323,7 @@ The first change to the app itself.
 - The reference grey fails contrast on glass over a bright backdrop: on
   see-through surfaces, check text against the worst spot behind it.
 
-## 17c The shell ✅ (16 Nov 2026)
+## 17c The shell âœ… (16 Nov 2026)
 
 ### What was done
 - **Sidebar:** two labelled groups, "Job search" (Dashboard, Analyze,
@@ -331,7 +331,7 @@ The first change to the app itself.
   itself on its own pages. The number of jobs waiting for you sits on
   Tracker. The model card became one row: dot, model, state; a click
   opens Settings.
-- **Top bar** on every screen: Search · Ctrl K, the light/dark switch,
+- **Top bar** on every screen: Search Â· Ctrl K, the light/dark switch,
   and New analysis (not on Analyze, where it leads). On hover or focus
   the button reads "Land the next one" and its plus becomes a scanning
   lens.
@@ -372,7 +372,7 @@ The first change to the app itself.
 - Ctrl K was pressed in a browser, not inside the real JobLens window.
   Try it there: `.venv\Scripts\python -m desktop_web`.
 
-## 17d The Dashboard ✅ (16 Nov 2026)
+## 17d The Dashboard âœ… (16 Nov 2026)
 
 ### What was done
 - **Two groups**, each with its own heading. "Your job search" first:
@@ -425,7 +425,7 @@ The first change to the app itself.
 - Chart colours on Evals (17g). The blur's graphics cost is still not
   measured.
 
-## 17e The Tracker ✅ (17 Nov 2026)
+## 17e The Tracker âœ… (17 Nov 2026)
 
 ### What was done
 - **Needs you**: one accordion (open) instead of two banners, in the
@@ -476,7 +476,7 @@ The first change to the app itself.
 - **The Tracker keeps its search box.** It filters the board in place,
   which quick actions doesn't do.
 
-## 17f Analyze ✅ (17 Nov 2026)
+## 17f Analyze âœ… (17 Nov 2026)
 
 ### What was done
 - **One column, in the order things happen** (it was two columns: steps
@@ -523,7 +523,7 @@ The first change to the app itself.
 - **The Analyze button stays** and shows the running time; Stop is next
   to it.
 
-## 17g Evals ✅ (17 Nov 2026)
+## 17g Evals âœ… (17 Nov 2026)
 
 ### What was done
 - **"A run, step by step"** replaces the seven tiles and four chart rows.
@@ -585,7 +585,7 @@ search results. Numbers and rewrites: the cover note.
   agent time per run, time against tokens, recent runs and the tracing
   chips are real parts of this screen that the mockup left out.
 
-## 17h Settings, the setup wizard, the quick-analyze box ✅ (17 Nov 2026)
+## 17h Settings, the setup wizard, the quick-analyze box âœ… (17 Nov 2026)
 
 These three had no mockup. They already had the new look from 17b's shared
 styles; this step looked at each in both themes and fixed what was off.
@@ -594,7 +594,7 @@ styles; this step looked at each in both themes and fixed what was off.
 - **Settings in two parts.** AI model and Your resumes stay open: they are
   what setup needs and what you change most. Under a "More settings"
   heading, Appearance, Options, Reminders, Quick analyze and Updates are
-  accordions, each with a line saying what it is set to ("Like Windows ·
+  accordions, each with a line saying what it is set to ("Like Windows Â·
   3D animated", "Follow up after a week", "Shortcut Ctrl+Alt+J"...). The
   "Saved" mark shows inside the open section.
 - **The setup wizard** had its own flat background, which hid the glass
@@ -617,7 +617,7 @@ styles; this step looked at each in both themes and fixed what was off.
   stopped now. For the next steps: one dev server and one test browser at
   a time, closed as soon as the checks are done.
 
-## 17i Light theme check ✅ (17 Nov 2026)
+## 17i Light theme check âœ… (17 Nov 2026)
 
 Both themes had been built screen by screen since 17b, so this step
 measured them instead of only looking at them.
@@ -645,7 +645,7 @@ measured them instead of only looking at them.
   and on disabled controls. The gradient cards and buttons were looked at
   in both themes in 17c and 17d.
 
-## 17j Accessibility and window sizes ✅ (17 Nov 2026)
+## 17j Accessibility and window sizes âœ… (17 Nov 2026)
 
 ### Checked
 - **Keyboard**, in both themes, on Dashboard, Analyze, Tracker, Evals and
@@ -665,7 +665,7 @@ measured them instead of only looking at them.
 
 ### Nothing needed fixing in this step.
 
-## Phase 17 done ✅ (17 Nov 2026)
+## Phase 17 done âœ… (17 Nov 2026)
 
 Every screen has the glass look in dark and light: the shell, Dashboard,
 Analyze, Tracker, Evals, Settings, the setup wizard, the quick-analyze box
@@ -685,14 +685,14 @@ and the dialogs. Commits `03bb5c1` (17b) to this one, all on `version-3`.
 ## 18 Before starting: a size check (17 Nov 2026)
 
 Today's app folder, by part: the window code Tauri would replace is about
-3–4 MB of the libraries; `pandas`/`numpy` are ~40 MB (used only to add up
+3â€“4 MB of the libraries; `pandas`/`numpy` are ~40 MB (used only to add up
 Evals and Dashboard numbers); the web search library ~15 MB; `PIL` ~13 MB
 (the tray icon). From that I expected Tauri to be neither clearly smaller
 nor faster, and suggested slimming the Python side instead. You chose to
 run the spike as planned. **The size part of that expectation held; the
 speed part was wrong** (below).
 
-## 18a The Tauri window ✅ (17 Nov 2026)
+## 18a The Tauri window âœ… (17 Nov 2026)
 
 ### What was done
 - **Rust installed** (1.100.0, the minimal toolchain, in
@@ -716,7 +716,7 @@ speed part was wrong** (below).
 - The window started and the page got its data from Python, every time
   (measured in 18b; it closes itself after measuring).
 
-## 18b Measured ✅ (17 Nov 2026)
+## 18b Measured âœ… (17 Nov 2026)
 
 Both windows run from source with the same Python and the same start-up
 work, started from outside and timed the same way; 5 runs each after a
@@ -725,7 +725,7 @@ warm-up, alternated. Scripts: `spikes/18_tauri/measure.py`, `size.py`.
 | | Today (pywebview) | Tauri | Change |
 |---|---|---|---|
 | Time until your data shows | 2.11 s | 1.34 s | **36% faster** |
-| The page drawn (before data) | – | 0.32 s | |
+| The page drawn (before data) | â€“ | 0.32 s | |
 | Memory, 1 s after ready | 585 MB | 474 MB | **19% less** |
 | Peak memory at start | 626 MB | 476 MB | **24% less** |
 | Installer, compressed (estimate) | 62.1 MB | 59.0 MB | **5% smaller** |
@@ -753,14 +753,14 @@ sooner, **and** nothing worse (tray, shortcut, updates, memory)."
   in Tauri (Add PDFs dialog, the tray, the global shortcut, Start with
   Windows, one copy at a time, the updater).
 
-## 18c Decided ✅ (17 Nov 2026)
+## 18c Decided âœ… (17 Nov 2026)
 
 You chose to adopt Tauri: version 3's window moves to Rust, the agent stays
 Python. The bar for 18d is "nothing worse": every feature of today's
 window works the same before the release, and the real update test
 passes. How it is built: decision E6. The steps: the plan, Phase 18.
 
-## 18d1 The Rust window in the app ✅ (17 Nov 2026)
+## 18d1 The Rust window in the app âœ… (17 Nov 2026)
 
 ### What was done
 - **`desktop_tauri/`**: the Rust program, out of the spike and into the app
@@ -796,7 +796,7 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
 - A filter that kills processes by command line must not match its own
   command (it stopped itself once; nothing else was touched).
 
-## 18d2 File dialogs ✅ (17 Nov 2026)
+## 18d2 File dialogs âœ… (17 Nov 2026)
 
 ### What was done
 - **Rust** shows Windows' own Open and Save dialogs (Tauri's dialog
@@ -831,7 +831,7 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
   no file in the project changed. The keys may have landed in an open
   editor or terminal without being saved.
 
-## 18d3 The tray ✅ (17 Nov 2026)
+## 18d3 The tray âœ… (17 Nov 2026)
 
 ### What was done
 - **Python decides, unchanged.** The Rust window uses the same `Tray`
@@ -870,12 +870,12 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
   run (it should hide, with the "still working" notification); clicking
   a notification with Do Not Disturb off.
 
-## 18d4 The quick-analyze box ✅ (17 Nov 2026)
+## 18d4 The quick-analyze box âœ… (17 Nov 2026)
 
 ### What was done
 - **The shortcut stays in Python** (E6): the same `HotkeyListener`, started
   by the engine; Settings still changes it and shows whether it works.
-- **Rust has the box ready**: a second small window (480 × 210, no frame,
+- **Rust has the box ready**: a second small window (480 Ã— 210, no frame,
   on top, not in the taskbar), made hidden at start so Ctrl+Alt+J opens it
   at once. Each time it's shown it is centred, focused, and cleared, with a
   copied link filled in (the page's own `joblensQuick.opened()`).
@@ -904,7 +904,7 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
 - A process check that matches "desktop_web.engine" in command lines also
   matches itself. Filter by process name, or leave out your own process.
 
-## 18d5 One copy, Start with Windows, closing at shutdown ✅ (17 Nov 2026)
+## 18d5 One copy, Start with Windows, closing at shutdown âœ… (17 Nov 2026)
 
 ### What was done
 - **One JobLens at a time**: Tauri's single-instance plugin. A second start
@@ -940,7 +940,7 @@ passes. How it is built: decision E6. The steps: the plan, Phase 18.
 - A real Windows shutdown or sign-out (same messages as the Restart
   Manager's, but untested); worth noticing once after 2.0.0 is installed.
 
-## 18d6 Packaging ✅ (17 Nov 2026)
+## 18d6 Packaging âœ… (17 Nov 2026)
 
 ### What was done
 - **The installed app is now two programs** in the same folder as before
@@ -984,7 +984,7 @@ parts are numpy (27 MB with its libraries), primp (15 MB, the web search),
 pandas (13 MB), Pillow (13 MB) and cryptography (10 MB). For 18d8: measure
 properly, and see what the engine can still leave out.
 
-## 18d7 The real update test ✅ (17 Nov 2026)
+## 18d7 The real update test âœ… (17 Nov 2026)
 
 `python scripts/check_real_update.py --old 1.2.1 --new 2.0.0`: **all four
 checks pass.** Real installers, real apps, a local stand-in for GitHub; the
@@ -992,8 +992,8 @@ real JobLens 1.2.0 install was not touched.
 
 | Check | What happened |
 |---|---|
-| new_from_old (1.2.0's app → version 3) | 1.2.0's updater downloaded and verified the new installer, quit, Setup installed it and opened the **Rust window** with its engine; data kept; 1.2.0's `_internal\` removed |
-| self_update (version 3 → next) | the Rust app updated itself: the engine ran the installer, the window quit by itself, the new one opened; data kept |
+| new_from_old (1.2.0's app â†’ version 3) | 1.2.0's updater downloaded and verified the new installer, quit, Setup installed it and opened the **Rust window** with its engine; data kept; 1.2.0's `_internal\` removed |
+| self_update (version 3 â†’ next) | the Rust app updated itself: the engine ran the installer, the window quit by itself, the new one opened; data kept |
 | hand_run | the X button hid JobLens to the tray; Setup run by hand closed it through the Restart Manager (18d5), nothing force-closed |
 | failure | Setup couldn't replace a file; the old JobLens reopened, knew the update failed, and Settings said so |
 
@@ -1028,7 +1028,7 @@ inside the code is still 1.2.0 until the release (E5).
   On this PC that can be enough for Windows' memory pressure to stop a
   build: close Chrome first.
 
-## 18d8 Measured, installed ✅ (17 Nov 2026) — Phase 18 done
+## 18d8 Measured, installed âœ… (17 Nov 2026) â€” Phase 18 done
 
 `python scripts/measure_installed.py 5`: each Test Build installed silently
 in a temp folder with an empty data folder, started **normally** (as you
@@ -1048,8 +1048,8 @@ not touched.
 answer from Python, i.e. when the screens can show your data. "Memory": the
 app and everything it started (WebView2, Python) added up.
 
-Against the bar proposed for E2 (installer ≥ 25 % smaller **or** ready
-≥ 30 % sooner, nothing worse): **ready 42 % sooner, memory a little lower,
+Against the bar proposed for E2 (installer â‰¥ 25 % smaller **or** ready
+â‰¥ 30 % sooner, nothing worse): **ready 42 % sooner, memory a little lower,
 and the tray, shortcut, notifications and updates pass every check
 (18d2-18d7).** Size is unchanged.
 
@@ -1072,3 +1072,55 @@ Version 3 drops pywebview, pythonnet and pystray from the app but adds the
 
 Making it smaller means rewriting the Dashboard's sums without pandas. That
 would be a separate decision, not part of Phase 18.
+
+## Phase 19 chosen ✅ (21 Nov 2026)
+
+You had no feature list, so I suggested nine features based on what
+JobLens doesn't do yet. You chose resume tailoring, insights, the
+interview calendar and backup (E7). Two of them were partly there already:
+the interview date and contact (14h) and the CSV export (14i). The plan
+only builds what is new.
+
+## 19a Backup and restore ✅ (21 Nov 2026)
+
+**Settings → Your data** (a new fold before Updates):
+
+- **Back up now…** writes one `.zip` you choose: the tracker and run log
+  (`jobs.db`, copied with SQLite's own backup so it is consistent even
+  mid-write), the resumes, the cover notes, and the settings **without
+  API keys** (E7).
+- **Restore from a backup…** first says what the file holds (jobs, resumes,
+  cover notes, when, which version) and asks. Then it backs up what is
+  there now ("before restore", so a restore can be undone), replaces the
+  data, keeps your API keys, and reloads the page.
+- **Automatic backups** go to `APP_HOME\backups`: once a week (a minute
+  after start) and just before an update installs. The newest 4 are kept.
+  A failed automatic backup never stops the app or the update.
+
+**Left out on purpose: paused runs** (`checkpoints.db`). The plan listed
+them, but only the last run can be continued (D30), the file is the
+largest one, and the agent keeps it open, so replacing it under a running
+app is risky. After a restore, the "Continue" offer simply doesn't appear
+for a run whose checkpoint isn't there (already handled since 14d).
+
+**A file from anywhere is checked before anything changes:** only the
+names a backup is made of (no folders, no `..`, no other files, no Windows
+device names like `CON.pdf`), no name twice, at most 1 GB unpacked,
+`jobs.db` must pass SQLite's integrity check, and a backup from a newer
+JobLens is refused. Settings come back only for keys the app knows, never
+secrets, never with a line break. An older backup gets today's columns
+(the same migrations as at start).
+
+**Checks:**
+- `tests/test_backup.py`: 21 tests (round trip, no keys in the file, keys
+  kept, undo, 10 kinds of bad file each leaving the data untouched, an
+  old-schema tracker, keep-4, weekly timing, the bridge's two-step restore,
+  no restore during a run). All 520 tests pass.
+- The real test data: 33 jobs, 6 resumes, 10 cover notes → 0.7 MB in
+  0.1 s; the file holds no key. (The test zip was deleted afterwards: it
+  held the friends' resumes.)
+- Screenshots (dev server, made-up data): the restore question in dark,
+  light and at 720 px.
+- On Windows, Python's `zipfile` turns a `\` in a name into `/` when it
+  writes, so a "backslash" test file can't be made with it. The check for
+  `\` stays as a guard for zips made by other tools.

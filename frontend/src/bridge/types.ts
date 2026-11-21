@@ -249,6 +249,25 @@ export interface UpdateStatus {
   install_problem?: { version: string; reason: string } | null; // 1.1.1: the last update failed
 }
 
+/** 19a: what a backup holds (create_backup / choose_backup / restore_backup). */
+export interface BackupInfo {
+  file: string; // choose_backup: the file's name
+  created: string; // ISO, local time
+  version: string; // the JobLens that made it
+  jobs: number;
+  resumes: string[];
+  cover_notes: number;
+}
+
+/** 19a: the automatic backups (Settings → Your data). */
+export interface BackupStatus {
+  folder: string;
+  count: number;
+  keep: number;
+  last: string | null; // ISO, local time
+  last_reason: string | null; // "weekly" / "before update" / "before restore"
+}
+
 /** Installing Ollama or downloading a model (12g). Not part of an agent run. */
 export interface SetupProgress {
   type: "setup_progress";
@@ -517,6 +536,12 @@ export interface PyApi {
   add_resumes(): Promise<string[]>;
   remove_resume(name: string): Promise<void>;
   open_data_folder(): Promise<void>;
+  /** 19a: backup and restore. A restore is two calls: choose (shows what's in it), then restore. */
+  backup_status(): Promise<BackupStatus>;
+  create_backup(): Promise<(Omit<BackupInfo, "file"> & { path: string }) | null>;
+  choose_backup(): Promise<BackupInfo | null>;
+  restore_backup(): Promise<Omit<BackupInfo, "file"> & { settings: number; before: string | null }>;
+  open_backup_folder(): Promise<void>;
   system_check(provider?: string | null, model?: string | null): Promise<SystemCheck>;
   ollama_status(): Promise<OllamaStatus>;
   install_ollama(): Promise<{ ok: boolean; manual: boolean }>;
