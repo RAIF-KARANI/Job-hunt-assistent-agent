@@ -1317,3 +1317,15 @@ stays (E4), interview practice waits (E8). Installer only (E9).
   `JobLens-Setup-2.0.0.exe`: 67,663,417 bytes, SHA-256
   `948c84095fdc14ded91f7903531450fbe755855ced374f9766ce71cf1ead830e`.
 - Release notes: [release-notes-version-3.md](release-notes-version-3.md).
+
+## Release v2.0.0 ✅ (22 Nov 2026)
+https://github.com/RAIF-KARANI/Job-hunt-assistent-agent/releases/tag/v2.0.0
+- `main` fast-forwarded to `version-3` (`8c8e131`); you published the
+  release with `gh release create`.
+- **Checked after publishing:** Latest; not a draft or pre-release; tag →
+  `8c8e131`; GitHub's SHA-256 of the installer matches the build
+  (`948c8409…ead830e`); the updater (real API), asked as 1.2.0 and as
+  1.0.3, offers v2.0.0 with that checksum; asked as 2.0.0, nothing.
+- **Left for you:** update your own JobLens (Settings → Updates), open an
+  interview `.ics` in your calendar, try Suggested edits on a real job.
+  Phase 20 (interview practice) waits (E8).
