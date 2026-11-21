@@ -1,4 +1,4 @@
-﻿"""
+"""
 19a (E7): back up everything you'd hate to lose, and put it back.
 
 One .zip file:
