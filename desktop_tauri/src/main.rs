@@ -218,8 +218,9 @@ fn handle_request(app: &AppHandle, action: &str, args: &Value) -> Result<Value, 
         }
         "navigate" => {
             // Only our own page names (letters and dashes), never a script.
+            // 19b: plus a query like "tracker?job=12": ? = & can't end the quoted string below.
             let page = args.get("page").and_then(Value::as_str).unwrap_or("dashboard");
-            if !page.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+            if !page.chars().all(|c| c.is_ascii_alphanumeric() || "-?=&".contains(c)) {
                 return Err(format!("Not a JobLens page: {page}"));
             }
             if let Some(window) = main_window(app) {

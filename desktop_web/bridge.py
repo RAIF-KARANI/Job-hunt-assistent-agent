@@ -358,6 +358,31 @@ class Api:
         self._exported.add(str(path))
         return {"path": str(path)}
 
+    def export_interview_ics(self, job_id: int) -> dict | None:
+        """19b: "Add to calendar": the interview as an .ics file you save and
+        open (Outlook, Google, Apple). None = you cancelled."""
+        from job_agent import interviews
+
+        job = tracker.get_job(int(job_id))
+        if job is None:
+            raise ValueError(f"No job with id {job_id}")
+        text = interviews.ics(job)  # raises when there's no interview date
+        path = self._save_path(interviews.file_name(job), "Calendar file (*.ics)")
+        if not path:
+            return None
+        Path(path).write_text(text, encoding="utf-8", newline="")
+        self._exported.add(str(path))
+        return {"path": str(path)}
+
+    def open_exported(self, path: str) -> None:
+        """19b: open a file JobLens just exported with its program (an .ics opens
+        your calendar). Only files this session wrote, like show_in_folder."""
+        if str(path) not in self._exported or not Path(path).exists():
+            raise ValueError("Only a file exported in this session can be opened.")
+        if Path(path).suffix.lower() != ".ics":
+            raise ValueError("Only calendar files are opened this way.")
+        os.startfile(str(Path(path)))
+
     def show_in_folder(self, path: str) -> None:
         """Open Explorer at a file JobLens just exported (never any other path)."""
         if str(path) not in self._exported or not Path(path).exists():

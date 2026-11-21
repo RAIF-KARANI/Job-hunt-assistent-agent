@@ -492,6 +492,10 @@ export interface PyApi {
   export_tracker(): Promise<{ path: string; count: number } | null>;
   export_cover_note(jobId: number, fmt: "txt" | "docx" | "pdf"): Promise<{ path: string } | null>;
   show_in_folder(path: string): Promise<void>;
+  /** 19b: "Add to calendar": an .ics you save. null = cancelled. */
+  export_interview_ics(jobId: number): Promise<{ path: string } | null>;
+  /** 19b: open an .ics exported this session in your calendar program. */
+  open_exported(path: string): Promise<void>;
   /** 1.0.1: remove a job with its cover notes and your notes. */
   delete_job(jobId: number): Promise<{ company: string; title: string; cover_notes: number; files: number }>;
   test_langfuse(host: string | null, publicKey: string | null, secretKey: string | null): Promise<LlmStatus & { state: string }>;

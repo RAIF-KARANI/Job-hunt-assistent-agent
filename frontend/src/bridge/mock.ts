@@ -14,9 +14,16 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     ANTHROPIC_API_KEY_SET: false,
   };
   let autostart = { supported: true, enabled: false };
+  // 19b: interview dates relative to today, so "upcoming" always has something to show.
+  const inDays = (n: number, time?: string) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return time ? `${day}T${time}` : day;
+  };
   const jobs: JobRow[] = [
-    { id: 1, title: "AI Engineer", company: "Northwind Labs", fit_score: 86, best_resume: "AI_Engineer.pdf", status: "interviewing", created_at: "2026-10-29 10:42", updated_at: "2026-10-29 10:42", followed_up_at: null, snoozed_until: null, follow_up: false, notes: "Asked about evals; prepare the LangGraph demo.", interview_at: "2026-11-04T10:30", contact: "Dana Lee (recruiter)" },
-    { id: 2, title: "Backend Engineer (Python)", company: "Lumen Robotics", fit_score: 78, best_resume: "Software_Engineer.pdf", status: "applied", created_at: "2026-10-21 09:15", updated_at: "2026-10-21 09:15", followed_up_at: null, snoozed_until: null, follow_up: true, notes: null, interview_at: null, contact: null },
+    { id: 1, title: "AI Engineer", company: "Northwind Labs", fit_score: 86, best_resume: "AI_Engineer.pdf", status: "interviewing", created_at: "2026-10-29 10:42", updated_at: "2026-10-29 10:42", followed_up_at: null, snoozed_until: null, follow_up: false, notes: "Asked about evals; prepare the LangGraph demo.", interview_at: inDays(1, "10:30"), contact: "Dana Lee (recruiter)" },
+    { id: 2, title: "Backend Engineer (Python)", company: "Lumen Robotics", fit_score: 78, best_resume: "Software_Engineer.pdf", status: "applied", created_at: "2026-10-21 09:15", updated_at: "2026-10-21 09:15", followed_up_at: null, snoozed_until: null, follow_up: true, notes: null, interview_at: inDays(6), contact: null },
     { id: 3, title: "Applied Scientist", company: "Peregrine AI", fit_score: 81, best_resume: "AI_Engineer.pdf", status: "cover_note_ready", created_at: "2026-10-28 14:02", updated_at: "2026-10-28 14:02", followed_up_at: null, snoozed_until: null, follow_up: false, apply_ask: true, ready_to_apply: true, note_approved_at: "2026-10-28 14:02", notes: null, interview_at: null, contact: null },
     { id: 4, title: "Platform Engineer (Rust)", company: "Tessellate", fit_score: 52, best_resume: "Software_Engineer.pdf", status: "researched", created_at: "2026-10-26 08:30", updated_at: "2026-10-26 08:30", followed_up_at: null, snoozed_until: null, follow_up: false, notes: null, interview_at: null, contact: null },
     { id: 5, title: "LLM Engineer", company: "Halcyon Data", fit_score: 72, best_resume: "AI_Engineer.pdf", status: "cover_note_ready", created_at: "2026-10-30 07:10", updated_at: "2026-10-30 07:10", followed_up_at: null, snoozed_until: null, follow_up: false, apply_ask: true, note_approved_at: "2026-10-30 07:10", notes: null, interview_at: null, contact: null },
@@ -166,6 +173,8 @@ export function mockApi(emit: (event: AgentEvent) => void): PyApi {
     export_tracker: async () => ({ path: "C:\Users\you\Documents\JobLens jobs 2026-10-31.csv", count: jobs.length }),
     export_cover_note: async (id, fmt) => ({ path: `C:\Users\you\Documents\Cover note - ${id}.${fmt}` }),
     show_in_folder: async () => undefined,
+    export_interview_ics: async (id) => ({ path: `C:\\Users\\you\\Documents\\Interview - ${id}.ics` }),
+    open_exported: async () => undefined,
     save_notes: async (id, values) => {
       const job = jobs.find((j) => j.id === id)!;
       for (const [k, v] of Object.entries(values)) Object.assign(job, { [k]: v || null });

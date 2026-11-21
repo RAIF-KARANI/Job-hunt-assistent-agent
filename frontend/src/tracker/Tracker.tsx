@@ -11,7 +11,7 @@ import type { JobStatus } from "../bridge/types";
 import { Board } from "./Board";
 import { JobList } from "./JobList";
 import { JobSheet } from "./JobSheet";
-import { matches, STATUSES, statusLabel } from "./status";
+import { interviewAhead, interviewDate, interviewLabel, interviewSoon, matches, STATUSES, statusLabel } from "./status";
 import { useJobs, type Move } from "./useJobs";
 
 type View = "board" | "list";
@@ -113,6 +113,10 @@ export function Tracker() {
   // The status filter is for the List; the Board already sorts by status.
   const byStatus = view === "list" && statuses.length ? searched.filter((j) => statuses.includes(j.status)) : searched;
   const askCount = jobs?.filter((j) => j.apply_ask).length ?? 0; // 16i
+  // 19b: interviews today or tomorrow (not rejected), soonest first.
+  const soon = (jobs ?? [])
+    .filter((j) => j.interview_at && j.status !== "rejected" && interviewAhead(j.interview_at) && interviewSoon(j.interview_at))
+    .sort((a, b) => interviewDate(a.interview_at!).getTime() - interviewDate(b.interview_at!).getTime());
   const shown = view !== "list" ? byStatus : byStatus.filter((j) => (!followOnly || j.follow_up) && (!applyOnly || j.apply_ask));
   const toggleStatus = (s: JobStatus) => setStatuses((old) => (old.includes(s) ? old.filter((x) => x !== s) : [...old, s]));
   const showStatus = (s: JobStatus) => {
@@ -200,14 +204,40 @@ export function Tracker() {
       )}
 
       {/* 17e: what is waiting for you, in the order you'd do it: confirm, then follow up. */}
-      {(askCount > 0 || dueCount > 0) && (
+      {(askCount > 0 || dueCount > 0 || soon.length > 0) && (
         <Fold
           level={2}
           defaultOpen
           title="Needs you"
-          digest={[askCount > 0 && `${askCount} to confirm`, dueCount > 0 && `${dueCount} to follow up`].filter(Boolean).join(" · ")}
+          digest={[
+            soon.length > 0 && `${soon.length} interview${soon.length === 1 ? "" : "s"} soon`,
+            askCount > 0 && `${askCount} to confirm`,
+            dueCount > 0 && `${dueCount} to follow up`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         >
           <div className="needs" role="status">
+            {/* 19b: first, because it has a time. */}
+            {soon.map((j) => (
+              <div className="need" key={`interview-${j.id}`}>
+                <span className="next-icon ask">
+                  <Icon name="calendar" size={17} />
+                </span>
+                <span className="next-text">
+                  <span className="next-title">
+                    Interview {interviewLabel(j.interview_at!)}
+                  </span>
+                  <span className="next-note">
+                    {j.title} at {j.company}
+                    {j.contact ? `, with ${j.contact}` : ""}. The job's prep sheet has everything saved about it.
+                  </span>
+                </span>
+                <a className="btn btn-secondary btn-sm" href={`#/tracker?job=${j.id}`}>
+                  Open the job
+                </a>
+              </div>
+            ))}
             {askCount > 0 && (
               <div className="need">
                 <span className="next-icon ask">

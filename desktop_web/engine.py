@@ -154,8 +154,9 @@ class ShellTray:
     def refresh(self) -> None:
         self.shell.do("tray", tooltip=self.tooltip(), menu=self.menu())
 
-    def notify(self, title: str, message: str) -> None:
+    def notify(self, title: str, message: str, page: str | None = None) -> None:
         self.tray._last_note = title  # what a click on it opens
+        self.tray._last_page = page   # 19b: or this page, e.g. "tracker?job=12"
         self.shell.do("notify", title=title, body=message)
 
     def clicked(self, item: str) -> None:

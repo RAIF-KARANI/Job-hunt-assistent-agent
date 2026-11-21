@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { getApi, onEvent } from "../bridge/bridge";
+import type { JobRow } from "../bridge/types";
+import { interviewAhead, interviewSoon } from "../tracker/status";
+
+const interviewNear = (j: JobRow) => !!j.interview_at && j.status !== "rejected" && interviewAhead(j.interview_at) && interviewSoon(j.interview_at);
 
 /**
  * How many jobs are waiting for you: due a follow-up, or asking "Did you
@@ -17,7 +21,8 @@ export function useReminders(): number {
     const load = () =>
       getApi()
         .then((api) => api.list_jobs())
-        .then((jobs) => alive && setCount(jobs.filter((j) => j.follow_up || j.apply_ask).length))
+        // 19b: an interview today or tomorrow counts too (it's in Needs you).
+        .then((jobs) => alive && setCount(jobs.filter((j) => j.follow_up || j.apply_ask || interviewNear(j)).length))
         .catch(() => undefined); // the Tracker shows the error; a missing number is enough here
     load();
     const off = onEvent((e) => {

@@ -71,6 +71,16 @@ export function interviewAhead(value: string, now = Date.now()): boolean {
   return value.length === 10 ? date.getTime() + 86_400_000 > now : date.getTime() > now;
 }
 
+/** 19b: today or tomorrow (by the calendar, not 48 hours). */
+export function interviewSoon(value: string, now = new Date()): boolean {
+  const day = interviewDate(value);
+  day.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((day.getTime() - today.getTime()) / 86_400_000);
+  return days >= 0 && days <= 1;
+}
+
 export function matches(job: JobRow, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;

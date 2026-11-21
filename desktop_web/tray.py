@@ -153,6 +153,7 @@ class Tray:
         self._keep_in_tray, self._open_tracker = keep_in_tray, open_tracker or show
         self._open_page = open_page or (lambda page: show())
         self._last_note: str | None = None  # title of the last notification: what a click opens
+        self._last_page: str | None = None  # 19b: ...unless it named its own page
         self.follow_ups = 0  # jobs due a follow-up; set by count_follow_ups()
         self.quick = False  # 14f: the current run came from the quick box
         self._count = follow_ups
@@ -209,7 +210,7 @@ class Tray:
     def notification_clicked(self) -> None:
         """Open JobLens on the screen the last notification was about."""
         self.hidden = False
-        self._open_page(NOTE_PAGES.get(self._last_note or "", "analyze"))
+        self._open_page(self._last_page or NOTE_PAGES.get(self._last_note or "", "analyze"))
 
     def stop(self) -> None:
         """Remove the icon (its thread isn't a daemon: the app can't exit before this)."""
@@ -271,8 +272,10 @@ class Tray:
             self.quick = False  # told once: from here you're in the window
         self._refresh()
 
-    def notify(self, title: str, message: str) -> None:
+    def notify(self, title: str, message: str, page: str | None = None) -> None:
+        """`page`: what a click opens, when it isn't the title's usual page (19b: one job)."""
         self._last_note = title
+        self._last_page = page
         if self._icon is not None:
             try:
                 self._icon.notify(message, title)
@@ -300,6 +303,20 @@ def keeps_tray(api, autostart_on) -> bool:
     registered: the shortcut only works while JobLens runs."""
     hotkey = getattr(api, "_hotkey", None)
     return bool(autostart_on()) or bool(hotkey and hotkey.key)
+
+
+def interview_reminders(tray, now=None) -> int:
+    """19b: the evening before and an hour before an interview, once each.
+    Not only while hidden: you may be in another program with the window
+    open behind it. A click opens that job. Returns how many were shown."""
+    from job_agent import interviews, tracker
+
+    shown = 0
+    for job, kind in interviews.due([dict(r) for r in tracker.list_jobs()], now):
+        tray.notify(*interviews.notice(job, kind, now), page=f"tracker?job={int(job['id'])}")
+        interviews.mark_sent(job["id"], job["interview_at"], kind)
+        shown += 1
+    return shown
 
 
 def follow_up_reminders(tray) -> None:
@@ -337,6 +354,10 @@ def follow_up_reminders(tray) -> None:
                         applyreminder.due_jobs(mark=True)  # shown: the 24 hours to answer start
             except Exception as e:
                 print(f"! apply reminder: {e}")
-            time.sleep(30 * 60)
+            try:
+                interview_reminders(tray)  # 19b: shown even with the window open
+            except Exception as e:
+                print(f"! interview reminder: {e}")
+            time.sleep(5 * 60)  # 19b: was 30 min; "an hour before" needs a closer look
 
     threading.Thread(target=loop, name="joblens-follow-ups", daemon=True).start()

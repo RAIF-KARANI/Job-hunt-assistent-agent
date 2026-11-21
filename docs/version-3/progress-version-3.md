@@ -34,6 +34,7 @@ teaches. Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | 18d8 Measured, installed | ✅ | 42 % sooner to data, 7 % less memory, same size |
 | 19 Your features | 🚧 | chosen (E7): 19a backup, 19b interview calendar, 19c insights, 19d resume tailoring |
 | 19a Backup and restore | ✅ | one .zip, no API keys; restore checks the file and backs up first; weekly + before an update |
+| 19b Interview calendar | ✅ | reminders the evening before and an hour before (fired in the real window); .ics; Do next and Needs you |
 | 20 Interview practice | ⏳ | last |
 
 ---
@@ -1131,3 +1132,53 @@ file without a BOM as ANSI, and `Set-Content -Encoding utf8` then writes
 it back garbled with a BOM. That happened to the plan and this log in the
 first 19a commit; fixed in the next one. Edit docs with the editor, not
 PowerShell string replacement.
+
+## 19b Interview calendar ✅ (21 Nov 2026)
+
+The interview date you type on a job (since 14h) now does something:
+
+- **Reminders** (`job_agent/interviews.py`, sent by the tray loop): one
+  **the evening before** (from 18:00) and one **an hour before**, each once
+  per date. The tracker remembers what was sent in a new column,
+  `interview_reminded` = `"<date>|evening,hour"`, so a moved interview gets
+  fresh reminders by itself. A date without a time gets only the evening
+  one. If JobLens wasn't running the evening before, the morning reminder
+  says "today", not "tomorrow"; a late start gets only the hour one. No
+  reminders for rejected jobs. Unlike the follow-up reminders, these show
+  **even with the window open** (you may be in another program). A click
+  opens that job (`tracker?job=12`), not just the Tracker.
+- The reminder loop now looks every **5 minutes** (was 30): "an hour
+  before" needs it. The follow-up notice is still once a day and "Did you
+  apply?" still once per job.
+- **Add to calendar…** in the job's notes (only for a saved date still
+  ahead): an `.ics` file, then **Open in your calendar**. "Floating" time
+  (no time zone) so every calendar shows the 10:30 you typed; a date only
+  is an all-day event; a reminder an hour before is built in; contact,
+  posting link and location go in the event. Lines are folded at 75 bytes
+  without splitting a character (tested with Polish and Nordic names).
+- **Needs you** (Tracker) lists interviews today or tomorrow first, with
+  "Open the job"; they count in the sidebar's number too.
+- **Dashboard → Do next** starts with the next 7 days' interviews. (The
+  plan said a separate card; Do next already is "what's waiting for you",
+  and a second card would push the galaxy down. So no new bridge call
+  either: it uses the job list the Dashboard already has.)
+- **Rust window:** a page name may now carry a query (`?`, `=`, `&`), so a
+  notification can open one job. Still no quotes or brackets: it can't
+  break out of the script string.
+
+**Checks:**
+- `tests/test_interviews.py`: 14 tests (upcoming order, evening then hour
+  each once, late start, "today", a moved date, date-only, the tray shows
+  each once and a click opens the job, the .ics fields, escaping and
+  folding, all-day, the bridge export, only exported .ics files open).
+  534 tests pass.
+- **In the real Rust window**, on a temporary copy of the test tracker with
+  an interview 50 minutes ahead: the reminder went out about 20 s after
+  start and was recorded; no errors; the engine exited with the window.
+  Your installed JobLens kept running untouched. The copy was deleted.
+- Screenshots (dev server, made-up data): Do next (dark), Needs you
+  (light), the notes with "Add to calendar" and the saved file.
+
+**Left for you:** open one `.ics` in your own calendar (Outlook or
+Google) to see the time come out as typed. I can't check that without
+your calendar.

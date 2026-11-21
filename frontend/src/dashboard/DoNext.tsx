@@ -7,9 +7,18 @@
 import type { JobRow } from "../bridge/types";
 import { Icon, type IconName } from "../app/Icon";
 import { FitChip } from "../tracker/FitChip";
-import { ago, quietDays } from "../tracker/status";
+import { ago, interviewAhead, interviewDate, interviewLabel, quietDays } from "../tracker/status";
 
 const MAX_READY = 5;
+const INTERVIEW_DAYS = 7; // 19b: interviews this close show here
+
+/** 19b: still ahead and within a week, not rejected, soonest first. */
+function upcoming(jobs: JobRow[], now = Date.now()): JobRow[] {
+  return jobs
+    .filter((j) => j.interview_at && j.status !== "rejected" && interviewAhead(j.interview_at, now))
+    .filter((j) => interviewDate(j.interview_at!).getTime() - now < INTERVIEW_DAYS * 86_400_000)
+    .sort((a, b) => interviewDate(a.interview_at!).getTime() - interviewDate(b.interview_at!).getTime());
+}
 
 /** When the cover note was approved (a job moved by hand has no note: its last change). */
 const readySince = (job: JobRow) => job.note_approved_at ?? job.updated_at;
@@ -52,9 +61,10 @@ function Reminder({ icon, tone, title, note, job, show, onOpen }: ReminderProps)
 export function DoNext({ jobs, onOpen }: { jobs: JobRow[]; onOpen(id: number): void }) {
   const due = jobs.filter((j) => j.follow_up);
   const asks = jobs.filter((j) => j.apply_ask);
+  const interviews = upcoming(jobs);
   const ready = jobs.filter((j) => j.ready_to_apply).sort((a, b) => readySince(a).localeCompare(readySince(b)));
   // A ready job that is also asking "Did you apply?" is one thing to do, not two.
-  const total = due.length + asks.length + ready.filter((j) => !j.apply_ask).length;
+  const total = interviews.length + due.length + asks.length + ready.filter((j) => !j.apply_ask).length;
   const more = ready.length - MAX_READY;
 
   return (
@@ -73,6 +83,36 @@ export function DoNext({ jobs, onOpen }: { jobs: JobRow[]; onOpen(id: number): v
           Nothing is waiting for you.
           {jobs.length === 0 ? " Analyze a job and what to do about it shows up here." : " Strong fits and reminders show up here."}
         </p>
+      )}
+
+      {interviews.length > 0 && (
+        <>
+          <div className="next-sub">
+            <h4>Interviews</h4>
+            <span className="hint">The next {INTERVIEW_DAYS} days</span>
+          </div>
+          <ul className="next-list">
+            {interviews.map((job) => (
+              <li key={job.id}>
+                <button
+                  type="button"
+                  className="next-row"
+                  onClick={() => onOpen(job.id)}
+                  aria-label={`Interview with ${job.company}, ${job.title}, ${interviewLabel(job.interview_at!)}. Open details`}
+                >
+                  <span className="next-icon ask">
+                    <Icon name="calendar" size={17} />
+                  </span>
+                  <span className="next-text">
+                    <span className="next-title">{job.company}</span>
+                    <span className="next-note">{job.title}</span>
+                  </span>
+                  <span className="next-when">{interviewLabel(job.interview_at!)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {(due.length > 0 || asks.length > 0) && (

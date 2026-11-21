@@ -99,6 +99,13 @@ const paths = {
       <path d="M6.75 10.5l1.5 1.5 3-3" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  // 19b: interviews, "Add to calendar"
+  calendar: (
+    <>
+      <rect x="2.75" y="3.75" width="12.5" height="11.5" rx="2" />
+      <path d="M2.75 7.25h12.5M6 2.25v3M12 2.25v3" strokeLinecap="round" />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof paths;

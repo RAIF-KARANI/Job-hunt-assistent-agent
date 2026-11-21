@@ -4,6 +4,8 @@
 import { useState } from "react";
 import { errorMessage, getApi } from "../bridge/bridge";
 import type { JobNotes } from "../bridge/types";
+import { Icon } from "../app/Icon";
+import { interviewAhead } from "./status";
 
 interface Props {
   jobId: number;
@@ -23,6 +25,17 @@ export function NotesSection({ jobId, initial, onSaved }: Props) {
   const change = (field: keyof JobNotes, value: string) => {
     setDraft((d) => ({ ...d, [field]: value }));
     setState("idle");
+  };
+
+  const [calendar, setCalendar] = useState<string | null>(null); // 19b: the .ics just saved
+  const addToCalendar = async () => {
+    setError(null);
+    try {
+      const result = await (await getApi()).export_interview_ics(jobId);
+      if (result) setCalendar(result.path);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   };
 
   const save = async () => {
@@ -97,7 +110,21 @@ export function NotesSection({ jobId, initial, onSaved }: Props) {
             Clear the date
           </button>
         )}
+        {/* 19b: the saved date only: a calendar entry for a date you haven't saved would disagree with the tracker. */}
+        {saved.interview_at && !dirty && interviewAhead(saved.interview_at) && (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => void addToCalendar()}>
+            <Icon name="calendar" size={15} /> Add to calendar…
+          </button>
+        )}
       </div>
+      {calendar && (
+        <p className="check-status ok" role="status">
+          <span aria-hidden="true">✓</span> Saved {calendar.split(/[\\/]/).pop()}.{" "}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => void getApi().then((api) => api.open_exported(calendar)).catch((e) => setError(errorMessage(e)))}>
+            Open in your calendar
+          </button>
+        </p>
+      )}
     </section>
   );
 }
