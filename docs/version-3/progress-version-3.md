@@ -1287,3 +1287,33 @@ pull against each other with a small model. The code check is what makes
 the strict part safe, so the prompt can ask for real rewriting.
 
 **Phase 19 is done.**
+
+## Release checks for 2.0.0 ✅ (21–22 Nov 2026)
+
+Your choices (21 Nov): release now as **2.0.0** (E5), "Like Windows"
+stays (E4), interview practice waits (E8). Installer only (E9).
+
+- `pytest`: 565 pass.
+- `build_installer.py --test-install`: the Test Build (68 MB, app folder
+  161 MB) passed the engine self-test and the window test, both in the
+  build folder and installed; uninstalled with nothing left; your JobLens
+  1.2.0 not touched.
+- `check_real_update.py --old 1.2.1 --new 2.0.0`: **all four checks pass**
+  (1.2.0 → 2.0.0, 2.0.0 → 2.0.1, Setup run by hand with JobLens in the
+  tray, a failed update reopens the old JobLens and says so); your JobLens
+  not touched.
+- `measure_installed.py 5`, installed, medians of 5 runs:
+
+| | 1.2.0 (pywebview) | 2.0.0 (Rust) |
+|---|---|---|
+| Installer | 64.8 MB | 64.5 MB |
+| App folder | 158 MB | 158 MB |
+| Time to data | 3.04 s | 1.44 s (53 % sooner) |
+| Memory 1 s after | 572 MB | 515 MB (10 % less) |
+| Peak, first 3 s | 594 MB | 536 MB |
+
+- The release build: self-test and window test PASS; no PDF, database,
+  `.env` or backup in the app folder.
+  `JobLens-Setup-2.0.0.exe`: 67,663,417 bytes, SHA-256
+  `948c84095fdc14ded91f7903531450fbe755855ced374f9766ce71cf1ead830e`.
+- Release notes: [release-notes-version-3.md](release-notes-version-3.md).

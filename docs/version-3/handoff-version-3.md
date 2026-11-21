@@ -21,7 +21,7 @@ Plan: [plan-version-3.md](plan-version-3.md) · Decisions:
 | Working branch | **`version-3`**, pushed. Phases 17 (new look) and 18 (Rust window) are done |
 | Open pull requests | none |
 | Tests | 499 pass (`.venv\Scripts\python -m pytest`); also `scripts/build_installer.py --test-install` and `scripts/check_real_update.py --old 1.2.1 --new 2.0.0` |
-| Next step | **Phase 20** (interview practice), then the release. Phase 19 (E7) is done |
+| Next step | **Publish v2.0.0** (all checks pass, `main` merged); then Phase 20 (on hold, E8) |
 | Waiting on you | the release number (E5) and "Match Windows" (E4); neither blocks Phase 19 |
 
 ## 2. Version 3 in short
